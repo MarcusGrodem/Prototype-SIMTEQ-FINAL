@@ -1,0 +1,297 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #172033;
+  background: #f3f6fb;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #f3f6fb;
+  color: #172033;
+}
+
+button {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.sidebar h1,
+.page-header h2,
+.section-header h2 {
+  margin: 0;
+}
+
+.sidebar-copy,
+.page-header p,
+.card-helper,
+.issue-list span {
+  color: #94a3b8;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #5eead4;
+}
+
+.nav-list {
+  display: grid;
+  gap: 10px;
+}
+
+.nav-item,
+.primary-button,
+.secondary-button {
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-item {
+  padding: 14px 16px;
+  text-align: left;
+  background: rgba(148, 163, 184, 0.08);
+  color: inherit;
+}
+
+.nav-item:hover,
+.nav-item.active {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.main-content {
+  padding: 32px;
+}
+
+.page-stack {
+  display: grid;
+  gap: 24px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.page-header p {
+  margin: 8px 0 0;
+  max-width: 680px;
+}
+
+.split-header {
+  align-items: center;
+}
+
+.metric-grid,
+.content-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.metric-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.two-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #dbe3f1;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.card-label {
+  margin: 0;
+  color: #5b6780;
+  font-size: 0.9rem;
+}
+
+.metric-value {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 1.9rem;
+}
+
+.metric-success {
+  border-left: 4px solid #16a34a;
+}
+
+.metric-warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.metric-danger {
+  border-left: 4px solid #dc2626;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: top;
+}
+
+td strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+thead th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 86px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.badge-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-neutral {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.status-summary,
+.issue-list {
+  display: grid;
+  gap: 14px;
+}
+
+.status-row,
+.issue-list li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.issue-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.issue-list li {
+  grid-template-columns: 1fr;
+  padding: 14px;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.primary-button {
+  padding: 12px 18px;
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.primary-button:hover {
+  background: #1e40af;
+}
+
+.secondary-button {
+  padding: 10px 14px;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: #dbeafe;
+}
+
+.secondary-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+@media (max-width: 1100px) {
+  .app-shell,
+  .metric-grid,
+  .two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    padding-bottom: 20px;
+  }
+
+  .main-content {
+    padding: 20px;
+  }
+}
