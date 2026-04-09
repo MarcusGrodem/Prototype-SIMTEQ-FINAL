@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from './ui/badge';
 import { StatusBadge } from './StatusBadge';
 import { Button } from './ui/button';
-import { 
+import {
   Calendar,
   User,
   FileText,
@@ -14,40 +14,93 @@ import {
   CheckCircle2,
   UserCheck,
   Eye,
-  AlertCircle
+  AlertCircle,
+  ExternalLink
 } from 'lucide-react';
-import { Control, risks } from '../data/mockData';
-import { useState } from 'react';
+import { Control } from '../../lib/types';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'sonner';
+import { getRiskScoreColor } from '../utils/riskUtils';
 
 interface ControlDetailsDialogProps {
   control: Control | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
+  onGoToControl?: () => void;
 }
 
-export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDetailsDialogProps) {
-  // Four-eye principle state
+interface LinkedRisk {
+  id: string;
+  title: string;
+  category: string;
+  likelihood: string;
+  impact: string;
+  risk_score: number;
+  owner_name: string;
+  status: string;
+  last_review: string | null;
+}
+
+interface LinkedDoc {
+  id: string;
+  name: string;
+  uploaded_by_name: string;
+  current_version: number;
+  file_path: string | null;
+}
+
+export function ControlDetailsDialog({ control, open, onOpenChange, onSuccess, onGoToControl }: ControlDetailsDialogProps) {
   const [executedBy, setExecutedBy] = useState<string | null>(null);
   const [executedDate, setExecutedDate] = useState<string | null>(null);
   const [reviewedBy, setReviewedBy] = useState<string | null>(null);
   const [reviewedDate, setReviewedDate] = useState<string | null>(null);
   const [reviewStatus, setReviewStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
+  const [linkedRisks, setLinkedRisks] = useState<LinkedRisk[]>([]);
+  const [linkedDocs, setLinkedDocs] = useState<LinkedDoc[]>([]);
+  const { profile } = useAuth();
+
+  useEffect(() => {
+    if (control && open) {
+      loadLinkedData();
+      // Reset four-eye state
+      setExecutedBy(null);
+      setExecutedDate(null);
+      setReviewedBy(null);
+      setReviewedDate(null);
+      setReviewStatus(null);
+    }
+  }, [control, open]);
+
+  const loadLinkedData = async () => {
+    if (!control) return;
+    const [rcRes, dlRes] = await Promise.all([
+      supabase.from('risk_controls').select('risk_id').eq('control_id', control.id),
+      supabase.from('document_links').select('document_id').eq('link_type', 'control').eq('link_id', control.id)
+    ]);
+
+    if (rcRes.data && rcRes.data.length > 0) {
+      const riskIds = rcRes.data.map(r => r.risk_id);
+      const { data: risks } = await supabase.from('risks').select('*').in('id', riskIds);
+      setLinkedRisks(risks || []);
+    } else {
+      setLinkedRisks([]);
+    }
+
+    if (dlRes.data && dlRes.data.length > 0) {
+      const docIds = dlRes.data.map(d => d.document_id);
+      const { data: docs } = await supabase.from('documents').select('id, name, uploaded_by_name, current_version, file_path').in('id', docIds);
+      setLinkedDocs(docs || []);
+    } else {
+      setLinkedDocs([]);
+    }
+  };
 
   if (!control) return null;
 
-  // Simulate current user
-  const currentUser = 'Anna Johansen';
-
-  // Get risks linked to this control
-  const linkedRisks = risks.filter(risk => 
-    risk.relatedControls.includes(control.id)
-  );
-
-  const getRiskScoreColor = (score: number) => {
-    if (score >= 7) return 'bg-red-100 text-red-700 border-red-200';
-    if (score >= 4) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-    return 'bg-green-100 text-green-700 border-green-200';
-  };
+  const currentUser = profile?.full_name ?? 'Unknown User';
 
   const handleMarkAsExecuted = () => {
     setExecutedBy(currentUser);
@@ -55,16 +108,31 @@ export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDet
     setReviewStatus('pending');
   };
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     setReviewedBy(currentUser);
     setReviewedDate(new Date().toLocaleDateString('en-US'));
     setReviewStatus('approved');
+
+    // Update control status to Completed
+    const { error } = await supabase
+      .from('controls')
+      .update({ status: 'Completed', last_execution: new Date().toISOString().split('T')[0], updated_at: new Date().toISOString() })
+      .eq('id', control.id);
+    if (error) toast.error('Failed to update control status');
+    else { toast.success('Control approved and marked as completed!'); onSuccess?.(); }
   };
 
   const handleReject = () => {
     setReviewedBy(currentUser);
     setReviewedDate(new Date().toLocaleDateString('en-US'));
     setReviewStatus('rejected');
+  };
+
+  const handleDownloadDoc = async (doc: LinkedDoc) => {
+    if (!doc.file_path) { toast.error('No file path available'); return; }
+    const { data, error } = await supabase.storage.from('evidence').createSignedUrl(doc.file_path, 3600);
+    if (error || !data) { toast.error('Could not get download URL'); return; }
+    window.open(data.signedUrl, '_blank');
   };
 
   const canExecute = !executedBy;
@@ -79,12 +147,10 @@ export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDet
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <DialogTitle>{control.title}</DialogTitle>
-                <Badge variant="outline" className="text-xs">
-                  {control.id}
-                </Badge>
+                <Badge variant="outline" className="text-xs">{control.id}</Badge>
               </div>
               <DialogDescription className="text-sm text-gray-500">
-                {control.description}
+                {control.description ?? 'No description'}
               </DialogDescription>
             </div>
             <StatusBadge status={control.status} />
@@ -104,7 +170,6 @@ export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDet
                   <p className="text-sm font-medium text-gray-900 mt-1">{control.category}</p>
                 </div>
               </div>
-
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Calendar className="w-5 h-5 text-purple-600" />
@@ -114,21 +179,13 @@ export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDet
                   <p className="text-sm font-medium text-gray-900 mt-1">{control.frequency}</p>
                 </div>
               </div>
-
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <User className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Control Owner</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-xs font-medium text-gray-600">
-                        {control.owner.split(' ').map(n => n[0]).join('')}
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium text-gray-900">{control.owner}</p>
-                  </div>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{control.owner_name}</p>
                 </div>
               </div>
             </div>
@@ -140,51 +197,36 @@ export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDet
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Last Execution</p>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{control.lastExecution}</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{control.last_execution ?? '—'}</p>
                 </div>
               </div>
-
               <div className="flex items-start gap-3">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                  control.status === 'Overdue' 
-                    ? 'bg-red-100' 
-                    : control.status === 'Pending'
-                    ? 'bg-yellow-100'
-                    : 'bg-green-100'
+                  control.status === 'Overdue' ? 'bg-red-100' :
+                  control.status === 'Pending' ? 'bg-yellow-100' : 'bg-green-100'
                 }`}>
                   <Calendar className={`w-5 h-5 ${
-                    control.status === 'Overdue' 
-                      ? 'text-red-600' 
-                      : control.status === 'Pending'
-                      ? 'text-yellow-600'
-                      : 'text-green-600'
+                    control.status === 'Overdue' ? 'text-red-600' :
+                    control.status === 'Pending' ? 'text-yellow-600' : 'text-green-600'
                   }`} />
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Next Due Date</p>
-                  <p className={`text-sm font-medium mt-1 ${
-                    control.status === 'Overdue' ? 'text-red-600' : 'text-gray-900'
-                  }`}>
-                    {control.nextDue}
+                  <p className={`text-sm font-medium mt-1 ${control.status === 'Overdue' ? 'text-red-600' : 'text-gray-900'}`}>
+                    {control.next_due ?? '—'}
                   </p>
                 </div>
               </div>
-
               <div className="flex items-start gap-3">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                  control.evidence.length > 0 ? 'bg-green-100' : 'bg-yellow-100'
+                  linkedDocs.length > 0 ? 'bg-green-100' : 'bg-yellow-100'
                 }`}>
-                  <FileCheck className={`w-5 h-5 ${
-                    control.evidence.length > 0 ? 'text-green-600' : 'text-yellow-600'
-                  }`} />
+                  <FileCheck className={`w-5 h-5 ${linkedDocs.length > 0 ? 'text-green-600' : 'text-yellow-600'}`} />
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Evidence Documents</p>
                   <p className="text-sm font-medium text-gray-900 mt-1">
-                    {control.evidence.length > 0 
-                      ? `${control.evidence.length} ${control.evidence.length === 1 ? 'document' : 'documents'}`
-                      : 'No evidence uploaded'
-                    }
+                    {linkedDocs.length > 0 ? `${linkedDocs.length} document(s)` : 'No evidence uploaded'}
                   </p>
                 </div>
               </div>
@@ -192,20 +234,20 @@ export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDet
           </div>
 
           {/* Evidence Files */}
-          {control.evidence.length > 0 && (
+          {linkedDocs.length > 0 && (
             <div className="border-t pt-6">
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Evidence Files</h3>
               <div className="space-y-2">
-                {control.evidence.map((fileName, idx) => (
-                  <div 
-                    key={idx}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
+                {linkedDocs.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex items-center gap-3">
                       <FileText className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-900">{fileName}</span>
+                      <div>
+                        <span className="text-sm text-gray-900">{doc.name}</span>
+                        <span className="text-xs text-gray-500 ml-2">v{doc.current_version} • {doc.uploaded_by_name}</span>
+                      </div>
                     </div>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={() => handleDownloadDoc(doc)}>
                       <Download className="w-4 h-4" />
                     </Button>
                   </div>
@@ -214,7 +256,7 @@ export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDet
             </div>
           )}
 
-          {/* Four-Eye Principle Section */}
+          {/* Four-Eye Principle */}
           <div className="border-t pt-6">
             <div className="flex items-center gap-2 mb-4">
               <Eye className="w-5 h-5 text-blue-600" />
@@ -231,7 +273,7 @@ export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDet
                   <div>
                     <p className="text-sm font-medium text-gray-900">Dual Control Not Started</p>
                     <p className="text-xs text-gray-600 mt-1">
-                      This control requires execution by one person and independent review by another person before completion.
+                      This control requires execution by one person and independent review by another before completion.
                     </p>
                   </div>
                 </div>
@@ -240,51 +282,25 @@ export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDet
 
             {(executedBy || reviewedBy) && (
               <div className="space-y-4">
-                {/* Execution Step */}
-                <div className={`p-4 border rounded-lg ${
-                  executedBy ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
-                }`}>
+                <div className={`p-4 border rounded-lg ${executedBy ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                   <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      executedBy ? 'bg-green-100' : 'bg-gray-100'
-                    }`}>
-                      {executedBy ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-600" />
-                      ) : (
-                        <User className="w-5 h-5 text-gray-400" />
-                      )}
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${executedBy ? 'bg-green-100' : 'bg-gray-100'}`}>
+                      {executedBy ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <User className="w-5 h-5 text-gray-400" />}
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="text-sm font-semibold text-gray-900">Step 1: Execution</p>
-                        {executedBy && (
-                          <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
-                            Completed
-                          </Badge>
-                        )}
-                      </div>
+                      <p className="text-sm font-semibold text-gray-900">Step 1: Execution</p>
                       {executedBy ? (
-                        <div className="space-y-1">
-                          <p className="text-sm text-gray-700">
-                            Executed by <span className="font-medium">{executedBy}</span>
-                          </p>
+                        <div className="space-y-1 mt-1">
+                          <p className="text-sm text-gray-700">Executed by <span className="font-medium">{executedBy}</span></p>
                           <p className="text-xs text-gray-500">Date: {executedDate}</p>
                         </div>
-                      ) : (
-                        <p className="text-xs text-gray-500">Waiting for execution</p>
-                      )}
+                      ) : <p className="text-xs text-gray-500 mt-1">Waiting for execution</p>}
                     </div>
                   </div>
                 </div>
 
-                {/* Arrow */}
-                {executedBy && (
-                  <div className="flex justify-center">
-                    <div className="w-px h-8 bg-gray-300"></div>
-                  </div>
-                )}
+                {executedBy && <div className="flex justify-center"><div className="w-px h-8 bg-gray-300"></div></div>}
 
-                {/* Review Step */}
                 <div className={`p-4 border rounded-lg ${
                   reviewStatus === 'approved' ? 'bg-green-50 border-green-200' :
                   reviewStatus === 'rejected' ? 'bg-red-50 border-red-200' :
@@ -295,55 +311,27 @@ export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDet
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
                       reviewStatus === 'approved' ? 'bg-green-100' :
                       reviewStatus === 'rejected' ? 'bg-red-100' :
-                      reviewStatus === 'pending' ? 'bg-yellow-100' :
-                      'bg-gray-100'
+                      reviewStatus === 'pending' ? 'bg-yellow-100' : 'bg-gray-100'
                     }`}>
-                      {reviewStatus === 'approved' ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-600" />
-                      ) : reviewStatus === 'rejected' ? (
-                        <AlertCircle className="w-5 h-5 text-red-600" />
-                      ) : (
-                        <UserCheck className={`w-5 h-5 ${reviewStatus === 'pending' ? 'text-yellow-600' : 'text-gray-400'}`} />
-                      )}
+                      {reviewStatus === 'approved' ? <CheckCircle2 className="w-5 h-5 text-green-600" /> :
+                       reviewStatus === 'rejected' ? <AlertCircle className="w-5 h-5 text-red-600" /> :
+                       <UserCheck className={`w-5 h-5 ${reviewStatus === 'pending' ? 'text-yellow-600' : 'text-gray-400'}`} />}
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="text-sm font-semibold text-gray-900">Step 2: Independent Review</p>
-                        {reviewStatus === 'approved' && (
-                          <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
-                            Approved
-                          </Badge>
-                        )}
-                        {reviewStatus === 'rejected' && (
-                          <Badge variant="outline" className="text-xs bg-red-100 text-red-700 border-red-300">
-                            Rejected
-                          </Badge>
-                        )}
-                        {reviewStatus === 'pending' && (
-                          <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-700 border-yellow-300">
-                            Pending Review
-                          </Badge>
-                        )}
-                      </div>
+                      <p className="text-sm font-semibold text-gray-900">Step 2: Independent Review</p>
                       {reviewedBy ? (
-                        <div className="space-y-1">
-                          <p className="text-sm text-gray-700">
-                            Reviewed by <span className="font-medium">{reviewedBy}</span>
-                          </p>
+                        <div className="space-y-1 mt-1">
+                          <p className="text-sm text-gray-700">Reviewed by <span className="font-medium">{reviewedBy}</span></p>
                           <p className="text-xs text-gray-500">Date: {reviewedDate}</p>
                         </div>
                       ) : reviewStatus === 'pending' ? (
-                        <div>
-                          <p className="text-xs text-gray-500 mb-2">Awaiting independent review (reviewer must be different from executor)</p>
+                        <div className="mt-1">
+                          <p className="text-xs text-gray-500">Awaiting independent review</p>
                           {executedBy === currentUser && (
-                            <p className="text-xs text-orange-600 font-medium">
-                              ⚠️ You cannot review your own execution
-                            </p>
+                            <p className="text-xs text-orange-600 font-medium mt-1">You cannot review your own execution</p>
                           )}
                         </div>
-                      ) : (
-                        <p className="text-xs text-gray-500">Waiting for execution to complete</p>
-                      )}
+                      ) : <p className="text-xs text-gray-500 mt-1">Waiting for execution</p>}
                     </div>
                   </div>
                 </div>
@@ -355,67 +343,27 @@ export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDet
           <div className="border-t pt-6">
             <div className="flex items-center gap-2 mb-4">
               <AlertTriangle className="w-5 h-5 text-orange-600" />
-              <h3 className="text-sm font-semibold text-gray-900">
-                Linked Risks ({linkedRisks.length})
-              </h3>
+              <h3 className="text-sm font-semibold text-gray-900">Linked Risks ({linkedRisks.length})</h3>
             </div>
 
             {linkedRisks.length > 0 ? (
               <div className="space-y-3">
                 {linkedRisks.map((risk) => (
-                  <div
-                    key={risk.id}
-                    className="p-4 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors"
-                  >
+                  <div key={risk.id} className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="text-sm font-medium text-gray-900">{risk.id}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {risk.category}
-                          </Badge>
-                          <Badge 
-                            variant="outline" 
-                            className={`text-xs font-semibold border ${getRiskScoreColor(risk.riskScore)}`}
-                          >
-                            Risk Score: {risk.riskScore}
+                          <Badge variant="outline" className="text-xs">{risk.category}</Badge>
+                          <Badge variant="outline" className={`text-xs font-semibold border ${getRiskScoreColor(risk.risk_score)}`}>
+                            Risk Score: {risk.risk_score}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-900 mb-2">{risk.title}</p>
-                        <div className="flex items-center gap-4 text-xs text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium">Likelihood:</span>
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs ${
-                                risk.likelihood === 'High' ? 'bg-red-50 text-red-700 border-red-200' :
-                                risk.likelihood === 'Medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                                'bg-green-50 text-green-700 border-green-200'
-                              }`}
-                            >
-                              {risk.likelihood}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium">Impact:</span>
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs ${
-                                risk.impact === 'High' ? 'bg-red-50 text-red-700 border-red-200' :
-                                risk.impact === 'Medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                                'bg-green-50 text-green-700 border-green-200'
-                              }`}
-                            >
-                              {risk.impact}
-                            </Badge>
-                          </div>
-                        </div>
+                        <p className="text-sm text-gray-900">{risk.title}</p>
                         <div className="flex items-center gap-3 text-xs text-gray-500 mt-2">
-                          <span>Owner: {risk.owner}</span>
+                          <span>Owner: {risk.owner_name}</span>
                           <span>•</span>
-                          <span>Last Review: {risk.lastReview}</span>
-                          <span>•</span>
-                          <StatusBadge status={risk.status} />
+                          <StatusBadge status={risk.status as 'Active' | 'Mitigated' | 'Monitoring'} />
                         </div>
                       </div>
                     </div>
@@ -431,23 +379,23 @@ export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDet
           </div>
 
           {/* Actions */}
-          <div className="border-t pt-6 flex justify-end gap-2">
-            <Button variant="outline" size="sm">
-              <FileText className="w-4 h-4 mr-2" />
-              Upload Evidence
-            </Button>
-            <Button variant="outline" size="sm">
-              Edit Control
-            </Button>
-            <Button size="sm" disabled={!canExecute} onClick={handleMarkAsExecuted}>
+          <div className="border-t pt-6 flex flex-wrap justify-end gap-2">
+            {onGoToControl && (
+              <Button variant="outline" size="sm" onClick={onGoToControl} className="mr-auto">
+                <ExternalLink className="w-4 h-4 mr-1" />
+                Go to Control
+              </Button>
+            )}
+            <Button variant="outline" size="sm" disabled={!canExecute} onClick={handleMarkAsExecuted}>
               Mark as Executed
             </Button>
             {canReview && (
               <>
-                <Button size="sm" onClick={handleApprove}>
+                <Button size="sm" onClick={handleApprove} className="bg-green-600 hover:bg-green-700">
+                  <CheckCircle2 className="w-4 h-4 mr-1" />
                   Approve
                 </Button>
-                <Button size="sm" onClick={handleReject}>
+                <Button size="sm" variant="outline" onClick={handleReject} className="text-red-600 border-red-200 hover:bg-red-50">
                   Reject
                 </Button>
               </>
@@ -455,7 +403,7 @@ export function ControlDetailsDialog({ control, open, onOpenChange }: ControlDet
             {isFullyApproved && (
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-green-600" />
-                <p className="text-sm text-gray-900">Approved by {reviewedBy} on {reviewedDate}</p>
+                <p className="text-sm text-gray-900">Approved by {reviewedBy}</p>
               </div>
             )}
           </div>

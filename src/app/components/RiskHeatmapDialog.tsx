@@ -3,6 +3,7 @@ import { Badge } from './ui/badge';
 import { StatusBadge } from './StatusBadge';
 import { X, ExternalLink } from 'lucide-react';
 import { Risk, Control, risks, controls } from '../data/mockData';
+import { getRiskScoreColor } from '../utils/riskUtils';
 import { useState, useCallback } from 'react';
 import { Button } from './ui/button';
 
@@ -72,12 +73,6 @@ export function RiskHeatmapDialog({ open, onOpenChange }: RiskHeatmapDialogProps
     if (likelihood === 'Low' && impact === 'Medium') return 'bg-green-200 hover:bg-green-300';
     if (likelihood === 'Low' && impact === 'High') return 'bg-yellow-300 hover:bg-yellow-400';
     return 'bg-gray-200';
-  };
-
-  const getRiskScoreColor = (score: number) => {
-    if (score >= 7) return 'bg-red-100 text-red-700 border-red-200';
-    if (score >= 4) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-    return 'bg-green-100 text-green-700 border-green-200';
   };
 
   return (

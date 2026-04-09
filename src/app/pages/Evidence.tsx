@@ -2,25 +2,228 @@ import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { 
+import { Label } from '../components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from '../components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '../components/ui/dropdown-menu';
+import {
   Search,
   Upload,
   Download,
   FileText,
   Link as LinkIcon,
   MoreVertical,
-  FileCheck
+  FileCheck,
+  History,
+  Trash2,
+  Edit2
 } from 'lucide-react';
-import { documents } from '../data/mockData';
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '../../lib/supabase';
+import { Document, DocumentVersion, DocumentLink, Control, Risk } from '../../lib/types';
+import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'sonner';
+
+interface DocumentWithLinks extends Document {
+  document_links: DocumentLink[];
+}
 
 export function Evidence() {
+  const [documents, setDocuments] = useState<DocumentWithLinks[]>([]);
+  const [controls, setControls] = useState<Control[]>([]);
+  const [risks, setRisks] = useState<Risk[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Upload modal state
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [docName, setDocName] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  // History modal
+  const [historyDoc, setHistoryDoc] = useState<DocumentWithLinks | null>(null);
+  const [versions, setVersions] = useState<DocumentVersion[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [reuploadFile, setReuploadFile] = useState<File | null>(null);
+  const [changelog, setChangelog] = useState('');
+
+  // Link modal
+  const [linkDoc, setLinkDoc] = useState<DocumentWithLinks | null>(null);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkType, setLinkType] = useState<'control' | 'risk' | ''>('');
+  const [linkId, setLinkId] = useState('');
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { profile } = useAuth();
+
+  useEffect(() => { loadData(); }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    const [docRes, ctrlRes, riskRes] = await Promise.all([
+      supabase.from('documents').select('*, document_links(*)').order('created_at', { ascending: false }),
+      supabase.from('controls').select('id, title').order('id'),
+      supabase.from('risks').select('id, title').order('id')
+    ]);
+    if (docRes.data) setDocuments(docRes.data as DocumentWithLinks[]);
+    if (ctrlRes.data) setControls(ctrlRes.data as Control[]);
+    if (riskRes.data) setRisks(riskRes.data as Risk[]);
+    setLoading(false);
+  };
 
   const filteredDocuments = documents.filter(doc =>
     doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.uploadedBy.toLowerCase().includes(searchTerm.toLowerCase())
+    doc.uploaded_by_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleFileDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) { setPendingFile(file); setDocName(file.name.replace(/\.[^/.]+$/, '')); setUploadModalOpen(true); }
+  }, []);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) { setPendingFile(file); setDocName(file.name.replace(/\.[^/.]+$/, '')); setUploadModalOpen(true); }
+  };
+
+  const handleUpload = async () => {
+    if (!pendingFile || !docName) { toast.error('Name is required'); return; }
+    setUploading(true);
+
+    const docId = crypto.randomUUID();
+    const path = `documents/${docId}/${pendingFile.name}`;
+
+    const { error: uploadError } = await supabase.storage.from('evidence').upload(path, pendingFile);
+    if (uploadError) { toast.error('Upload failed: ' + uploadError.message); setUploading(false); return; }
+
+    const { error: insertError } = await supabase.from('documents').insert({
+      id: docId,
+      name: docName,
+      file_type: pendingFile.type,
+      uploaded_by_name: profile?.full_name ?? 'Unknown',
+      file_path: path,
+      file_size: pendingFile.size,
+      current_version: 1
+    });
+
+    if (insertError) { toast.error('Failed to save document'); setUploading(false); return; }
+
+    await supabase.from('document_versions').insert({
+      document_id: docId,
+      version: 1,
+      file_path: path,
+      file_size: pendingFile.size,
+      changelog: 'Initial upload',
+      uploaded_by_name: profile?.full_name ?? 'Unknown'
+    });
+
+    toast.success('Document uploaded successfully!');
+    setPendingFile(null);
+    setDocName('');
+    setUploading(false);
+    setUploadModalOpen(false);
+    loadData();
+  };
+
+  const handleDownload = async (doc: DocumentWithLinks) => {
+    if (!doc.file_path) { toast.error('No file available'); return; }
+    const { data, error } = await supabase.storage.from('evidence').createSignedUrl(doc.file_path, 3600);
+    if (error || !data) { toast.error('Could not get download URL'); return; }
+    window.open(data.signedUrl, '_blank');
+  };
+
+  const handleDelete = async (doc: DocumentWithLinks) => {
+    if (!confirm(`Delete "${doc.name}"? This cannot be undone.`)) return;
+    if (doc.file_path) await supabase.storage.from('evidence').remove([doc.file_path]);
+    await supabase.from('documents').delete().eq('id', doc.id);
+    toast.success('Document deleted');
+    loadData();
+  };
+
+  const handleRename = async (doc: DocumentWithLinks) => {
+    const newName = prompt('Enter new name:', doc.name);
+    if (!newName || newName === doc.name) return;
+    await supabase.from('documents').update({ name: newName, updated_at: new Date().toISOString() }).eq('id', doc.id);
+    toast.success('Document renamed');
+    loadData();
+  };
+
+  const openHistory = async (doc: DocumentWithLinks) => {
+    setHistoryDoc(doc);
+    const { data } = await supabase.from('document_versions').select('*').eq('document_id', doc.id).order('version', { ascending: false });
+    setVersions(data || []);
+    setHistoryOpen(true);
+    setReuploadFile(null);
+    setChangelog('');
+  };
+
+  const handleReupload = async () => {
+    if (!reuploadFile || !changelog || !historyDoc) { toast.error('File and changelog are required'); return; }
+    setUploading(true);
+    const newVersion = historyDoc.current_version + 1;
+    const path = `documents/${historyDoc.id}/v${newVersion}-${reuploadFile.name}`;
+
+    const { error: uploadError } = await supabase.storage.from('evidence').upload(path, reuploadFile);
+    if (uploadError) { toast.error('Upload failed'); setUploading(false); return; }
+
+    await supabase.from('document_versions').insert({
+      document_id: historyDoc.id,
+      version: newVersion,
+      file_path: path,
+      file_size: reuploadFile.size,
+      changelog,
+      uploaded_by_name: profile?.full_name ?? 'Unknown'
+    });
+
+    await supabase.from('documents').update({
+      current_version: newVersion,
+      file_path: path,
+      file_size: reuploadFile.size,
+      updated_at: new Date().toISOString()
+    }).eq('id', historyDoc.id);
+
+    toast.success(`Version ${newVersion} uploaded`);
+    setReuploadFile(null);
+    setChangelog('');
+    setUploading(false);
+    openHistory({ ...historyDoc, current_version: newVersion, file_path: path });
+    loadData();
+  };
+
+  const handleLink = async () => {
+    if (!linkDoc || !linkType || !linkId) { toast.error('Please select type and ID'); return; }
+    const { error } = await supabase.from('document_links').insert({
+      document_id: linkDoc.id,
+      link_type: linkType,
+      link_id: linkId
+    });
+    if (error) { toast.error('Link failed (may already exist)'); return; }
+    toast.success('Document linked successfully');
+    setLinkOpen(false);
+    loadData();
+  };
+
+  const formatSize = (bytes: number | null) => {
+    if (!bytes) return '—';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
 
   return (
     <div className="p-8 space-y-6">
@@ -30,10 +233,11 @@ export function Evidence() {
           <h1 className="text-2xl font-semibold text-gray-900">Evidence & Documentation</h1>
           <p className="text-sm text-gray-500 mt-1">Manage compliance documentation and evidence</p>
         </div>
-        <Button size="sm">
+        <Button size="sm" onClick={() => fileInputRef.current?.click()}>
           <Upload className="w-4 h-4 mr-2" />
           Upload Document
         </Button>
+        <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} />
       </div>
 
       {/* Stats */}
@@ -45,18 +249,20 @@ export function Evidence() {
         <Card className="p-4">
           <p className="text-sm text-gray-500">Linked to Controls</p>
           <p className="text-2xl font-semibold text-green-600 mt-1">
-            {documents.filter(d => d.linkedTo.some(l => l.type === 'control')).length}
+            {documents.filter(d => d.document_links.some(l => l.link_type === 'control')).length}
           </p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-gray-500">Linked to Risks</p>
           <p className="text-2xl font-semibold text-orange-600 mt-1">
-            {documents.filter(d => d.linkedTo.some(l => l.type === 'risk')).length}
+            {documents.filter(d => d.document_links.some(l => l.link_type === 'risk')).length}
           </p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-gray-500">Total Storage</p>
-          <p className="text-2xl font-semibold text-gray-900 mt-1">13.7 MB</p>
+          <p className="text-2xl font-semibold text-gray-900 mt-1">
+            {formatSize(documents.reduce((acc, d) => acc + (d.file_size ?? 0), 0))}
+          </p>
         </Card>
       </div>
 
@@ -74,105 +280,248 @@ export function Evidence() {
       </Card>
 
       {/* Upload Area */}
-      <Card className="p-8 border-2 border-dashed border-gray-300 bg-gray-50">
+      <Card
+        className={`p-8 border-2 border-dashed transition-colors ${isDragging ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-50'}`}
+        onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleFileDrop}
+      >
         <div className="text-center">
           <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto">
             <Upload className="w-6 h-6 text-blue-600" />
           </div>
           <h3 className="mt-4 font-medium text-gray-900">Upload evidence documents</h3>
-          <p className="text-sm text-gray-500 mt-1">
-            Drag and drop files here, or click to browse
-          </p>
-          <Button variant="outline" size="sm" className="mt-4">
+          <p className="text-sm text-gray-500 mt-1">Drag and drop files here, or click to browse</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => fileInputRef.current?.click()}>
             Select Files
           </Button>
         </div>
       </Card>
 
       {/* Documents Grid */}
-      <div className="grid grid-cols-1 gap-4">
-        {filteredDocuments.map((doc) => (
-          <Card key={doc.id} className="p-5 hover:shadow-md transition-shadow">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <FileText className="w-6 h-6 text-blue-600" />
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">{doc.name}</h3>
-                    <div className="flex items-center gap-3 mt-2">
-                      <span className="text-xs text-gray-500">
-                        Uploaded by {doc.uploadedBy}
-                      </span>
-                      <span className="text-xs text-gray-400">•</span>
-                      <span className="text-xs text-gray-500">{doc.uploadDate}</span>
-                      <span className="text-xs text-gray-400">•</span>
-                      <span className="text-xs text-gray-500">{doc.size}</span>
+      {loading ? (
+        <div className="text-center py-12 text-gray-500">Loading...</div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {filteredDocuments.map((doc) => (
+            <Card key={doc.id} className="p-5 hover:shadow-md transition-shadow">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-6 h-6 text-blue-600" />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium text-gray-900 truncate">{doc.name}</h3>
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className="text-xs text-gray-500">Uploaded by {doc.uploaded_by_name}</span>
+                        <span className="text-xs text-gray-400">•</span>
+                        <span className="text-xs text-gray-500">{new Date(doc.created_at).toLocaleDateString()}</span>
+                        <span className="text-xs text-gray-400">•</span>
+                        <span className="text-xs text-gray-500">{formatSize(doc.file_size)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 ml-2">
+                      <Badge variant="outline" className="text-xs">v{doc.current_version}</Badge>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleDownload(doc)}>
+                            <Download className="w-4 h-4 mr-2" />
+                            Download
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleRename(doc)}>
+                            <Edit2 className="w-4 h-4 mr-2" />
+                            Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDelete(doc)} className="text-red-600">
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      v{doc.version}
-                    </Badge>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="w-4 h-4" />
+
+                  {/* Linked Items */}
+                  {doc.document_links.length > 0 && (
+                    <div className="mt-4 flex items-center gap-2">
+                      <LinkIcon className="w-3.5 h-3.5 text-gray-400" />
+                      <div className="flex flex-wrap gap-2">
+                        {doc.document_links.map((link) => (
+                          <Badge
+                            key={link.id}
+                            variant="outline"
+                            className={`text-xs ${
+                              link.link_type === 'control'
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : 'bg-orange-50 text-orange-700 border-orange-200'
+                            }`}
+                          >
+                            {link.link_type === 'control' ? 'Control' : 'Risk'}: {link.link_id}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="mt-4 pt-4 border-t flex gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={() => handleDownload(doc)}>
+                      <Download className="w-3.5 h-3.5 mr-2" />
+                      Download
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => { setLinkDoc(doc); setLinkType(''); setLinkId(''); setLinkOpen(true); }}>
+                      <LinkIcon className="w-3.5 h-3.5 mr-2" />
+                      Link to Control/Risk
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => openHistory(doc)}>
+                      <History className="w-3.5 h-3.5 mr-2" />
+                      View History
                     </Button>
                   </div>
                 </div>
-
-                {/* Linked Items */}
-                {doc.linkedTo.length > 0 && (
-                  <div className="mt-4 flex items-center gap-2">
-                    <LinkIcon className="w-3.5 h-3.5 text-gray-400" />
-                    <div className="flex flex-wrap gap-2">
-                      {doc.linkedTo.map((link, idx) => (
-                        <Badge 
-                          key={idx} 
-                          variant="outline" 
-                          className={`text-xs ${
-                            link.type === 'control' 
-                              ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                              : 'bg-orange-50 text-orange-700 border-orange-200'
-                          }`}
-                        >
-                          {link.type === 'control' ? 'Control' : 'Risk'}: {link.id}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="mt-4 pt-4 border-t flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Download className="w-3.5 h-3.5 mr-2" />
-                    Download
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <LinkIcon className="w-3.5 h-3.5 mr-2" />
-                    Link to Control/Risk
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <FileCheck className="w-3.5 h-3.5 mr-2" />
-                    View History
-                  </Button>
-                </div>
               </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {filteredDocuments.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">No documents found matching your search.</p>
+            </Card>
+          ))}
         </div>
       )}
 
-      {/* Document Types Legend */}
+      {filteredDocuments.length === 0 && !loading && (
+        <div className="text-center py-12">
+          <FileText className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+          <p className="text-gray-500">No documents found. Upload your first evidence document above.</p>
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      <Dialog open={uploadModalOpen} onOpenChange={setUploadModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>Set a name for the document before uploading.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {pendingFile && (
+              <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-3">
+                <FileText className="w-5 h-5 text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{pendingFile.name}</p>
+                  <p className="text-xs text-gray-500">{formatSize(pendingFile.size)}</p>
+                </div>
+              </div>
+            )}
+            <div>
+              <Label>Document Name *</Label>
+              <Input value={docName} onChange={e => setDocName(e.target.value)} placeholder="Document name" className="mt-1.5" />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => { setUploadModalOpen(false); setPendingFile(null); setDocName(''); }}>Cancel</Button>
+              <Button onClick={handleUpload} disabled={uploading}>
+                {uploading ? 'Uploading...' : 'Upload'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* History Modal */}
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Version History</DialogTitle>
+            <DialogDescription>{historyDoc?.name}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {versions.map(v => (
+              <div key={v.id} className="p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">v{v.version}</span>
+                      <span className="text-sm font-medium text-gray-900">{v.changelog}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">By {v.uploaded_by_name} • {new Date(v.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">{formatSize(v.file_size)}</Badge>
+                </div>
+              </div>
+            ))}
+
+            {/* Upload new version */}
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">Upload New Version</h4>
+              <div className="space-y-3">
+                <div>
+                  <Label>Changelog / What changed *</Label>
+                  <Input value={changelog} onChange={e => setChangelog(e.target.value)} placeholder="Describe what changed in this version" className="mt-1.5" />
+                </div>
+                <div>
+                  <Label>New File *</Label>
+                  <input
+                    type="file"
+                    className="mt-1.5 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    onChange={e => setReuploadFile(e.target.files?.[0] || null)}
+                  />
+                </div>
+                <Button onClick={handleReupload} disabled={uploading || !reuploadFile || !changelog} className="w-full">
+                  {uploading ? 'Uploading...' : 'Upload New Version'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Modal */}
+      <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Link Document</DialogTitle>
+            <DialogDescription>Link "{linkDoc?.name}" to a control or risk.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>Link Type</Label>
+              <select value={linkType} onChange={e => { setLinkType(e.target.value as 'control' | 'risk' | ''); setLinkId(''); }} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Select type...</option>
+                <option value="control">Control</option>
+                <option value="risk">Risk</option>
+              </select>
+            </div>
+            {linkType === 'control' && (
+              <div>
+                <Label>Select Control</Label>
+                <select value={linkId} onChange={e => setLinkId(e.target.value)} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Choose a control...</option>
+                  {controls.map(c => <option key={c.id} value={c.id}>{c.id} — {c.title}</option>)}
+                </select>
+              </div>
+            )}
+            {linkType === 'risk' && (
+              <div>
+                <Label>Select Risk</Label>
+                <select value={linkId} onChange={e => setLinkId(e.target.value)} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Choose a risk...</option>
+                  {risks.map(r => <option key={r.id} value={r.id}>{r.id} — {r.title}</option>)}
+                </select>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setLinkOpen(false)}>Cancel</Button>
+              <Button onClick={handleLink} disabled={!linkType || !linkId}>Link Document</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tips */}
       <Card className="p-5 bg-gray-50">
         <h3 className="text-sm font-medium text-gray-900 mb-3">Document Management Tips</h3>
         <ul className="text-sm text-gray-600 space-y-2">
@@ -182,11 +531,11 @@ export function Evidence() {
           </li>
           <li className="flex items-start gap-2">
             <span className="text-blue-600 mt-0.5">•</span>
-            <span>Version control is automatically maintained for all uploaded documents</span>
+            <span>Use "View History" to track changes and upload new versions with changelogs</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-blue-600 mt-0.5">•</span>
-            <span>All evidence is encrypted and stored securely for ISAE 3402 compliance</span>
+            <span>All evidence is encrypted and stored securely in Supabase Storage</span>
           </li>
         </ul>
       </Card>

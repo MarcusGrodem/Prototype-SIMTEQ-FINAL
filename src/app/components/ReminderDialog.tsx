@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Badge } from './ui/badge';
-import { 
+import {
   Bell,
   Mail,
   Clock,
@@ -12,71 +12,64 @@ import {
   Plus,
   Trash2
 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'sonner';
+import { Reminder } from '../../lib/types';
 
 interface ReminderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-interface Reminder {
-  id: string;
-  type: 'email' | 'notification';
-  daysBeforeDeadline: number;
-  recipients: string[];
-  active: boolean;
-}
-
 export function ReminderDialog({ open, onOpenChange }: ReminderDialogProps) {
-  const [reminders, setReminders] = useState<Reminder[]>([
-    {
-      id: '1',
-      type: 'email',
-      daysBeforeDeadline: 7,
-      recipients: ['lars.hansen@simteq.no', 'anna.johansen@simteq.no'],
-      active: true
-    },
-    {
-      id: '2',
-      type: 'email',
-      daysBeforeDeadline: 3,
-      recipients: ['lars.hansen@simteq.no'],
-      active: true
-    },
-    {
-      id: '3',
-      type: 'notification',
-      daysBeforeDeadline: 1,
-      recipients: ['All control owners'],
-      active: true
-    }
-  ]);
-
-  const [newReminderDays, setNewReminderDays] = useState('14');
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [newReminderDays, setNewReminderDays] = useState('7');
   const [newReminderEmail, setNewReminderEmail] = useState('');
+  const [saving, setSaving] = useState(false);
+  const { user, profile } = useAuth();
 
-  const handleAddReminder = () => {
-    if (newReminderDays && newReminderEmail) {
-      const newReminder: Reminder = {
-        id: Date.now().toString(),
-        type: 'email',
-        daysBeforeDeadline: parseInt(newReminderDays),
-        recipients: [newReminderEmail],
-        active: true
-      };
-      setReminders([...reminders, newReminder]);
-      setNewReminderDays('14');
-      setNewReminderEmail('');
+  useEffect(() => {
+    if (open && user) {
+      loadReminders();
+      setNewReminderEmail(profile?.email ?? '');
     }
+  }, [open, user]);
+
+  const loadReminders = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('reminders')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at');
+    setReminders(data || []);
   };
 
-  const handleDeleteReminder = (id: string) => {
-    setReminders(reminders.filter(r => r.id !== id));
+  const handleAddReminder = async () => {
+    if (!newReminderDays || !newReminderEmail) { toast.error('Days and email are required'); return; }
+    if (!user) { toast.error('Not logged in'); return; }
+    setSaving(true);
+    const { error } = await supabase.from('reminders').insert({
+      user_id: user.id,
+      email: newReminderEmail,
+      days_before: parseInt(newReminderDays),
+      email_enabled: true
+    });
+    if (error) { toast.error('Failed to add reminder'); }
+    else { toast.success('Reminder added'); setNewReminderDays('7'); setNewReminderEmail(''); loadReminders(); }
+    setSaving(false);
   };
 
-  const handleToggleActive = (id: string) => {
-    setReminders(reminders.map(r => 
-      r.id === id ? { ...r, active: !r.active } : r
-    ));
+  const handleDeleteReminder = async (id: string) => {
+    await supabase.from('reminders').delete().eq('id', id);
+    toast.success('Reminder deleted');
+    loadReminders();
+  };
+
+  const handleToggleActive = async (reminder: Reminder) => {
+    await supabase.from('reminders').update({ email_enabled: !reminder.email_enabled }).eq('id', reminder.id);
+    loadReminders();
   };
 
   return (
@@ -90,7 +83,7 @@ export function ReminderDialog({ open, onOpenChange }: ReminderDialogProps) {
             <div>
               <DialogTitle>Control Reminders</DialogTitle>
               <p className="text-sm text-gray-500 mt-1">
-                Automatic notifications before control deadlines
+                Automatic email notifications before control deadlines
               </p>
             </div>
           </div>
@@ -99,74 +92,59 @@ export function ReminderDialog({ open, onOpenChange }: ReminderDialogProps) {
         <div className="space-y-6 mt-4">
           {/* Active Reminders */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Active Reminders</h3>
-            <div className="space-y-3">
-              {reminders.map((reminder) => (
-                <div
-                  key={reminder.id}
-                  className={`p-4 border rounded-lg transition-all ${
-                    reminder.active 
-                      ? 'bg-white border-gray-200' 
-                      : 'bg-gray-50 border-gray-100 opacity-60'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                        reminder.type === 'email' 
-                          ? 'bg-purple-100' 
-                          : 'bg-blue-100'
-                      }`}>
-                        {reminder.type === 'email' ? (
-                          <Mail className={`w-4 h-4 ${
-                            reminder.type === 'email' ? 'text-purple-600' : 'text-blue-600'
-                          }`} />
-                        ) : (
-                          <Bell className="w-4 h-4 text-blue-600" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                            <Clock className="w-3 h-3 mr-1" />
-                            {reminder.daysBeforeDeadline} days before
-                          </Badge>
-                          <Badge variant="outline" className="text-xs capitalize">
-                            {reminder.type === 'email' ? 'Email' : 'Notification'}
-                          </Badge>
-                          {!reminder.active && (
-                            <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600">
-                              Disabled
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+              Your Reminders ({reminders.length})
+            </h3>
+            {reminders.length === 0 ? (
+              <div className="text-center py-6 bg-gray-50 rounded-lg">
+                <Bell className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+                <p className="text-sm text-gray-500">No reminders set yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {reminders.map((reminder) => (
+                  <div
+                    key={reminder.id}
+                    className={`p-4 border rounded-lg transition-all ${
+                      reminder.email_enabled
+                        ? 'bg-white border-gray-200'
+                        : 'bg-gray-50 border-gray-100 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Mail className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {reminder.days_before} days before
                             </Badge>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          <span className="font-medium">Recipients: </span>
-                          {reminder.recipients.join(', ')}
+                            <Badge variant="outline" className="text-xs">Email</Badge>
+                            {!reminder.email_enabled && (
+                              <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600">Disabled</Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            <span className="font-medium">To: </span>{reminder.email}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleActive(reminder.id)}
-                        className="text-xs"
-                      >
-                        {reminder.active ? 'Disable' : 'Enable'}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteReminder(reminder.id)}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-600" />
-                      </Button>
+                      <div className="flex items-center gap-2 ml-4">
+                        <Button variant="ghost" size="sm" onClick={() => handleToggleActive(reminder)} className="text-xs">
+                          {reminder.email_enabled ? 'Disable' : 'Enable'}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteReminder(reminder.id)}>
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Add New Reminder */}
@@ -188,7 +166,7 @@ export function ReminderDialog({ open, onOpenChange }: ReminderDialogProps) {
                       value={newReminderDays}
                       onChange={(e) => setNewReminderDays(e.target.value)}
                       className="pl-10"
-                      placeholder="14"
+                      placeholder="7"
                     />
                   </div>
                 </div>
@@ -210,13 +188,13 @@ export function ReminderDialog({ open, onOpenChange }: ReminderDialogProps) {
                 </div>
               </div>
 
-              <Button 
+              <Button
                 onClick={handleAddReminder}
-                disabled={!newReminderDays || !newReminderEmail}
+                disabled={!newReminderDays || !newReminderEmail || saving}
                 className="w-full"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Reminder
+                {saving ? 'Adding...' : 'Add Reminder'}
               </Button>
             </div>
           </div>
@@ -228,8 +206,8 @@ export function ReminderDialog({ open, onOpenChange }: ReminderDialogProps) {
               <div>
                 <p className="text-sm font-medium text-gray-900">Automatic Delivery</p>
                 <p className="text-xs text-gray-600 mt-1">
-                  Reminders are sent automatically to specified recipients based on control due dates. 
-                  Control owners always receive notifications 3 days before deadlines.
+                  Reminders are sent automatically based on control due dates.
+                  Set multiple reminders at different intervals for important controls.
                 </p>
               </div>
             </div>
@@ -237,11 +215,8 @@ export function ReminderDialog({ open, onOpenChange }: ReminderDialogProps) {
 
           {/* Actions */}
           <div className="flex justify-end gap-2 border-t pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
             <Button onClick={() => onOpenChange(false)}>
-              Save Settings
+              Done
             </Button>
           </div>
         </div>

@@ -1,3 +1,6 @@
 node_modules/
 isae-dashboard-mvp/node_modules/
 isae-dashboard-mvp/dist/
+dist/
+.env.local
+.env*.local

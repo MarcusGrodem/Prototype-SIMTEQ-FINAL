@@ -8,13 +8,13 @@ import { SidebarEditor } from './SidebarEditor';
 import { useSidebarConfig } from '../hooks/useSidebarConfig';
 import { PAGE_BY_KEY } from './allPages';
 
-export function DashboardLayout() {
+export function QALayout() {
   const location = useLocation()
   const { profile, signOut, user } = useAuth()
   const navigate = useNavigate()
   const [editing, setEditing] = useState(false)
 
-  const { config, toggleVisible, moveUp, moveDown, reset } = useSidebarConfig('ceo', user?.id)
+  const { config, toggleVisible, moveUp, moveDown, reset } = useSidebarConfig('qa', user?.id)
 
   const visibleNav = config
     .filter(c => c.visible)
@@ -25,7 +25,7 @@ export function DashboardLayout() {
 
   const initials = profile?.full_name
     ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
-    : 'CE'
+    : 'QA'
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -38,8 +38,8 @@ export function DashboardLayout() {
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-900 leading-none">ComplianceOS</p>
-              <span className="inline-block mt-1 text-[10px] font-semibold tracking-wide text-sky-700 bg-sky-50 border border-sky-100 px-1.5 py-0.5 rounded-full uppercase">
-                CEO
+              <span className="inline-block mt-1 text-[10px] font-semibold tracking-wide text-emerald-700 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-full uppercase">
+                QA
               </span>
             </div>
           </div>
@@ -71,7 +71,7 @@ export function DashboardLayout() {
           ) : (
             <SidebarEditor
               config={config}
-              view="CEO"
+              view="QA"
               onToggle={toggleVisible}
               onMoveUp={moveUp}
               onMoveDown={moveDown}
@@ -98,12 +98,12 @@ export function DashboardLayout() {
         {/* User */}
         <div className="p-3 border-t border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-emerald-700 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-xs font-semibold text-white">{initials}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate leading-none">{profile?.full_name ?? 'CEO'}</p>
-              <p className="text-xs text-slate-400 mt-0.5 truncate">Executive View</p>
+              <p className="text-sm font-semibold text-slate-900 truncate leading-none">{profile?.full_name ?? 'QA'}</p>
+              <p className="text-xs text-slate-400 mt-0.5 truncate">QA View</p>
             </div>
             <Button
               variant="ghost"

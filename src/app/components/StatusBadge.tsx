@@ -5,21 +5,19 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const variants = {
-    Completed: { className: 'bg-green-100 text-green-700 border-green-200', label: 'Completed' },
-    Pending: { className: 'bg-yellow-100 text-yellow-700 border-yellow-200', label: 'Pending' },
-    Overdue: { className: 'bg-red-100 text-red-700 border-red-200', label: 'Overdue' },
-    Active: { className: 'bg-orange-100 text-orange-700 border-orange-200', label: 'Active' },
-    Mitigated: { className: 'bg-green-100 text-green-700 border-green-200', label: 'Mitigated' },
-    Monitoring: { className: 'bg-blue-100 text-blue-700 border-blue-200', label: 'Monitoring' },
-    Upcoming: { className: 'bg-yellow-100 text-yellow-700 border-yellow-200', label: 'Upcoming' }
+  const variants: Record<string, string> = {
+    Completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    Pending:   'bg-amber-50 text-amber-700 border-amber-200',
+    Overdue:   'bg-red-50 text-red-700 border-red-200',
+    Active:    'bg-sky-50 text-sky-700 border-sky-200',
+    Mitigated: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    Monitoring:'bg-slate-100 text-slate-600 border-slate-200',
+    Upcoming:  'bg-amber-50 text-amber-700 border-amber-200',
   };
 
-  const variant = variants[status];
-
   return (
-    <Badge variant="outline" className={`${variant.className} border`}>
-      {variant.label}
+    <Badge variant="outline" className={`text-xs font-medium border ${variants[status] ?? 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+      {status}
     </Badge>
   );
 }

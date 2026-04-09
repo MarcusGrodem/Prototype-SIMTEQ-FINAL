@@ -3,7 +3,7 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { StatusBadge } from '../components/StatusBadge';
 import { ReminderDialog } from '../components/ReminderDialog';
-import { 
+import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
@@ -11,73 +11,98 @@ import {
   Bell,
   X
 } from 'lucide-react';
-import { complianceEvents, controls } from '../data/mockData';
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../../lib/supabase';
+import { Control, ComplianceEvent } from '../../lib/types';
+import { downloadCSV } from '../utils/exportUtils';
+import { toast } from 'sonner';
 
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
+const currentRealYear = new Date().getFullYear();
+
 export function ComplianceCalendar() {
-  const currentMonth = 2; // March (0-indexed)
+  const [controls, setControls] = useState<Control[]>([]);
+  const [complianceEvents, setComplianceEvents] = useState<ComplianceEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState(currentRealYear);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
 
-  // Handle month click
+  const currentMonth = new Date().getMonth();
+
+  useEffect(() => { loadData(); }, [selectedYear]);
+
+  const loadData = async () => {
+    setLoading(true);
+    const yearStart = `${selectedYear}-01-01`;
+    const yearEnd = `${selectedYear}-12-31`;
+
+    const [ctrlRes, evtRes] = await Promise.all([
+      supabase.from('controls').select('*')
+        .gte('next_due', yearStart)
+        .lte('next_due', yearEnd),
+      supabase.from('compliance_events').select('*')
+        .gte('date', yearStart)
+        .lte('date', yearEnd)
+        .order('date')
+    ]);
+
+    if (ctrlRes.error) toast.error('Failed to load controls');
+    else setControls(ctrlRes.data || []);
+    if (evtRes.data) setComplianceEvents(evtRes.data);
+    setLoading(false);
+  };
+
   const handleMonthClick = useCallback((idx: number) => {
     setSelectedMonth(prev => idx === prev ? null : idx);
   }, []);
 
-  // Handle clear selection
-  const handleClearSelection = useCallback(() => {
-    setSelectedMonth(null);
-  }, []);
+  const handleClearSelection = useCallback(() => setSelectedMonth(null), []);
+  const handleReminderClick = useCallback(() => setReminderDialogOpen(true), []);
 
-  // Handle reminder button click
-  const handleReminderClick = useCallback(() => {
-    setReminderDialogOpen(true);
-  }, []);
-
-  // Group controls by month
   const controlsByMonth = months.map((month, idx) => {
     const monthControls = controls.filter(control => {
-      const nextDueMonth = new Date(control.nextDue).getMonth();
+      if (!control.next_due) return false;
+      const nextDueMonth = new Date(control.next_due).getMonth();
       return nextDueMonth === idx;
     });
-    
-    // Determine highest priority status for the month
+
     let highestPriorityStatus: 'Overdue' | 'Pending' | 'Completed' | null = null;
-    if (monthControls.some(c => c.status === 'Overdue')) {
-      highestPriorityStatus = 'Overdue';
-    } else if (monthControls.some(c => c.status === 'Pending')) {
-      highestPriorityStatus = 'Pending';
-    } else if (monthControls.length > 0) {
-      highestPriorityStatus = 'Completed';
-    }
-    
-    return { 
-      month, 
-      controls: monthControls, 
-      count: monthControls.length,
-      highestPriorityStatus 
-    };
+    if (monthControls.some(c => c.status === 'Overdue')) highestPriorityStatus = 'Overdue';
+    else if (monthControls.some(c => c.status === 'Pending')) highestPriorityStatus = 'Pending';
+    else if (monthControls.length > 0) highestPriorityStatus = 'Completed';
+
+    return { month, controls: monthControls, count: monthControls.length, highestPriorityStatus };
   });
 
-  // Upcoming events
   const upcomingEvents = complianceEvents.slice(0, 8);
 
-  // Calculate positions for months in a circle
   const centerX = 300;
   const centerY = 300;
-  const radius = 175; // Position for text labels
-  
+  const radius = 175;
+
   const monthPositions = months.map((month, idx) => {
-    const angle = (idx * 30 - 90) * (Math.PI / 180); // Start from top, 30 degrees per month
+    const angle = (idx * 30 - 90) * (Math.PI / 180);
     const x = centerX + radius * Math.cos(angle);
     const y = centerY + radius * Math.sin(angle);
     return { month, x, y, angle: idx * 30, ...controlsByMonth[idx] };
   });
+
+  const handleExport = () => {
+    downloadCSV(controls.map(c => ({
+      id: c.id,
+      title: c.title,
+      frequency: c.frequency,
+      owner: c.owner_name,
+      status: c.status,
+      next_due: c.next_due ?? '',
+      last_execution: c.last_execution ?? ''
+    })), `compliance_calendar_${selectedYear}.csv`);
+  };
 
   return (
     <div className="p-8 space-y-6">
@@ -92,7 +117,7 @@ export function ComplianceCalendar() {
             <Bell className="w-4 h-4 mr-2" />
             Set Reminders
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
@@ -130,169 +155,110 @@ export function ComplianceCalendar() {
       {/* Year Wheel */}
       <Card className="p-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="font-semibold text-gray-900">2026 Control Schedule</h2>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+          <h2 className="font-semibold text-gray-900">{selectedYear} Control Schedule</h2>
+          <div className="flex gap-2 items-center">
+            <Button variant="outline" size="sm" onClick={() => { setSelectedYear(y => y - 1); setSelectedMonth(null); }}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="sm">
-              2026
+            <Button variant="outline" size="sm" className="min-w-16">
+              {selectedYear}
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => { setSelectedYear(y => y + 1); setSelectedMonth(null); }}>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        {/* Circular year wheel */}
-        <div className="flex justify-center">
-          <svg width="600" height="600" viewBox="0 0 600 600" className="max-w-full">
-            {/* Outer circle rings */}
-            <circle cx={centerX} cy={centerY} r="250" fill="none" stroke="#e5e7eb" strokeWidth="1" />
-            <circle cx={centerX} cy={centerY} r="220" fill="none" stroke="#e5e7eb" strokeWidth="1" />
-            <circle cx={centerX} cy={centerY} r="190" fill="none" stroke="#e5e7eb" strokeWidth="1" />
-            
-            {/* Month segments */}
-            {monthPositions.map((monthData, idx) => {
-              const isCurrentMonth = idx === currentMonth;
-              const isSelected = idx === selectedMonth;
-              const startAngle = idx * 30 - 90;
-              const endAngle = (idx + 1) * 30 - 90;
-              const innerRadius = 100;
-              const outerRadius = 250;
-              
-              // Calculate arc path
-              const startRad = startAngle * (Math.PI / 180);
-              const endRad = endAngle * (Math.PI / 180);
-              
-              const x1 = centerX + innerRadius * Math.cos(startRad);
-              const y1 = centerY + innerRadius * Math.sin(startRad);
-              const x2 = centerX + outerRadius * Math.cos(startRad);
-              const y2 = centerY + outerRadius * Math.sin(startRad);
-              const x3 = centerX + outerRadius * Math.cos(endRad);
-              const y3 = centerY + outerRadius * Math.sin(endRad);
-              const x4 = centerX + innerRadius * Math.cos(endRad);
-              const y4 = centerY + innerRadius * Math.sin(endRad);
-              
-              const pathData = `
-                M ${x1} ${y1}
-                L ${x2} ${y2}
-                A ${outerRadius} ${outerRadius} 0 0 1 ${x3} ${y3}
-                L ${x4} ${y4}
-                A ${innerRadius} ${innerRadius} 0 0 0 ${x1} ${y1}
-              `;
-              
-              // Calculate midpoint for text positioning
-              const midAngle = (startAngle + endAngle) / 2;
-              const midRad = midAngle * (Math.PI / 180);
-              const textRadius = 175;
-              const textX = centerX + textRadius * Math.cos(midRad);
-              const textY = centerY + textRadius * Math.sin(midRad);
-              
-              // Determine segment fill and stroke colors
-              let segmentFill = '#fafafa'; // default light gray
-              let segmentStroke = '#e5e7eb'; // default border
-              let segmentStrokeWidth = '1';
-              
-              if (isSelected) {
-                segmentFill = '#3b82f6'; // bright blue for selected
-                segmentStroke = '#2563eb';
-                segmentStrokeWidth = '2';
-              } else if (isCurrentMonth) {
-                segmentFill = '#dbeafe'; // light blue for current month
-                segmentStroke = '#93c5fd';
-              } else if (monthData.count > 0) {
-                segmentFill = '#f9fafb'; // very light gray for months with controls
-              }
-              
-              // Determine color for the count based on highest priority status
-              let countColor = '#9ca3af'; // gray for no controls
-              if (isSelected) {
-                countColor = '#ffffff'; // white for selected
-              } else if (monthData.highestPriorityStatus === 'Overdue') {
-                countColor = '#dc2626'; // red for overdue
-              } else if (monthData.highestPriorityStatus === 'Pending') {
-                countColor = '#ca8a04'; // yellow for pending
-              } else if (monthData.highestPriorityStatus === 'Completed') {
-                countColor = '#16a34a'; // green for completed
-              } else if (isCurrentMonth) {
-                countColor = '#1e40af'; // dark blue for current month with no specific status
-              }
-              
-              // Label color
-              let labelColor = '#4b5563'; // default gray
-              if (isSelected) {
-                labelColor = '#ffffff'; // white for selected
-              } else if (isCurrentMonth) {
-                labelColor = '#1e40af'; // dark blue for current month
-              }
-              
-              return (
-                <g key={monthData.month}>
-                  {/* Clickable segment fill */}
-                  <path
-                    d={pathData}
-                    fill={segmentFill}
-                    stroke={segmentStroke}
-                    strokeWidth={segmentStrokeWidth}
-                    className="cursor-pointer hover:opacity-70 transition-all"
-                    onClick={handleMonthClick.bind(null, idx)}
-                    style={{ pointerEvents: 'all' }}
-                  />
-                  
-                  {/* Month label and count - centered in segment */}
-                  <g className="pointer-events-none">
-                    <text
-                      x={textX}
-                      y={textY - 8}
-                      textAnchor="middle"
-                      fontSize="11"
-                      fontWeight="600"
-                      fill={labelColor}
-                    >
-                      {monthData.month.substring(0, 3).toUpperCase()}
-                    </text>
-                    
-                    <text
-                      x={textX}
-                      y={textY + 12}
-                      textAnchor="middle"
-                      fontSize="20"
-                      fontWeight="700"
-                      fill={countColor}
-                    >
-                      {monthData.count}
-                    </text>
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <svg className="animate-spin h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <svg width="600" height="600" viewBox="0 0 600 600" className="max-w-full">
+              <circle cx={centerX} cy={centerY} r="250" fill="none" stroke="#e5e7eb" strokeWidth="1" />
+              <circle cx={centerX} cy={centerY} r="220" fill="none" stroke="#e5e7eb" strokeWidth="1" />
+              <circle cx={centerX} cy={centerY} r="190" fill="none" stroke="#e5e7eb" strokeWidth="1" />
+
+              {monthPositions.map((monthData, idx) => {
+                const isCurrentMonth = idx === currentMonth && selectedYear === currentRealYear;
+                const isSelected = idx === selectedMonth;
+                const startAngle = idx * 30 - 90;
+                const endAngle = (idx + 1) * 30 - 90;
+                const innerRadius = 100;
+                const outerRadius = 250;
+                const startRad = startAngle * (Math.PI / 180);
+                const endRad = endAngle * (Math.PI / 180);
+                const x1 = centerX + innerRadius * Math.cos(startRad);
+                const y1 = centerY + innerRadius * Math.sin(startRad);
+                const x2 = centerX + outerRadius * Math.cos(startRad);
+                const y2 = centerY + outerRadius * Math.sin(startRad);
+                const x3 = centerX + outerRadius * Math.cos(endRad);
+                const y3 = centerY + outerRadius * Math.sin(endRad);
+                const x4 = centerX + innerRadius * Math.cos(endRad);
+                const y4 = centerY + innerRadius * Math.sin(endRad);
+                const pathData = `M ${x1} ${y1} L ${x2} ${y2} A ${outerRadius} ${outerRadius} 0 0 1 ${x3} ${y3} L ${x4} ${y4} A ${innerRadius} ${innerRadius} 0 0 0 ${x1} ${y1}`;
+                const midAngle = (startAngle + endAngle) / 2;
+                const midRad = midAngle * (Math.PI / 180);
+                const textRadius = 175;
+                const textX = centerX + textRadius * Math.cos(midRad);
+                const textY = centerY + textRadius * Math.sin(midRad);
+
+                let segmentFill = '#fafafa';
+                let segmentStroke = '#e5e7eb';
+                let segmentStrokeWidth = '1';
+                if (isSelected) { segmentFill = '#3b82f6'; segmentStroke = '#2563eb'; segmentStrokeWidth = '2'; }
+                else if (isCurrentMonth) { segmentFill = '#dbeafe'; segmentStroke = '#93c5fd'; }
+                else if (monthData.count > 0) { segmentFill = '#f9fafb'; }
+
+                let countColor = '#9ca3af';
+                if (isSelected) countColor = '#ffffff';
+                else if (monthData.highestPriorityStatus === 'Overdue') countColor = '#dc2626';
+                else if (monthData.highestPriorityStatus === 'Pending') countColor = '#ca8a04';
+                else if (monthData.highestPriorityStatus === 'Completed') countColor = '#16a34a';
+                else if (isCurrentMonth) countColor = '#1e40af';
+
+                let labelColor = '#4b5563';
+                if (isSelected) labelColor = '#ffffff';
+                else if (isCurrentMonth) labelColor = '#1e40af';
+
+                return (
+                  <g key={monthData.month}>
+                    <path d={pathData} fill={segmentFill} stroke={segmentStroke} strokeWidth={segmentStrokeWidth} className="cursor-pointer hover:opacity-70 transition-all" onClick={() => handleMonthClick(idx)} style={{ pointerEvents: 'all' }} />
+                    <g className="pointer-events-none">
+                      <text x={textX} y={textY - 8} textAnchor="middle" fontSize="11" fontWeight="600" fill={labelColor}>
+                        {monthData.month.substring(0, 3).toUpperCase()}
+                      </text>
+                      <text x={textX} y={textY + 12} textAnchor="middle" fontSize="20" fontWeight="700" fill={countColor}>
+                        {monthData.count}
+                      </text>
+                    </g>
                   </g>
-                </g>
-              );
-            })}
-            
-            {/* Center circle */}
-            <circle cx={centerX} cy={centerY} r="90" fill="#2563eb" />
-            
-            {/* Center icon and text */}
-            <g transform={`translate(${centerX}, ${centerY})`}>
-              {/* Calendar icon - moved up to avoid overlap */}
-              <rect x="-20" y="-40" width="40" height="35" rx="4" fill="none" stroke="white" strokeWidth="2.5" />
-              <line x1="-13" y1="-40" x2="-13" y2="-33" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="0" y1="-40" x2="0" y2="-33" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="13" y1="-40" x2="13" y2="-33" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="-20" y1="-28" x2="20" y2="-28" stroke="white" strokeWidth="2.5" />
-              
-              {/* Year - properly centered below icon */}
-              <text
-                y="20"
-                textAnchor="middle"
-                fontSize="32"
-                fontWeight="800"
-                fill="white"
-              >
-                2026
-              </text>
-            </g>
-          </svg>
-        </div>
+                );
+              })}
+
+              {/* Center circle */}
+              <circle cx={centerX} cy={centerY} r="90" fill="#2563eb" />
+
+              {/* Center: icon at top, year at bottom */}
+              <g transform={`translate(${centerX}, ${centerY})`}>
+                {/* Calendar icon - positioned in upper half of circle */}
+                <rect x="-18" y="-50" width="36" height="30" rx="4" fill="none" stroke="white" strokeWidth="2" />
+                <line x1="-11" y1="-50" x2="-11" y2="-44" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                <line x1="0" y1="-50" x2="0" y2="-44" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                <line x1="11" y1="-50" x2="11" y2="-44" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                <line x1="-18" y1="-40" x2="18" y2="-40" stroke="white" strokeWidth="2" />
+                {/* Year text - below icon with proper spacing */}
+                <text y="22" textAnchor="middle" fontSize="28" fontWeight="800" fill="white">
+                  {selectedYear}
+                </text>
+              </g>
+            </svg>
+          </div>
+        )}
       </Card>
 
       {/* Selected Month Controls */}
@@ -313,24 +279,17 @@ export function ComplianceCalendar() {
           {controlsByMonth[selectedMonth].count > 0 ? (
             <div className="space-y-3">
               {controlsByMonth[selectedMonth].controls.map((control) => (
-                <div 
-                  key={control.id}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
+                <div key={control.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium text-gray-900">{control.title}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {control.category}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                        {control.frequency}
-                      </Badge>
+                      <Badge variant="outline" className="text-xs">{control.category}</Badge>
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">{control.frequency}</Badge>
                     </div>
                     <div className="flex items-center gap-3 mt-2">
-                      <span className="text-xs text-gray-500">Due: {control.nextDue}</span>
+                      <span className="text-xs text-gray-500">Due: {control.next_due ?? 'N/A'}</span>
                       <span className="text-xs text-gray-500">•</span>
-                      <span className="text-xs text-gray-500">Owner: {control.owner}</span>
+                      <span className="text-xs text-gray-500">Owner: {control.owner_name}</span>
                     </div>
                   </div>
                   <StatusBadge status={control.status} />
@@ -347,47 +306,40 @@ export function ComplianceCalendar() {
       )}
 
       {/* Upcoming Events */}
-      <Card className="p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Upcoming Events & Deadlines</h2>
-        
-        <div className="space-y-3">
-          {upcomingEvents.map((event) => (
-            <div 
-              key={event.id} 
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <div className="flex items-center gap-4 flex-1">
-                <div className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center ${
-                  event.status === 'Overdue' 
-                    ? 'bg-red-100 text-red-700'
-                    : event.status === 'Upcoming'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-green-100 text-green-700'
-                }`}>
-                  <span className="text-xs font-medium">
-                    {new Date(event.date).toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
-                  </span>
-                  <span className="text-lg font-semibold">
-                    {new Date(event.date).getDate()}
-                  </span>
-                </div>
+      {upcomingEvents.length > 0 && (
+        <Card className="p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Upcoming Events & Deadlines</h2>
 
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{event.title}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs text-gray-500">{event.owner}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {event.type}
-                    </Badge>
+          <div className="space-y-3">
+            {upcomingEvents.map((event) => (
+              <div key={event.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex items-center gap-4 flex-1">
+                  <div className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center ${
+                    event.status === 'Overdue' ? 'bg-red-100 text-red-700' :
+                    event.status === 'Upcoming' ? 'bg-blue-100 text-blue-700' :
+                    'bg-green-100 text-green-700'
+                  }`}>
+                    <span className="text-xs font-medium">
+                      {new Date(event.date).toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
+                    </span>
+                    <span className="text-lg font-semibold">
+                      {new Date(event.date).getDate()}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{event.title}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs text-gray-500">{event.owner_name}</span>
+                      <Badge variant="outline" className="text-xs">{event.type}</Badge>
+                    </div>
                   </div>
                 </div>
+                <StatusBadge status={event.status} />
               </div>
-
-              <StatusBadge status={event.status} />
-            </div>
-          ))}
-        </div>
-      </Card>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Legend */}
       <Card className="p-5 bg-gray-50">
@@ -417,14 +369,13 @@ export function ComplianceCalendar() {
           <div className="flex items-start gap-2">
             <CalendarIcon className="w-4 h-4 text-blue-600 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-gray-900">Frequency-based</p>
-              <p className="text-xs text-gray-500">Controls scheduled by frequency</p>
+              <p className="text-sm font-medium text-gray-900">Year Navigation</p>
+              <p className="text-xs text-gray-500">Use arrows to navigate between years</p>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Reminder Dialog */}
       <ReminderDialog open={reminderDialogOpen} onOpenChange={setReminderDialogOpen} />
     </div>
   );

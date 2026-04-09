@@ -1,0 +1,169 @@
+// Database types matching the Supabase schema
+
+export interface Profile {
+  id: string
+  full_name: string
+  role: 'ceo' | 'cto' | 'qa'
+  email: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Risk {
+  id: string
+  title: string
+  category: string
+  likelihood: 'Low' | 'Medium' | 'High'
+  impact: 'Low' | 'Medium' | 'High'
+  risk_score: number
+  owner_name: string
+  status: 'Active' | 'Mitigated' | 'Monitoring'
+  last_review: string | null
+  created_at: string
+  updated_at: string
+  // Joined
+  risk_controls?: { control_id: string }[]
+}
+
+export interface Control {
+  id: string
+  title: string
+  category: string
+  frequency: 'Monthly' | 'Quarterly' | 'Yearly'
+  owner_name: string
+  status: 'Completed' | 'Pending' | 'Overdue'
+  last_execution: string | null
+  next_due: string | null
+  description: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RiskControl {
+  risk_id: string
+  control_id: string
+}
+
+export interface Document {
+  id: string
+  name: string
+  file_type: string | null
+  uploaded_by_name: string
+  file_path: string | null
+  file_size: number | null
+  current_version: number
+  created_at: string
+  updated_at: string
+  // Joined
+  document_links?: DocumentLink[]
+}
+
+export interface DocumentVersion {
+  id: string
+  document_id: string
+  version: number
+  file_path: string | null
+  file_size: number | null
+  changelog: string
+  uploaded_by_name: string
+  created_at: string
+}
+
+export interface DocumentLink {
+  id: string
+  document_id: string
+  link_type: 'risk' | 'control'
+  link_id: string
+  created_at: string
+}
+
+export interface ComplianceEvent {
+  id: string
+  title: string
+  type: 'control' | 'audit' | 'review'
+  date: string
+  owner_name: string
+  status: 'Completed' | 'Upcoming' | 'Overdue'
+  created_at: string
+}
+
+export interface Alert {
+  id: string
+  type: 'warning' | 'error' | 'info'
+  message: string
+  date: string | null
+  related_to: string | null
+  created_at: string
+}
+
+export interface Reminder {
+  id: string
+  user_id: string
+  email: string
+  days_before: number
+  email_enabled: boolean
+  created_at: string
+}
+
+export interface ChangeLog {
+  id: string
+  title: string
+  description: string | null
+  change_type: 'Release' | 'Configuration' | 'Access' | 'Code' | 'Infrastructure'
+  environment: 'Production' | 'Staging' | 'Development' | null
+  author_name: string
+  approved_by_name: string | null
+  status: 'Draft' | 'Pending Approval' | 'Approved' | 'Deployed' | 'Rejected'
+  related_risk_id: string | null
+  related_control_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Product {
+  id: string
+  name: string
+  description: string | null
+  owner_name: string
+  created_at: string
+}
+
+export interface ReleaseChange {
+  id: string
+  release_id: string
+  change_type: 'Feature' | 'Bug Fix' | 'Security' | 'Breaking Change' | 'Performance' | 'Other'
+  description: string
+  created_at: string
+}
+
+export interface Release {
+  id: string
+  version: string
+  title: string
+  description: string | null
+  environment: 'Production' | 'Staging' | 'Development'
+  status: 'Planned' | 'In Progress' | 'Released' | 'Rolled Back'
+  released_by_name: string | null
+  approved_by_name: string | null
+  approved_at: string | null
+  product_name: string | null
+  release_date: string | null
+  created_at: string
+  updated_at: string
+  changes?: ReleaseChange[]
+}
+
+export interface Policy {
+  id: string
+  title: string
+  category: string
+  description: string | null
+  version: string
+  status: 'Active' | 'Draft' | 'Under Review' | 'Archived'
+  owner_name: string
+  last_reviewed: string | null
+  next_review: string | null
+  related_control_id: string | null
+  created_at: string
+  updated_at: string
+}
