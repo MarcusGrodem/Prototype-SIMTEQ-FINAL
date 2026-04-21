@@ -158,8 +158,8 @@ export function ControlManagement() {
       <div className="bg-white border-b border-slate-200 px-8 py-5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-base font-semibold text-slate-900 leading-none">Control Management</h1>
-            <p className="text-xs text-slate-400 mt-1.5">Monitor and execute internal controls</p>
+            <h1 className="text-xl font-semibold text-slate-900 leading-none">Control Management</h1>
+            <p className="text-xs text-slate-400 mt-2">Monitor and execute internal controls</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleExport} className="border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 gap-1.5 cursor-pointer">
@@ -174,29 +174,29 @@ export function ControlManagement() {
         </div>
       </div>
 
-      <div className="flex-1 p-8 space-y-6 max-w-7xl mx-auto w-full">
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-slate-400 shadow-none rounded-lg">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Total Controls</p>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{controls.length}</p>
+      <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
+        {/* Stats strip */}
+        <div className="flex border border-slate-200 rounded-lg bg-white overflow-hidden divide-x divide-slate-200">
+          <div className="flex-1 px-6 py-5">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Total Controls</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-2">{controls.length}</p>
             <p className="text-xs text-slate-400 mt-3">across all categories</p>
-          </Card>
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-emerald-500 shadow-none rounded-lg">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Completed</p>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{completed}</p>
+          </div>
+          <div className="flex-1 px-6 py-5">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Completed</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-2">{completed}</p>
             <p className="text-xs text-emerald-600 mt-3 font-medium">{controls.length > 0 ? Math.round(completed / controls.length * 100) : 0}% completion rate</p>
-          </Card>
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-amber-500 shadow-none rounded-lg">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Pending</p>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{pending}</p>
+          </div>
+          <div className="flex-1 px-6 py-5">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Pending</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-2">{pending}</p>
             <p className="text-xs text-slate-400 mt-3">awaiting execution</p>
-          </Card>
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-red-500 shadow-none rounded-lg">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Overdue</p>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{overdue}</p>
-            <p className="text-xs text-red-500 mt-3 font-medium">requires immediate action</p>
-          </Card>
+          </div>
+          <div className={`flex-1 px-6 py-5 ${overdue > 0 ? 'bg-red-50/60' : ''}`}>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Overdue</p>
+            <p className={`text-3xl font-bold tabular-nums mt-2 ${overdue > 0 ? 'text-red-600' : 'text-slate-900'}`}>{overdue}</p>
+            <p className={`text-xs mt-3 font-medium ${overdue > 0 ? 'text-red-500' : 'text-slate-400'}`}>{overdue > 0 ? 'Requires immediate action' : 'All controls on track'}</p>
+          </div>
         </div>
 
         {/* Search and Filters */}
@@ -337,7 +337,28 @@ export function ControlManagement() {
             </table>
           </div>
           {filteredControls.length === 0 && !loading && (
-            <div className="text-center py-12 text-sm text-slate-400">No controls found matching your search.</div>
+            <div className="text-center py-12 px-4">
+              {searchTerm || filterStatus.length > 0 || filterCategory.length > 0 || filterFrequency.length > 0 ? (
+                <>
+                  <p className="text-sm font-medium text-slate-600">No controls match your search</p>
+                  <p className="text-xs text-slate-400 mt-1">Try adjusting your filters or search term.</p>
+                  <button
+                    onClick={() => { setSearchTerm(''); setFilterStatus([]); setFilterCategory([]); setFilterFrequency([]); setFilterOpen(false); }}
+                    className="mt-3 text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors cursor-pointer"
+                  >
+                    Clear all filters
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-slate-600">No controls yet</p>
+                  <p className="text-xs text-slate-400 mt-1">Add your first control to start tracking compliance execution.</p>
+                  <button onClick={handleAddControl} className="mt-3 text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors cursor-pointer">
+                    Add first control →
+                  </button>
+                </>
+              )}
+            </div>
           )}
         </Card>
 

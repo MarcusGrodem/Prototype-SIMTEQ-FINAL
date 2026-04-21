@@ -126,7 +126,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         <div className="space-y-6 mt-4">
           {/* Export Type Selection */}
           <div>
-            <Label className="text-sm font-semibold text-gray-900 mb-3 block">
+            <Label className="text-sm font-semibold text-slate-900 mb-3 block">
               Select Export Type
             </Label>
             <div className="grid grid-cols-2 gap-3">
@@ -139,7 +139,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                     className={`p-4 border-2 rounded-lg text-left transition-all ${
                       selectedType === type.id
                         ? 'border-blue-500 bg-blue-50'
-                        : `${type.color} hover:border-gray-300`
+                        : `${type.color} hover:border-slate-300`
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -153,7 +153,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <p className={`text-sm font-semibold ${
-                            selectedType === type.id ? 'text-blue-900' : 'text-gray-900'
+                            selectedType === type.id ? 'text-blue-900' : 'text-slate-900'
                           }`}>
                             {type.name}
                           </p>
@@ -161,7 +161,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                             <CheckCircle2 className="w-4 h-4 text-blue-600 flex-shrink-0" />
                           )}
                         </div>
-                        <p className="text-xs text-gray-600">{type.description}</p>
+                        <p className="text-xs text-slate-600">{type.description}</p>
                       </div>
                     </div>
                   </button>
@@ -172,7 +172,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
           {/* Format Selection */}
           <div>
-            <Label className="text-sm font-semibold text-gray-900 mb-3 block">
+            <Label className="text-sm font-semibold text-slate-900 mb-3 block">
               Select File Format
             </Label>
             <div className="grid grid-cols-3 gap-3">
@@ -185,22 +185,22 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                     className={`p-4 border-2 rounded-lg text-center transition-all ${
                       selectedFormat === format.id
                         ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
                     <div className={`w-12 h-12 ${
-                      selectedFormat === format.id ? 'bg-blue-100' : 'bg-gray-50'
+                      selectedFormat === format.id ? 'bg-blue-100' : 'bg-slate-50'
                     } rounded-lg flex items-center justify-center mx-auto mb-2`}>
                       <Icon className={`w-6 h-6 ${
-                        selectedFormat === format.id ? 'text-blue-600' : 'text-gray-400'
+                        selectedFormat === format.id ? 'text-blue-600' : 'text-slate-400'
                       }`} />
                     </div>
                     <p className={`text-sm font-semibold mb-1 ${
-                      selectedFormat === format.id ? 'text-blue-900' : 'text-gray-900'
+                      selectedFormat === format.id ? 'text-blue-900' : 'text-slate-900'
                     }`}>
                       {format.name}
                     </p>
-                    <p className="text-xs text-gray-500">{format.description}</p>
+                    <p className="text-xs text-slate-500">{format.description}</p>
                     {selectedFormat === format.id && (
                       <Badge className="mt-2 bg-blue-600">
                         <CheckCircle2 className="w-3 h-3 mr-1" />
@@ -214,45 +214,45 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           </div>
 
           {/* Preview Information */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Export Preview</h3>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-slate-900 mb-3">Export Preview</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Export Type:</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-slate-600">Export Type:</span>
+                <span className="font-medium text-slate-900">
                   {exportTypes.find(t => t.id === selectedType)?.name}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">File Format:</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-slate-600">File Format:</span>
+                <span className="font-medium text-slate-900">
                   {formats.find(f => f.id === selectedFormat)?.name}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Generated:</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-slate-600">Generated:</span>
+                <span className="font-medium text-slate-900">
                   {new Date().toLocaleDateString('en-US')}
                 </span>
               </div>
               {selectedType === 'full' && (
                 <>
-                  <div className="border-t border-gray-300 my-2 pt-2">
-                    <p className="text-xs text-gray-500 mb-2">Includes:</p>
+                  <div className="border-t border-slate-300 my-2 pt-2">
+                    <p className="text-xs text-slate-500 mb-2">Includes:</p>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <div className="flex items-center gap-2 text-xs text-slate-600">
                     <CheckCircle2 className="w-3 h-3 text-green-600" />
                     {dashboardMetrics.totalControls} Controls
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <div className="flex items-center gap-2 text-xs text-slate-600">
                     <CheckCircle2 className="w-3 h-3 text-green-600" />
                     {dashboardMetrics.totalRisks} Risks
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <div className="flex items-center gap-2 text-xs text-slate-600">
                     <CheckCircle2 className="w-3 h-3 text-green-600" />
                     Dashboard Metrics & KPIs
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <div className="flex items-center gap-2 text-xs text-slate-600">
                     <CheckCircle2 className="w-3 h-3 text-green-600" />
                     Evidence Documentation
                   </div>

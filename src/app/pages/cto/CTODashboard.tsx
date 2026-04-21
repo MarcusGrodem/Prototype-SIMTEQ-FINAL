@@ -73,8 +73,8 @@ export function CTODashboard() {
       <div className="bg-white border-b border-slate-200 px-8 py-5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-base font-semibold text-slate-900 leading-none">CTO Overview</h1>
-            <p className="text-xs text-slate-400 mt-1.5">Reporting period: {period}</p>
+            <h1 className="text-xl font-semibold text-slate-900 leading-none">CTO Overview</h1>
+            <p className="text-xs text-slate-400 mt-2">Reporting period: {period}</p>
           </div>
           <Button size="sm" onClick={() => navigate('/cto/changelog')} className="bg-slate-900 hover:bg-slate-800 text-white gap-1.5 cursor-pointer">
             <Plus className="w-4 h-4" />
@@ -83,41 +83,29 @@ export function CTODashboard() {
         </div>
       </div>
 
-      <div className="flex-1 p-8 space-y-6 max-w-7xl mx-auto w-full">
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-slate-400 shadow-none rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Changes</p>
-              <GitCommit className="w-4 h-4 text-slate-400" />
-            </div>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{changeLogs.length}</p>
+      <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
+        {/* Stats strip — pending approvals is the action metric */}
+        <div className="flex border border-slate-200 rounded-lg bg-white overflow-hidden divide-x divide-slate-200">
+          <button onClick={() => navigate('/cto/changelog')} className="flex-1 px-6 py-7 text-left hover:bg-slate-50 transition-colors cursor-pointer">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Total Changes</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-3">{changeLogs.length}</p>
             <p className="text-xs text-slate-400 mt-3">{deployedCount} deployed</p>
-          </Card>
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-amber-500 shadow-none rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Pending Approval</p>
-              <Clock className="w-4 h-4 text-amber-500" />
-            </div>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{pendingApprovals}</p>
-            <p className="text-xs text-amber-600 mt-3 font-medium">awaiting review</p>
-          </Card>
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-sky-500 shadow-none rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Releases</p>
-              <Package className="w-4 h-4 text-sky-500" />
-            </div>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{releases.length}</p>
+          </button>
+          <button onClick={() => navigate('/cto/changelog')} className={`w-2/5 shrink-0 px-8 py-7 text-left hover:bg-slate-50 transition-colors cursor-pointer ${pendingApprovals > 0 ? 'bg-amber-50/40' : ''}`}>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Pending Approval</p>
+            <p className={`text-5xl font-bold tabular-nums mt-3 leading-none ${pendingApprovals > 0 ? 'text-amber-600' : 'text-slate-900'}`}>{pendingApprovals}</p>
+            <p className={`text-xs mt-4 font-medium ${pendingApprovals > 0 ? 'text-amber-500' : 'text-slate-400'}`}>{pendingApprovals > 0 ? 'awaiting review — action required' : 'all changes approved'}</p>
+          </button>
+          <button onClick={() => navigate('/cto/releases')} className="flex-1 px-6 py-7 text-left hover:bg-slate-50 transition-colors cursor-pointer">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Total Releases</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-3">{releases.length}</p>
             <p className="text-xs text-slate-400 mt-3">across all products</p>
-          </Card>
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-emerald-500 shadow-none rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">In Progress</p>
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            </div>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{activeReleases}</p>
+          </button>
+          <button onClick={() => navigate('/cto/releases')} className="flex-1 px-6 py-7 text-left hover:bg-slate-50 transition-colors cursor-pointer">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">In Progress</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-3">{activeReleases}</p>
             <p className="text-xs text-slate-400 mt-3">active releases</p>
-          </Card>
+          </button>
         </div>
 
         {/* Content Grid */}
@@ -143,7 +131,13 @@ export function CTODashboard() {
                 </div>
               ))}
               {changeLogs.length === 0 && (
-                <p className="text-sm text-slate-400 text-center py-6">No changes yet</p>
+                <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+                  <p className="text-sm font-medium text-slate-600">No changes logged</p>
+                  <p className="text-xs text-slate-400 mt-1">Document system changes to maintain audit traceability.</p>
+                  <button onClick={() => navigate('/cto/changelog')} className="mt-3 text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors cursor-pointer">
+                    Log first change →
+                  </button>
+                </div>
               )}
             </div>
           </Card>
@@ -176,7 +170,13 @@ export function CTODashboard() {
                 </div>
               ))}
               {releases.length === 0 && (
-                <p className="text-sm text-slate-400 text-center py-6">No releases yet</p>
+                <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+                  <p className="text-sm font-medium text-slate-600">No releases tracked</p>
+                  <p className="text-xs text-slate-400 mt-1">Track software releases to link them to controls and evidence.</p>
+                  <button onClick={() => navigate('/cto/releases')} className="mt-3 text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors cursor-pointer">
+                    Create first release →
+                  </button>
+                </div>
               )}
             </div>
           </Card>
@@ -207,25 +207,20 @@ export function CTODashboard() {
         </Card>
 
         {/* Quick Actions */}
-        <Card className="border-slate-200 shadow-none">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="text-sm font-semibold text-slate-900">Quick Actions</h2>
-          </div>
-          <div className="px-6 py-4 flex gap-3">
-            <Button onClick={() => navigate('/cto/changelog')} className="bg-slate-900 hover:bg-slate-800 text-white gap-1.5 cursor-pointer">
-              <GitCommit className="w-4 h-4" />
-              Log a Change
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/cto/releases')} className="border-slate-200 text-slate-600 hover:bg-slate-50 gap-1.5 cursor-pointer">
-              <Package className="w-4 h-4" />
-              New Release
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/cto/access')} className="border-slate-200 text-slate-600 hover:bg-slate-50 gap-1.5 cursor-pointer">
-              <CheckCircle2 className="w-4 h-4" />
-              Review Access
-            </Button>
-          </div>
-        </Card>
+        <div className="flex items-center gap-3 pt-1">
+          <Button onClick={() => navigate('/cto/changelog')} className="bg-slate-900 hover:bg-slate-800 text-white gap-1.5 cursor-pointer">
+            <GitCommit className="w-4 h-4" />
+            Log a Change
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/cto/releases')} className="border-slate-200 text-slate-600 hover:bg-slate-50 gap-1.5 cursor-pointer">
+            <Package className="w-4 h-4" />
+            New Release
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/cto/access')} className="border-slate-200 text-slate-600 hover:bg-slate-50 gap-1.5 cursor-pointer">
+            <CheckCircle2 className="w-4 h-4" />
+            Review Access
+          </Button>
+        </div>
       </div>
     </div>
   )

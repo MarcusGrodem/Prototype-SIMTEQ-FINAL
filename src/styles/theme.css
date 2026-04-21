@@ -2,26 +2,28 @@
 
 :root {
   --font-size: 16px;
-  --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --background: #F8FAFC;
-  --foreground: #020617;
-  --card: #ffffff;
-  --card-foreground: #020617;
-  --popover: #ffffff;
-  --popover-foreground: #020617;
-  --primary: #0F172A;
-  --primary-foreground: #ffffff;
-  --secondary: #F1F5F9;
-  --secondary-foreground: #0F172A;
-  --muted: #F1F5F9;
-  --muted-foreground: #64748B;
-  --accent: #F1F5F9;
-  --accent-foreground: #0F172A;
-  --destructive: #DC2626;
-  --destructive-foreground: #ffffff;
-  --border: #E2E8F0;
+  --font-family: 'Fira Sans', system-ui, -apple-system, sans-serif;
+  --font-heading-family: 'Barlow Semi Condensed', system-ui, sans-serif;
+  /* Surfaces — neutrals tinted toward navy hue (oklch h=240) for subconscious brand cohesion */
+  --background: oklch(98.5% 0.008 240);
+  --foreground: oklch(8% 0.02 240);
+  --card: oklch(100% 0.004 240);
+  --card-foreground: oklch(8% 0.02 240);
+  --popover: oklch(100% 0.004 240);
+  --popover-foreground: oklch(8% 0.02 240);
+  --primary: oklch(14% 0.025 240);
+  --primary-foreground: oklch(99% 0 0);
+  --secondary: oklch(96% 0.008 240);
+  --secondary-foreground: oklch(14% 0.025 240);
+  --muted: oklch(96% 0.008 240);
+  --muted-foreground: oklch(50% 0.012 240);
+  --accent: oklch(96% 0.008 240);
+  --accent-foreground: oklch(14% 0.025 240);
+  --destructive: oklch(53% 0.22 27);
+  --destructive-foreground: oklch(99% 0 0);
+  --border: oklch(91% 0.01 240);
   --input: transparent;
-  --input-background: #F8FAFC;
+  --input-background: oklch(98.5% 0.008 240);
   --switch-background: #CBD5E1;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
@@ -80,6 +82,7 @@
 }
 
 @theme inline {
+  --font-display: 'Barlow Semi Condensed', system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -139,22 +142,24 @@
     font-family: var(--font-family);
   }
 
+  h1, h2, h3 {
+    font-family: var(--font-heading-family);
+    line-height: 1.2;
+  }
+
   h1 {
     font-size: var(--text-2xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    font-weight: 700;
   }
 
   h2 {
     font-size: var(--text-xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    font-weight: 600;
   }
 
   h3 {
     font-size: var(--text-lg);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    font-weight: 600;
   }
 
   h4 {
@@ -179,5 +184,15 @@
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
+  }
+
+  /* Stat strip labels (uppercase tracking-widest) and numeric values (tabular-nums)
+     use the display typeface throughout the app */
+  .tracking-widest {
+    font-family: var(--font-heading-family);
+  }
+
+  .tabular-nums {
+    font-family: var(--font-heading-family);
   }
 }

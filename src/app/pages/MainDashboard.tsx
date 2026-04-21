@@ -9,9 +9,6 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  TrendingUp,
-  Shield,
-  AlertTriangle,
   Bell,
   Maximize2,
   Download,
@@ -81,8 +78,8 @@ export function MainDashboard() {
       <div className="bg-white border-b border-slate-200 px-8 py-5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-base font-semibold text-slate-900 leading-none">Risk &amp; Control Dashboard</h1>
-            <p className="text-xs text-slate-400 mt-1.5">Reporting period: {period}</p>
+            <h1 className="text-xl font-semibold text-slate-900 leading-none">Risk &amp; Control Dashboard</h1>
+            <p className="text-xs text-slate-400 mt-2">Reporting period: {period}</p>
           </div>
           <div className="flex items-center gap-2">
             <CatchUpNotification />
@@ -107,7 +104,7 @@ export function MainDashboard() {
         </div>
       </div>
 
-      <div className="flex-1 p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
         {/* Alerts banner */}
         {alerts.filter(a => a.type === 'error' || a.type === 'warning').length > 0 && (
           <div className="flex items-start gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
@@ -135,51 +132,30 @@ export function MainDashboard() {
           </div>
         )}
 
-        {/* KPI cards */}
-        <div className="grid grid-cols-4 gap-4">
-          <Link to="/controls">
-            <Card className="p-5 border-slate-200 border-l-[3px] border-l-emerald-500 shadow-none rounded-lg hover:shadow-sm hover:border-emerald-300 transition-all cursor-pointer group">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Compliance Score</p>
-                <TrendingUp className="w-4 h-4 text-emerald-500" />
-              </div>
-              <p className="text-3xl font-bold text-slate-900 mt-2">{complianceScore}%</p>
-              <Progress value={complianceScore} className="mt-3 h-1 bg-slate-100" />
-              <p className="text-xs text-slate-400 mt-2 group-hover:text-emerald-600 transition-colors">{completedControls} of {totalControls} controls complete</p>
-            </Card>
+        {/* KPI strip — compliance score is the hero */}
+        <div className="flex border border-slate-200 rounded-lg bg-white overflow-hidden divide-x divide-slate-200">
+          <Link to="/controls" className="w-2/5 shrink-0 px-8 py-7 hover:bg-slate-50 transition-colors">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Compliance Score</p>
+            <p className="text-5xl font-bold text-slate-900 tabular-nums mt-3 leading-none">
+              {complianceScore}<span className="text-2xl font-semibold text-slate-500">%</span>
+            </p>
+            <Progress value={complianceScore} className="mt-4 h-0.5 bg-slate-100" />
+            <p className="text-xs text-slate-400 mt-2">{completedControls} of {totalControls} controls complete</p>
           </Link>
-
-          <Link to="/controls">
-            <Card className="p-5 border-slate-200 border-l-[3px] border-l-sky-500 shadow-none rounded-lg hover:shadow-sm hover:border-sky-300 transition-all cursor-pointer group">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Controls</p>
-                <Shield className="w-4 h-4 text-sky-500" />
-              </div>
-              <p className="text-3xl font-bold text-slate-900 mt-2">{totalControls}</p>
-              <p className="text-xs text-slate-400 mt-3 group-hover:text-sky-600 transition-colors">{pendingControls} pending review</p>
-            </Card>
+          <Link to="/controls" className="flex-1 px-6 py-7 hover:bg-slate-50 transition-colors">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Controls</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-3">{totalControls}</p>
+            <p className="text-xs text-slate-400 mt-3">{pendingControls} pending review</p>
           </Link>
-
-          <Link to="/risks">
-            <Card className="p-5 border-slate-200 border-l-[3px] border-l-amber-500 shadow-none rounded-lg hover:shadow-sm hover:border-amber-300 transition-all cursor-pointer group">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">High Risks</p>
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
-              </div>
-              <p className="text-3xl font-bold text-slate-900 mt-2">{highRisks}</p>
-              <p className="text-xs text-slate-400 mt-3 group-hover:text-amber-600 transition-colors">{totalRisks} risks in register</p>
-            </Card>
+          <Link to="/risks" className="flex-1 px-6 py-7 hover:bg-slate-50 transition-colors">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">High Risks</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-3">{highRisks}</p>
+            <p className="text-xs text-slate-400 mt-3">{totalRisks} in register</p>
           </Link>
-
-          <Link to="/controls">
-            <Card className="p-5 border-slate-200 border-l-[3px] border-l-red-500 shadow-none rounded-lg hover:shadow-sm hover:border-red-300 transition-all cursor-pointer group">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Overdue</p>
-                <AlertCircle className="w-4 h-4 text-red-500" />
-              </div>
-              <p className="text-3xl font-bold text-slate-900 mt-2">{overdueControls}</p>
-              <p className="text-xs text-red-500 mt-3 font-medium group-hover:text-red-700 transition-colors">Requires immediate attention</p>
-            </Card>
+          <Link to="/controls" className={`flex-1 px-6 py-7 hover:bg-slate-50 transition-colors ${overdueControls > 0 ? 'bg-red-50/60' : ''}`}>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Overdue</p>
+            <p className={`text-3xl font-bold tabular-nums mt-3 ${overdueControls > 0 ? 'text-red-600' : 'text-slate-900'}`}>{overdueControls}</p>
+            <p className={`text-xs mt-3 font-medium ${overdueControls > 0 ? 'text-red-500' : 'text-slate-400'}`}>{overdueControls > 0 ? 'Requires immediate action' : 'All controls on track'}</p>
           </Link>
         </div>
 
@@ -231,7 +207,7 @@ export function MainDashboard() {
             <div className="p-6">
               <div className="space-y-1.5">
                 <div className="grid grid-cols-4 gap-1.5 text-xs text-center mb-1">
-                  <div className="text-[10px] text-slate-400 font-medium text-left">Likelihood</div>
+                  <div className="text-xs text-slate-400 font-medium text-left">Likelihood</div>
                   <div className="font-medium text-slate-400">Low</div>
                   <div className="font-medium text-slate-400">Med</div>
                   <div className="font-medium text-slate-400">High</div>
@@ -256,13 +232,13 @@ export function MainDashboard() {
                   <div key={row.label} className="grid grid-cols-4 gap-1.5 items-center">
                     <div className="text-xs font-medium text-slate-400">{row.label}</div>
                     {row.cells.map((cell, i) => (
-                      <Link key={i} to="/risks" className={`h-11 ${cell.cls} rounded-md flex items-center justify-center text-sm font-semibold tabular-nums transition-colors cursor-pointer`}>
+                      <Link key={i} to="/risks" className={`h-14 ${cell.cls} rounded-md flex items-center justify-center text-sm font-semibold tabular-nums transition-colors cursor-pointer`}>
                         {risks.filter(cell.filter).length}
                       </Link>
                     ))}
                   </div>
                 ))}
-                <p className="text-[10px] text-slate-400 text-center pt-1.5">Impact →</p>
+                <p className="text-xs text-slate-400 text-center pt-2">Impact →</p>
               </div>
             </div>
           </Card>
@@ -291,7 +267,13 @@ export function MainDashboard() {
                 </Link>
               ))}
               {controls.length === 0 && (
-                <p className="text-sm text-slate-400 text-center py-6">No controls found</p>
+                <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+                  <p className="text-sm font-medium text-slate-600">No controls yet</p>
+                  <p className="text-xs text-slate-400 mt-1">Add your first control to begin tracking compliance execution.</p>
+                  <Link to="/controls" className="mt-3 text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors">
+                    Go to Control Management →
+                  </Link>
+                </div>
               )}
             </div>
           </Card>
@@ -309,10 +291,12 @@ export function MainDashboard() {
             <div className="p-3">
               {alerts.map(alert => (
                 <div key={alert.id} className="flex items-start gap-3 px-3 py-2.5 rounded-md hover:bg-slate-50 transition-colors">
-                  <div className={`w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0 ${
-                    alert.type === 'error' ? 'bg-red-500' :
-                    alert.type === 'warning' ? 'bg-amber-500' : 'bg-sky-500'
-                  }`} />
+                  <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-widest px-1.5 py-0.5 rounded-sm mt-0.5 ${
+                    alert.type === 'error' ? 'bg-red-100 text-red-700' :
+                    alert.type === 'warning' ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'
+                  }`}>
+                    {alert.type === 'error' ? 'Error' : alert.type === 'warning' ? 'Warn' : 'Info'}
+                  </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-slate-900 leading-snug">{alert.message}</p>
                     {alert.date && <p className="text-xs text-slate-400 mt-0.5">{alert.date}</p>}
@@ -320,7 +304,10 @@ export function MainDashboard() {
                 </div>
               ))}
               {alerts.length === 0 && (
-                <p className="text-sm text-slate-400 text-center py-6">No active alerts</p>
+                <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+                  <p className="text-sm font-medium text-slate-600">No active issues</p>
+                  <p className="text-xs text-slate-400 mt-1">All controls are current — no alerts have been raised.</p>
+                </div>
               )}
             </div>
           </Card>

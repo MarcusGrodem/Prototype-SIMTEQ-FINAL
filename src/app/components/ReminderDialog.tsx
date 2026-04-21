@@ -96,9 +96,9 @@ export function ReminderDialog({ open, onOpenChange }: ReminderDialogProps) {
               Your Reminders ({reminders.length})
             </h3>
             {reminders.length === 0 ? (
-              <div className="text-center py-6 bg-gray-50 rounded-lg">
-                <Bell className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                <p className="text-sm text-gray-500">No reminders set yet</p>
+              <div className="text-center py-5 rounded-lg border border-slate-100 bg-slate-50">
+                <p className="text-sm font-medium text-slate-600">No reminders set</p>
+                <p className="text-xs text-slate-400 mt-1">Set a reminder above to receive an email before this control is due.</p>
               </div>
             ) : (
               <div className="space-y-3">

@@ -21,8 +21,8 @@ const statusColor = (s: string) => {
     case 'Active': return 'bg-green-100 text-green-700'
     case 'Draft': return 'bg-yellow-100 text-yellow-700'
     case 'Under Review': return 'bg-blue-100 text-blue-700'
-    case 'Archived': return 'bg-gray-100 text-gray-600'
-    default: return 'bg-gray-100 text-gray-700'
+    case 'Archived': return 'bg-slate-100 text-slate-600'
+    default: return 'bg-slate-100 text-slate-700'
   }
 }
 
@@ -149,33 +149,36 @@ export function PolicyManagement() {
   }
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Policy Management</h1>
-          <p className="text-sm text-gray-500 mt-1">ISO 27001 policy library and lifecycle management</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          <Button size="sm" onClick={() => { setEditItem(null); setForm(emptyForm); setAddOpen(true) }}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Policy
-          </Button>
+    <div className="flex flex-col min-h-full">
+      <div className="bg-white border-b border-slate-200 px-8 py-5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900 leading-none">Policy Management</h1>
+            <p className="text-xs text-slate-400 mt-2">ISO 27001 policy library and lifecycle management</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+            <Button size="sm" onClick={() => { setEditItem(null); setForm(emptyForm); setAddOpen(true) }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Policy
+            </Button>
+          </div>
         </div>
       </div>
+      <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
         {STATUS_OPTIONS.map(s => (
           <Card key={s} className="p-4">
-            <p className="text-sm text-gray-500">{s}</p>
+            <p className="text-sm text-slate-500">{s}</p>
             <p className={`text-2xl font-semibold mt-1 ${
               s === 'Active' ? 'text-green-600' :
               s === 'Draft' ? 'text-yellow-600' :
-              s === 'Under Review' ? 'text-blue-600' : 'text-gray-600'
+              s === 'Under Review' ? 'text-blue-600' : 'text-slate-600'
             }`}>
               {policies.filter(p => p.status === s).length}
             </p>
@@ -187,7 +190,7 @@ export function PolicyManagement() {
       <Card className="p-4">
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input placeholder="Search policies..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
           </div>
           <Button variant="outline" onClick={() => setFilterOpen(!filterOpen)}>
@@ -198,12 +201,12 @@ export function PolicyManagement() {
         </div>
         {filterOpen && (
           <div className="mt-4 pt-4 border-t">
-            <p className="text-xs font-medium text-gray-700 mb-2">Status</p>
+            <p className="text-xs font-medium text-slate-700 mb-2">Status</p>
             <div className="flex flex-wrap gap-3">
               {STATUS_OPTIONS.map(s => (
                 <label key={s} className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={filterStatus.includes(s)} onChange={() => toggleFilter(filterStatus, s, setFilterStatus)} className="rounded" />
-                  <span className="text-sm text-gray-700">{s}</span>
+                  <span className="text-sm text-slate-700">{s}</span>
                 </label>
               ))}
             </div>
@@ -216,40 +219,40 @@ export function PolicyManagement() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Title</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Category</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Version</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Status</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Owner</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Last Reviewed</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Next Review</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Control</th>
+              <tr className="border-b bg-slate-50">
+                <th className="text-left p-4 text-sm font-medium text-slate-700">Title</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-700">Category</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-700">Version</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-700">Status</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-700">Owner</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-700">Last Reviewed</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-700">Next Review</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-700">Control</th>
                 <th className="p-4" />
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={9} className="p-8 text-center text-gray-500">Loading...</td></tr>
+                <tr><td colSpan={9} className="p-8 text-center text-slate-500">Loading...</td></tr>
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="p-12 text-center">
-                    <BookOpen className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                    <p className="text-gray-500">No policies found</p>
+                    <p className="text-sm font-medium text-slate-600">No policies found</p>
+                    <p className="text-xs text-slate-400 mt-1">Add policies to document your ISO 27001 and GDPR compliance posture.</p>
                   </td>
                 </tr>
               ) : filtered.map(p => (
-                <tr key={p.id} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => openEdit(p)}>
+                <tr key={p.id} className="border-b hover:bg-slate-50 cursor-pointer" onClick={() => openEdit(p)}>
                   <td className="p-4">
-                    <p className="text-sm font-medium text-gray-900">{p.title}</p>
-                    {p.description && <p className="text-xs text-gray-500 mt-0.5 truncate max-w-xs">{p.description}</p>}
+                    <p className="text-sm font-medium text-slate-900">{p.title}</p>
+                    {p.description && <p className="text-xs text-slate-500 mt-0.5 truncate max-w-xs">{p.description}</p>}
                   </td>
                   <td className="p-4"><Badge variant="outline" className="text-xs">{p.category}</Badge></td>
-                  <td className="p-4"><span className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">v{p.version}</span></td>
+                  <td className="p-4"><span className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded">v{p.version}</span></td>
                   <td className="p-4"><Badge className={`text-xs ${statusColor(p.status)}`}>{p.status}</Badge></td>
-                  <td className="p-4"><span className="text-sm text-gray-700">{p.owner_name}</span></td>
-                  <td className="p-4"><span className="text-sm text-gray-700">{p.last_reviewed ?? '—'}</span></td>
-                  <td className="p-4"><span className="text-sm text-gray-700">{p.next_review ?? '—'}</span></td>
+                  <td className="p-4"><span className="text-sm text-slate-700">{p.owner_name}</span></td>
+                  <td className="p-4"><span className="text-sm text-slate-700">{p.last_reviewed ?? '—'}</span></td>
+                  <td className="p-4"><span className="text-sm text-slate-700">{p.next_review ?? '—'}</span></td>
                   <td className="p-4">
                     {p.related_control_id ? (
                       <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">{p.related_control_id}</Badge>
@@ -267,7 +270,7 @@ export function PolicyManagement() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={addOpen} onOpenChange={open => { setAddOpen(open); if (!open) { setEditItem(null); setForm(emptyForm) } }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editItem ? 'Edit Policy' : 'Add Policy'}</DialogTitle>
             <DialogDescription>
@@ -291,12 +294,12 @@ export function PolicyManagement() {
             </div>
             <div>
               <Label>Description</Label>
-              <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={3} placeholder="Policy description..." />
+              <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={3} placeholder="Policy description..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Status</Label>
-                <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as typeof STATUS_OPTIONS[number] }))} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as typeof STATUS_OPTIONS[number] }))} className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                   {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
@@ -326,6 +329,7 @@ export function PolicyManagement() {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }

@@ -55,8 +55,8 @@ export function CTOLayout() {
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-900 leading-none">ComplianceOS</p>
-              <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-wide">Technical View</p>
+              <p className="text-sm font-semibold text-slate-900 leading-none font-display tracking-wide">ComplianceOS</p>
+              <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-widest">Technical View</p>
             </div>
           </div>
         </div>

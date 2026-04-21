@@ -1118,7 +1118,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       <DialogContent className="w-[95vw] max-w-[1400px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -1143,13 +1143,13 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
                   <p className="text-2xl font-semibold text-blue-900">13+</p>
                   <p className="text-xs text-blue-600 mt-1">sections + appendices</p>
                 </div>
-                <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
-                    <FileText className="w-4 h-4 text-purple-600" />
-                    <span className="text-xs text-purple-600 font-medium">Domains</span>
+                    <FileText className="w-4 h-4 text-slate-600" />
+                    <span className="text-xs text-slate-600 font-medium">Domains</span>
                   </div>
-                  <p className="text-2xl font-semibold text-purple-900">{ISO_DOMAINS.length}</p>
-                  <p className="text-xs text-purple-600 mt-1">ISO 27001 domains</p>
+                  <p className="text-2xl font-semibold text-slate-900">{ISO_DOMAINS.length}</p>
+                  <p className="text-xs text-slate-500 mt-1">ISO 27001 domains</p>
                 </div>
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
@@ -1217,7 +1217,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
           {isGenerating && (
             <div className="py-12">
               <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Loader2 className="w-8 h-8 text-white animate-spin" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Fetching Live Data</h3>
@@ -1271,11 +1271,11 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
               </div>
 
               {/* Domain summary */}
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-                  <span className="text-xs font-medium text-gray-700">Control Status by ISO 27001 Domain</span>
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <div className="bg-slate-50 px-4 py-2 border-b border-slate-200">
+                  <span className="text-xs font-medium text-slate-700">Control Status by ISO 27001 Domain</span>
                 </div>
-                <div className="divide-y divide-gray-100 max-h-64 overflow-y-auto">
+                <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto">
                   {ISO_DOMAINS.map(domain => {
                     const dc = controls.filter(c => c.category === domain);
                     if (dc.length === 0) return null;
@@ -1283,9 +1283,9 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
                     const comp = dc.filter(c => c.status === 'Completed').length;
                     return (
                       <div key={domain} className="flex items-center justify-between px-4 py-2">
-                        <span className="text-xs text-gray-700 flex-1">{domain}</span>
+                        <span className="text-xs text-slate-700 flex-1">{domain}</span>
                         <div className="flex items-center gap-3 shrink-0 ml-2">
-                          <span className="text-xs text-gray-500">{comp}/{dc.length}</span>
+                          <span className="text-xs text-slate-500">{comp}/{dc.length}</span>
                           <span className={`text-sm font-bold ${symbol === '✓' ? 'text-green-600' : symbol === '⚠' ? 'text-yellow-600' : 'text-red-600'}`}>{symbol}</span>
                         </div>
                       </div>
@@ -1315,7 +1315,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
                 Close
               </Button>
               {!reportGenerated && !isGenerating && (
-                <Button onClick={handleGenerateReport} className="bg-gradient-to-r from-purple-500 to-blue-600">
+                <Button onClick={handleGenerateReport} className="bg-slate-900 hover:bg-slate-800 text-white">
                   <Sparkles className="w-4 h-4 mr-2" />
                   Generate Report
                 </Button>

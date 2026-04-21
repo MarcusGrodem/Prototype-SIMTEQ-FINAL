@@ -100,7 +100,7 @@ export function AddRiskDialog({ open, onOpenChange, onSuccess }: AddRiskDialogPr
         <div className="mt-4 space-y-6">
           <div className="space-y-4">
             <div>
-              <Label htmlFor="title" className="text-sm font-medium text-gray-700">Risk Title *</Label>
+              <Label htmlFor="title" className="text-sm font-medium text-slate-700">Risk Title *</Label>
               <Input
                 id="title"
                 placeholder="e.g., Unauthorized access to customer data"
@@ -111,7 +111,7 @@ export function AddRiskDialog({ open, onOpenChange, onSuccess }: AddRiskDialogPr
             </div>
 
             <div>
-              <Label htmlFor="description" className="text-sm font-medium text-gray-700">Description</Label>
+              <Label htmlFor="description" className="text-sm font-medium text-slate-700">Description</Label>
               <Textarea
                 id="description"
                 placeholder="Describe the risk in detail..."
@@ -124,12 +124,12 @@ export function AddRiskDialog({ open, onOpenChange, onSuccess }: AddRiskDialogPr
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="category" className="text-sm font-medium text-gray-700">Category *</Label>
+                <Label htmlFor="category" className="text-sm font-medium text-slate-700">Category *</Label>
                 <select
                   id="category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select category...</option>
                   <option value="Ledelse">Ledelse</option>
@@ -148,7 +148,7 @@ export function AddRiskDialog({ open, onOpenChange, onSuccess }: AddRiskDialogPr
               </div>
 
               <div>
-                <Label htmlFor="owner" className="text-sm font-medium text-gray-700">Risk Owner *</Label>
+                <Label htmlFor="owner" className="text-sm font-medium text-slate-700">Risk Owner *</Label>
                 <Input
                   id="owner"
                   placeholder="e.g., Lars Hansen"
@@ -161,10 +161,10 @@ export function AddRiskDialog({ open, onOpenChange, onSuccess }: AddRiskDialogPr
           </div>
 
           {/* Risk Score Preview */}
-          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-900">Current Risk Score</p>
+                <p className="text-sm font-medium text-slate-900">Current Risk Score</p>
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                     Likelihood: {likelihood}
@@ -175,7 +175,7 @@ export function AddRiskDialog({ open, onOpenChange, onSuccess }: AddRiskDialogPr
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-500 mb-1">Risk Score</p>
+                <p className="text-xs text-slate-500 mb-1">Risk Score</p>
                 <Badge
                   variant="outline"
                   className={`text-2xl font-bold px-4 py-2 ${getRiskScoreColor(riskScore)}`}
@@ -188,33 +188,33 @@ export function AddRiskDialog({ open, onOpenChange, onSuccess }: AddRiskDialogPr
 
           {/* Risk Matrix */}
           <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Risk Assessment Matrix</h3>
-            <p className="text-xs text-gray-500 mb-4">Click on a cell to set the likelihood and impact</p>
+            <h3 className="text-sm font-medium text-slate-900 mb-3">Risk Assessment Matrix</h3>
+            <p className="text-xs text-slate-500 mb-4">Click on a cell to set the likelihood and impact</p>
 
             <div className="space-y-2">
               <div className="grid grid-cols-4 gap-2 text-xs text-center">
                 <div></div>
-                <div className="font-medium text-gray-600">Low Impact</div>
-                <div className="font-medium text-gray-600">Medium Impact</div>
-                <div className="font-medium text-gray-600">High Impact</div>
+                <div className="font-medium text-slate-600">Low Impact</div>
+                <div className="font-medium text-slate-600">Medium Impact</div>
+                <div className="font-medium text-slate-600">High Impact</div>
               </div>
 
               <div className="grid grid-cols-4 gap-2">
-                <div className="text-xs font-medium text-gray-600 flex items-center">High Likelihood</div>
+                <div className="text-xs font-medium text-slate-600 flex items-center">High Likelihood</div>
                 <button type="button" onClick={() => handleMatrixClick('High', 'Low')} className={`h-16 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'High' && impact === 'Low' ? 'bg-yellow-300 ring-2 ring-yellow-600 scale-105' : 'bg-yellow-200 hover:bg-yellow-300'}`}>3</button>
                 <button type="button" onClick={() => handleMatrixClick('High', 'Medium')} className={`h-16 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'High' && impact === 'Medium' ? 'bg-orange-400 ring-2 ring-orange-600 scale-105' : 'bg-orange-300 hover:bg-orange-400'}`}>7</button>
                 <button type="button" onClick={() => handleMatrixClick('High', 'High')} className={`h-16 rounded flex items-center justify-center text-sm font-semibold text-white transition-all ${likelihood === 'High' && impact === 'High' ? 'bg-red-500 ring-2 ring-red-700 scale-105' : 'bg-red-400 hover:bg-red-500'}`}>9</button>
               </div>
 
               <div className="grid grid-cols-4 gap-2">
-                <div className="text-xs font-medium text-gray-600 flex items-center">Medium Likelihood</div>
+                <div className="text-xs font-medium text-slate-600 flex items-center">Medium Likelihood</div>
                 <button type="button" onClick={() => handleMatrixClick('Medium', 'Low')} className={`h-16 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'Medium' && impact === 'Low' ? 'bg-green-300 ring-2 ring-green-600 scale-105' : 'bg-green-200 hover:bg-green-300'}`}>2</button>
                 <button type="button" onClick={() => handleMatrixClick('Medium', 'Medium')} className={`h-16 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'Medium' && impact === 'Medium' ? 'bg-yellow-400 ring-2 ring-yellow-600 scale-105' : 'bg-yellow-300 hover:bg-yellow-400'}`}>5</button>
                 <button type="button" onClick={() => handleMatrixClick('Medium', 'High')} className={`h-16 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'Medium' && impact === 'High' ? 'bg-orange-500 ring-2 ring-orange-700 scale-105' : 'bg-orange-400 hover:bg-orange-500'}`}>7</button>
               </div>
 
               <div className="grid grid-cols-4 gap-2">
-                <div className="text-xs font-medium text-gray-600 flex items-center">Low Likelihood</div>
+                <div className="text-xs font-medium text-slate-600 flex items-center">Low Likelihood</div>
                 <button type="button" onClick={() => handleMatrixClick('Low', 'Low')} className={`h-16 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'Low' && impact === 'Low' ? 'bg-green-400 ring-2 ring-green-600 scale-105' : 'bg-green-300 hover:bg-green-400'}`}>1</button>
                 <button type="button" onClick={() => handleMatrixClick('Low', 'Medium')} className={`h-16 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'Low' && impact === 'Medium' ? 'bg-green-300 ring-2 ring-green-600 scale-105' : 'bg-green-200 hover:bg-green-300'}`}>2</button>
                 <button type="button" onClick={() => handleMatrixClick('Low', 'High')} className={`h-16 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'Low' && impact === 'High' ? 'bg-yellow-400 ring-2 ring-yellow-600 scale-105' : 'bg-yellow-300 hover:bg-yellow-400'}`}>5</button>

@@ -64,46 +64,36 @@ export function QADashboard() {
       {/* Page header */}
       <div className="bg-white border-b border-slate-200 px-8 py-5">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-base font-semibold text-slate-900 leading-none">QA Overview</h1>
-          <p className="text-xs text-slate-400 mt-1.5">Reporting period: {period}</p>
+          <h1 className="text-xl font-semibold text-slate-900 leading-none">QA Overview</h1>
+          <p className="text-xs text-slate-400 mt-2">Reporting period: {period}</p>
         </div>
       </div>
 
-      <div className="flex-1 p-8 space-y-6 max-w-7xl mx-auto w-full">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-4">
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-slate-400 shadow-none rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Controls</p>
-              <Shield className="w-4 h-4 text-slate-400" />
-            </div>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{controls.length}</p>
+      <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
+        {/* Stats strip — completion rate is the primary QA metric */}
+        <div className="flex border border-slate-200 rounded-lg bg-white overflow-hidden divide-x divide-slate-200">
+          <button onClick={() => navigate('/qa/controls')} className="flex-1 px-6 py-7 text-left hover:bg-slate-50 transition-colors cursor-pointer">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Total Controls</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-3">{controls.length}</p>
             <p className="text-xs text-slate-400 mt-3">in register</p>
-          </Card>
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-emerald-500 shadow-none rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Completed</p>
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            </div>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{completed}</p>
-            <p className="text-xs text-emerald-600 mt-3 font-medium">{controls.length > 0 ? Math.round(completed / controls.length * 100) : 0}% completion rate</p>
-          </Card>
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-sky-500 shadow-none rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Evidence Docs</p>
-              <FileText className="w-4 h-4 text-sky-500" />
-            </div>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{documents.length}</p>
+          </button>
+          <button onClick={() => navigate('/qa/controls')} className="w-2/5 shrink-0 px-8 py-7 text-left hover:bg-slate-50 transition-colors cursor-pointer">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Completion Rate</p>
+            <p className="text-5xl font-bold text-slate-900 tabular-nums mt-3 leading-none">
+              {controls.length > 0 ? Math.round(completed / controls.length * 100) : 0}<span className="text-2xl font-semibold text-slate-500">%</span>
+            </p>
+            <p className="text-xs text-slate-400 mt-4">{completed} of {controls.length} controls completed</p>
+          </button>
+          <button onClick={() => navigate('/qa/evidence')} className="flex-1 px-6 py-7 text-left hover:bg-slate-50 transition-colors cursor-pointer">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Evidence Docs</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-3">{documents.length}</p>
             <p className="text-xs text-slate-400 mt-3">uploaded</p>
-          </Card>
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-amber-500 shadow-none rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Active Policies</p>
-              <BookOpen className="w-4 h-4 text-amber-500" />
-            </div>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{policies.length}</p>
+          </button>
+          <button onClick={() => navigate('/qa/policies')} className="flex-1 px-6 py-7 text-left hover:bg-slate-50 transition-colors cursor-pointer">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Active Policies</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-3">{policies.length}</p>
             <p className="text-xs text-slate-400 mt-3">in policy library</p>
-          </Card>
+          </button>
         </div>
 
         <div className="grid grid-cols-2 gap-6">
@@ -136,7 +126,10 @@ export function QADashboard() {
             </div>
             <div className="p-3">
               {upcomingControls.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-6">No upcoming controls</p>
+                <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+                  <p className="text-sm font-medium text-slate-600">No upcoming deadlines</p>
+                  <p className="text-xs text-slate-400 mt-1">All pending controls are complete or have no due date set.</p>
+                </div>
               ) : upcomingControls.map(c => (
                 <div key={c.id} className="flex items-center justify-between px-3 py-2.5 rounded-md hover:bg-slate-50 transition-colors">
                   <div className="flex-1 min-w-0">
@@ -160,7 +153,13 @@ export function QADashboard() {
           </div>
           <div className="p-3">
             {documents.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-6">No documents uploaded yet</p>
+              <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+                <p className="text-sm font-medium text-slate-600">No evidence uploaded yet</p>
+                <p className="text-xs text-slate-400 mt-1">Evidence documents link your work to the controls they satisfy.</p>
+                <button onClick={() => navigate('/qa/evidence')} className="mt-3 text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors cursor-pointer">
+                  Upload first document →
+                </button>
+              </div>
             ) : documents.map(doc => (
               <div key={doc.id} className="flex items-center justify-between px-3 py-2.5 rounded-md hover:bg-slate-50 transition-colors">
                 <div className="flex items-center gap-3">
@@ -179,25 +178,20 @@ export function QADashboard() {
         </Card>
 
         {/* Quick Actions */}
-        <Card className="border-slate-200 shadow-none">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="text-sm font-semibold text-slate-900">Quick Actions</h2>
-          </div>
-          <div className="px-6 py-4 flex gap-3">
-            <Button onClick={() => navigate('/qa/controls')} className="bg-slate-900 hover:bg-slate-800 text-white gap-1.5 cursor-pointer">
-              <Plus className="w-4 h-4" />
-              Add Control
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/qa/evidence')} className="border-slate-200 text-slate-600 hover:bg-slate-50 gap-1.5 cursor-pointer">
-              <Upload className="w-4 h-4" />
-              Upload Evidence
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/qa/policies')} className="border-slate-200 text-slate-600 hover:bg-slate-50 gap-1.5 cursor-pointer">
-              <BookOpen className="w-4 h-4" />
-              Add Policy
-            </Button>
-          </div>
-        </Card>
+        <div className="flex items-center gap-3 pt-1">
+          <Button onClick={() => navigate('/qa/controls')} className="bg-slate-900 hover:bg-slate-800 text-white gap-1.5 cursor-pointer">
+            <Plus className="w-4 h-4" />
+            Add Control
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/qa/evidence')} className="border-slate-200 text-slate-600 hover:bg-slate-50 gap-1.5 cursor-pointer">
+            <Upload className="w-4 h-4" />
+            Upload Evidence
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/qa/policies')} className="border-slate-200 text-slate-600 hover:bg-slate-50 gap-1.5 cursor-pointer">
+            <BookOpen className="w-4 h-4" />
+            Add Policy
+          </Button>
+        </div>
       </div>
     </div>
   )

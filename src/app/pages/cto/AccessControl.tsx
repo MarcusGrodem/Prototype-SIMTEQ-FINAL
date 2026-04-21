@@ -17,7 +17,7 @@ const roleColor = (role: string) => {
     case 'ceo': return 'bg-blue-100 text-blue-700'
     case 'cto': return 'bg-purple-100 text-purple-700'
     case 'qa': return 'bg-green-100 text-green-700'
-    default: return 'bg-gray-100 text-gray-700'
+    default: return 'bg-slate-100 text-slate-700'
   }
 }
 
@@ -72,34 +72,37 @@ export function AccessControl() {
   }
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Access Control</h1>
-          <p className="text-sm text-gray-500 mt-1">User management and role audit trail</p>
+    <div className="flex flex-col min-h-full">
+      <div className="bg-white border-b border-slate-200 px-8 py-5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900 leading-none">Access Control</h1>
+            <p className="text-xs text-slate-400 mt-2">User management and role audit trail</p>
+          </div>
+          <Button size="sm" onClick={() => setInviteOpen(true)}>
+            <UserPlus className="w-4 h-4 mr-2" />
+            Invite User
+          </Button>
         </div>
-        <Button size="sm" onClick={() => setInviteOpen(true)}>
-          <UserPlus className="w-4 h-4 mr-2" />
-          Invite User
-        </Button>
       </div>
+      <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
         <Card className="p-4">
-          <p className="text-sm text-gray-500">Total Users</p>
-          <p className="text-2xl font-semibold text-gray-900 mt-1">{profiles.length}</p>
+          <p className="text-sm text-slate-500">Total Users</p>
+          <p className="text-2xl font-semibold text-slate-900 mt-1">{profiles.length}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-gray-500">CEO</p>
+          <p className="text-sm text-slate-500">CEO</p>
           <p className="text-2xl font-semibold text-blue-600 mt-1">{profiles.filter(p => p.role === 'ceo').length}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-gray-500">CTO</p>
+          <p className="text-sm text-slate-500">CTO</p>
           <p className="text-2xl font-semibold text-purple-600 mt-1">{profiles.filter(p => p.role === 'cto').length}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-gray-500">QA</p>
+          <p className="text-sm text-slate-500">QA</p>
           <p className="text-2xl font-semibold text-green-600 mt-1">{profiles.filter(p => p.role === 'qa').length}</p>
         </Card>
       </div>
@@ -107,7 +110,7 @@ export function AccessControl() {
       {/* Search */}
       <Card className="p-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input placeholder="Search users..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
         </div>
       </Card>
@@ -117,34 +120,34 @@ export function AccessControl() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="text-left p-4 text-sm font-medium text-gray-700">User</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Email</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Role</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Created</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Actions</th>
+              <tr className="border-b bg-slate-50">
+                <th className="text-left p-4 text-sm font-medium text-slate-700">User</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-700">Email</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-700">Role</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-700">Created</th>
+                <th className="text-left p-4 text-sm font-medium text-slate-700">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={5} className="p-8 text-center text-gray-500">Loading...</td></tr>
+                <tr><td colSpan={5} className="p-8 text-center text-slate-500">Loading...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={5} className="p-8 text-center text-gray-500">No users found</td></tr>
+                <tr><td colSpan={5} className="p-8 text-center text-slate-500">No users found</td></tr>
               ) : filtered.map(p => (
-                <tr key={p.id} className="border-b hover:bg-gray-50">
+                <tr key={p.id} className="border-b hover:bg-slate-50">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                        <span className="text-xs font-medium text-gray-600">
+                      <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+                        <span className="text-xs font-medium text-slate-600">
                           {p.full_name.split(' ').map(n => n[0]).join('')}
                         </span>
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{p.full_name}</span>
+                      <span className="text-sm font-medium text-slate-900">{p.full_name}</span>
                     </div>
                   </td>
                   <td className="p-4">
-                    <div className="flex items-center gap-1.5 text-sm text-gray-700">
-                      <Mail className="w-3.5 h-3.5 text-gray-400" />
+                    <div className="flex items-center gap-1.5 text-sm text-slate-700">
+                      <Mail className="w-3.5 h-3.5 text-slate-400" />
                       {p.email ?? '—'}
                     </div>
                   </td>
@@ -152,13 +155,13 @@ export function AccessControl() {
                     <Badge className={`text-xs ${roleColor(p.role)}`}>{p.role.toUpperCase()}</Badge>
                   </td>
                   <td className="p-4">
-                    <span className="text-sm text-gray-700">{new Date(p.created_at).toLocaleDateString()}</span>
+                    <span className="text-sm text-slate-700">{new Date(p.created_at).toLocaleDateString()}</span>
                   </td>
                   <td className="p-4">
                     <select
                       value={p.role}
                       onChange={e => handleChangeRole(p.id, e.target.value as 'ceo' | 'cto' | 'qa')}
-                      className="px-2 py-1 border border-gray-200 rounded text-xs text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="px-2 py-1 border border-gray-200 rounded text-xs text-slate-700 hover:border-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     >
                       <option value="ceo">CEO</option>
                       <option value="cto">CTO</option>
@@ -174,7 +177,7 @@ export function AccessControl() {
 
       {/* Invite Dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Invite User</DialogTitle>
             <DialogDescription>
@@ -185,7 +188,7 @@ export function AccessControl() {
             <div>
               <Label>Email Address</Label>
               <div className="relative mt-1.5">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="user@simteq.no" className="pl-10" />
               </div>
             </div>
@@ -216,6 +219,7 @@ export function AccessControl() {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }

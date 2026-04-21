@@ -226,41 +226,43 @@ export function Evidence() {
   };
 
   return (
-    <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Evidence & Documentation</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage compliance documentation and evidence</p>
+    <div className="flex flex-col min-h-full">
+      <div className="bg-white border-b border-slate-200 px-8 py-5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900 leading-none">Evidence & Documentation</h1>
+            <p className="text-xs text-slate-400 mt-2">Manage compliance documentation and evidence</p>
+          </div>
+          <Button size="sm" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="w-4 h-4 mr-2" />
+            Upload Document
+          </Button>
+          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} />
         </div>
-        <Button size="sm" onClick={() => fileInputRef.current?.click()}>
-          <Upload className="w-4 h-4 mr-2" />
-          Upload Document
-        </Button>
-        <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} />
       </div>
+      <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
         <Card className="p-4">
-          <p className="text-sm text-gray-500">Total Documents</p>
-          <p className="text-2xl font-semibold text-gray-900 mt-1">{documents.length}</p>
+          <p className="text-sm text-slate-500">Total Documents</p>
+          <p className="text-2xl font-semibold text-slate-900 mt-1">{documents.length}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-gray-500">Linked to Controls</p>
+          <p className="text-sm text-slate-500">Linked to Controls</p>
           <p className="text-2xl font-semibold text-green-600 mt-1">
             {documents.filter(d => d.document_links.some(l => l.link_type === 'control')).length}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-gray-500">Linked to Risks</p>
+          <p className="text-sm text-slate-500">Linked to Risks</p>
           <p className="text-2xl font-semibold text-orange-600 mt-1">
             {documents.filter(d => d.document_links.some(l => l.link_type === 'risk')).length}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-gray-500">Total Storage</p>
-          <p className="text-2xl font-semibold text-gray-900 mt-1">
+          <p className="text-sm text-slate-500">Total Storage</p>
+          <p className="text-2xl font-semibold text-slate-900 mt-1">
             {formatSize(documents.reduce((acc, d) => acc + (d.file_size ?? 0), 0))}
           </p>
         </Card>
@@ -269,7 +271,7 @@ export function Evidence() {
       {/* Search */}
       <Card className="p-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             placeholder="Search documents..."
             value={searchTerm}
@@ -281,7 +283,7 @@ export function Evidence() {
 
       {/* Upload Area */}
       <Card
-        className={`p-8 border-2 border-dashed transition-colors ${isDragging ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-50'}`}
+        className={`p-8 border-2 border-dashed transition-colors ${isDragging ? 'border-blue-400 bg-blue-50' : 'border-slate-300 bg-slate-50'}`}
         onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleFileDrop}
@@ -290,8 +292,8 @@ export function Evidence() {
           <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto">
             <Upload className="w-6 h-6 text-blue-600" />
           </div>
-          <h3 className="mt-4 font-medium text-gray-900">Upload evidence documents</h3>
-          <p className="text-sm text-gray-500 mt-1">Drag and drop files here, or click to browse</p>
+          <h3 className="mt-4 font-medium text-slate-900">Upload evidence documents</h3>
+          <p className="text-sm text-slate-500 mt-1">Drag and drop files here, or click to browse</p>
           <Button variant="outline" size="sm" className="mt-4" onClick={() => fileInputRef.current?.click()}>
             Select Files
           </Button>
@@ -300,7 +302,7 @@ export function Evidence() {
 
       {/* Documents Grid */}
       {loading ? (
-        <div className="text-center py-12 text-gray-500">Loading...</div>
+        <div className="text-center py-12 text-slate-500">Loading...</div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {filteredDocuments.map((doc) => (
@@ -313,13 +315,13 @@ export function Evidence() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">{doc.name}</h3>
+                      <h3 className="text-sm font-medium text-slate-900 truncate">{doc.name}</h3>
                       <div className="flex items-center gap-3 mt-2">
-                        <span className="text-xs text-gray-500">Uploaded by {doc.uploaded_by_name}</span>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500">{new Date(doc.created_at).toLocaleDateString()}</span>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500">{formatSize(doc.file_size)}</span>
+                        <span className="text-xs text-slate-500">Uploaded by {doc.uploaded_by_name}</span>
+                        <span className="text-xs text-slate-400">•</span>
+                        <span className="text-xs text-slate-500">{new Date(doc.created_at).toLocaleDateString()}</span>
+                        <span className="text-xs text-slate-400">•</span>
+                        <span className="text-xs text-slate-500">{formatSize(doc.file_size)}</span>
                       </div>
                     </div>
 
@@ -352,7 +354,7 @@ export function Evidence() {
                   {/* Linked Items */}
                   {doc.document_links.length > 0 && (
                     <div className="mt-4 flex items-center gap-2">
-                      <LinkIcon className="w-3.5 h-3.5 text-gray-400" />
+                      <LinkIcon className="w-3.5 h-3.5 text-slate-400" />
                       <div className="flex flex-wrap gap-2">
                         {doc.document_links.map((link) => (
                           <Badge
@@ -395,25 +397,25 @@ export function Evidence() {
 
       {filteredDocuments.length === 0 && !loading && (
         <div className="text-center py-12">
-          <FileText className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-          <p className="text-gray-500">No documents found. Upload your first evidence document above.</p>
+          <FileText className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+          <p className="text-slate-500">No documents found. Upload your first evidence document above.</p>
         </div>
       )}
 
       {/* Upload Modal */}
       <Dialog open={uploadModalOpen} onOpenChange={setUploadModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Upload Document</DialogTitle>
             <DialogDescription>Set a name for the document before uploading.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             {pendingFile && (
-              <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-3">
+              <div className="p-3 bg-slate-50 rounded-lg flex items-center gap-3">
                 <FileText className="w-5 h-5 text-blue-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{pendingFile.name}</p>
-                  <p className="text-xs text-gray-500">{formatSize(pendingFile.size)}</p>
+                  <p className="text-sm font-medium text-slate-900">{pendingFile.name}</p>
+                  <p className="text-xs text-slate-500">{formatSize(pendingFile.size)}</p>
                 </div>
               </div>
             )}
@@ -433,21 +435,21 @@ export function Evidence() {
 
       {/* History Modal */}
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Version History</DialogTitle>
             <DialogDescription>{historyDoc?.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             {versions.map(v => (
-              <div key={v.id} className="p-3 bg-gray-50 rounded-lg">
+              <div key={v.id} className="p-3 bg-slate-50 rounded-lg">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">v{v.version}</span>
-                      <span className="text-sm font-medium text-gray-900">{v.changelog}</span>
+                      <span className="text-sm font-medium text-slate-900">{v.changelog}</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">By {v.uploaded_by_name} • {new Date(v.created_at).toLocaleDateString()}</p>
+                    <p className="text-xs text-slate-500 mt-1">By {v.uploaded_by_name} • {new Date(v.created_at).toLocaleDateString()}</p>
                   </div>
                   <Badge variant="outline" className="text-xs">{formatSize(v.file_size)}</Badge>
                 </div>
@@ -456,7 +458,7 @@ export function Evidence() {
 
             {/* Upload new version */}
             <div className="border-t pt-4">
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">Upload New Version</h4>
+              <h4 className="text-sm font-semibold text-slate-900 mb-3">Upload New Version</h4>
               <div className="space-y-3">
                 <div>
                   <Label>Changelog / What changed *</Label>
@@ -466,7 +468,7 @@ export function Evidence() {
                   <Label>New File *</Label>
                   <input
                     type="file"
-                    className="mt-1.5 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="mt-1.5 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-slate-900 file:text-white hover:file:bg-slate-700"
                     onChange={e => setReuploadFile(e.target.files?.[0] || null)}
                   />
                 </div>
@@ -481,7 +483,7 @@ export function Evidence() {
 
       {/* Link Modal */}
       <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Link Document</DialogTitle>
             <DialogDescription>Link "{linkDoc?.name}" to a control or risk.</DialogDescription>
@@ -489,7 +491,7 @@ export function Evidence() {
           <div className="space-y-4 mt-4">
             <div>
               <Label>Link Type</Label>
-              <select value={linkType} onChange={e => { setLinkType(e.target.value as 'control' | 'risk' | ''); setLinkId(''); }} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select value={linkType} onChange={e => { setLinkType(e.target.value as 'control' | 'risk' | ''); setLinkId(''); }} className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Select type...</option>
                 <option value="control">Control</option>
                 <option value="risk">Risk</option>
@@ -498,7 +500,7 @@ export function Evidence() {
             {linkType === 'control' && (
               <div>
                 <Label>Select Control</Label>
-                <select value={linkId} onChange={e => setLinkId(e.target.value)} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select value={linkId} onChange={e => setLinkId(e.target.value)} className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Choose a control...</option>
                   {controls.map(c => <option key={c.id} value={c.id}>{c.id} — {c.title}</option>)}
                 </select>
@@ -507,7 +509,7 @@ export function Evidence() {
             {linkType === 'risk' && (
               <div>
                 <Label>Select Risk</Label>
-                <select value={linkId} onChange={e => setLinkId(e.target.value)} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select value={linkId} onChange={e => setLinkId(e.target.value)} className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Choose a risk...</option>
                   {risks.map(r => <option key={r.id} value={r.id}>{r.id} — {r.title}</option>)}
                 </select>
@@ -522,9 +524,9 @@ export function Evidence() {
       </Dialog>
 
       {/* Tips */}
-      <Card className="p-5 bg-gray-50">
-        <h3 className="text-sm font-medium text-gray-900 mb-3">Document Management Tips</h3>
-        <ul className="text-sm text-gray-600 space-y-2">
+      <Card className="p-5 bg-slate-50">
+        <h3 className="text-sm font-medium text-slate-900 mb-3">Document Management Tips</h3>
+        <ul className="text-sm text-slate-600 space-y-2">
           <li className="flex items-start gap-2">
             <span className="text-blue-600 mt-0.5">•</span>
             <span>Link documents to relevant controls and risks for complete audit trails</span>
@@ -539,6 +541,7 @@ export function Evidence() {
           </li>
         </ul>
       </Card>
+      </div>
     </div>
   );
 }

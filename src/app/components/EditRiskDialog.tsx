@@ -153,10 +153,10 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
 
         <div className="mt-4 space-y-6">
           {/* Risk Details */}
-          <div className="p-4 bg-gray-50 rounded-lg">
+          <div className="p-4 bg-slate-50 rounded-lg">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-900">{risk.title}</p>
+                <p className="text-sm font-medium text-slate-900">{risk.title}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="outline" className="text-xs">{risk.id}</Badge>
                   <Badge variant="outline" className="text-xs">{risk.category}</Badge>
@@ -170,29 +170,29 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
 
           {/* Risk Matrix */}
           <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Risk Matrix</h3>
-            <p className="text-xs text-gray-500 mb-4">Click on a cell to set the likelihood and impact</p>
+            <h3 className="text-sm font-medium text-slate-900 mb-3">Risk Matrix</h3>
+            <p className="text-xs text-slate-500 mb-4">Click on a cell to set the likelihood and impact</p>
             <div className="space-y-2">
               <div className="grid grid-cols-4 gap-2 text-xs text-center">
                 <div></div>
-                <div className="font-medium text-gray-600">Low Impact</div>
-                <div className="font-medium text-gray-600">Medium Impact</div>
-                <div className="font-medium text-gray-600">High Impact</div>
+                <div className="font-medium text-slate-600">Low Impact</div>
+                <div className="font-medium text-slate-600">Medium Impact</div>
+                <div className="font-medium text-slate-600">High Impact</div>
               </div>
               <div className="grid grid-cols-4 gap-2">
-                <div className="text-xs font-medium text-gray-600 flex items-center">High Likelihood</div>
+                <div className="text-xs font-medium text-slate-600 flex items-center">High Likelihood</div>
                 <button type="button" onClick={() => handleMatrixClick('High', 'Low')} className={`h-14 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'High' && impact === 'Low' ? 'bg-yellow-300 ring-2 ring-yellow-600' : 'bg-yellow-200 hover:bg-yellow-300'}`}>3</button>
                 <button type="button" onClick={() => handleMatrixClick('High', 'Medium')} className={`h-14 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'High' && impact === 'Medium' ? 'bg-orange-400 ring-2 ring-orange-600' : 'bg-orange-300 hover:bg-orange-400'}`}>7</button>
                 <button type="button" onClick={() => handleMatrixClick('High', 'High')} className={`h-14 rounded flex items-center justify-center text-sm font-semibold text-white transition-all ${likelihood === 'High' && impact === 'High' ? 'bg-red-500 ring-2 ring-red-700' : 'bg-red-400 hover:bg-red-500'}`}>9</button>
               </div>
               <div className="grid grid-cols-4 gap-2">
-                <div className="text-xs font-medium text-gray-600 flex items-center">Medium Likelihood</div>
+                <div className="text-xs font-medium text-slate-600 flex items-center">Medium Likelihood</div>
                 <button type="button" onClick={() => handleMatrixClick('Medium', 'Low')} className={`h-14 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'Medium' && impact === 'Low' ? 'bg-green-300 ring-2 ring-green-600' : 'bg-green-200 hover:bg-green-300'}`}>2</button>
                 <button type="button" onClick={() => handleMatrixClick('Medium', 'Medium')} className={`h-14 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'Medium' && impact === 'Medium' ? 'bg-yellow-400 ring-2 ring-yellow-600' : 'bg-yellow-300 hover:bg-yellow-400'}`}>5</button>
                 <button type="button" onClick={() => handleMatrixClick('Medium', 'High')} className={`h-14 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'Medium' && impact === 'High' ? 'bg-orange-500 ring-2 ring-orange-700' : 'bg-orange-400 hover:bg-orange-500'}`}>7</button>
               </div>
               <div className="grid grid-cols-4 gap-2">
-                <div className="text-xs font-medium text-gray-600 flex items-center">Low Likelihood</div>
+                <div className="text-xs font-medium text-slate-600 flex items-center">Low Likelihood</div>
                 <button type="button" onClick={() => handleMatrixClick('Low', 'Low')} className={`h-14 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'Low' && impact === 'Low' ? 'bg-green-400 ring-2 ring-green-600' : 'bg-green-300 hover:bg-green-400'}`}>1</button>
                 <button type="button" onClick={() => handleMatrixClick('Low', 'Medium')} className={`h-14 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'Low' && impact === 'Medium' ? 'bg-green-300 ring-2 ring-green-600' : 'bg-green-200 hover:bg-green-300'}`}>2</button>
                 <button type="button" onClick={() => handleMatrixClick('Low', 'High')} className={`h-14 rounded flex items-center justify-center text-sm font-semibold transition-all ${likelihood === 'Low' && impact === 'High' ? 'bg-yellow-400 ring-2 ring-yellow-600' : 'bg-yellow-300 hover:bg-yellow-400'}`}>5</button>
@@ -220,7 +220,7 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
           {/* Linked Controls */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium text-gray-900">Linked Controls</h3>
+              <h3 className="text-sm font-medium text-slate-900">Linked Controls</h3>
               <Button
                 type="button"
                 variant="outline"
@@ -234,10 +234,10 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
 
             {/* Control picker */}
             {showControlPicker && (
-              <div className="mb-3 border border-gray-200 rounded-lg overflow-hidden">
-                <div className="p-2 border-b bg-gray-50">
+              <div className="mb-3 border border-slate-200 rounded-lg overflow-hidden">
+                <div className="p-2 border-b bg-slate-50">
                   <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                     <Input
                       placeholder="Search controls..."
                       value={controlSearch}
@@ -248,7 +248,7 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
                 </div>
                 <div className="max-h-48 overflow-y-auto">
                   {availableControls.length === 0 ? (
-                    <p className="text-xs text-gray-500 text-center py-4">No controls available</p>
+                    <p className="text-xs text-slate-500 text-center py-4">No controls available</p>
                   ) : (
                     availableControls.slice(0, 20).map(c => (
                       <button
@@ -259,7 +259,7 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono text-blue-600 shrink-0">{c.id}</span>
-                          <span className="text-xs text-gray-700 truncate">{c.title}</span>
+                          <span className="text-xs text-slate-700 truncate">{c.title}</span>
                         </div>
                       </button>
                     ))
@@ -270,23 +270,23 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
 
             {/* Linked list */}
             {linkedControls.length === 0 ? (
-              <p className="text-xs text-gray-500 py-2">No controls linked yet.</p>
+              <p className="text-xs text-slate-500 py-2">No controls linked yet.</p>
             ) : (
               <div className="space-y-2">
                 {linkedControls.map(c => (
                   <div
                     key={c.id}
-                    className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-100 cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                    className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-colors"
                     onClick={() => handleOpenControlDetails(c.id)}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-xs font-mono text-blue-600 shrink-0">{c.id}</span>
-                      <span className="text-xs text-gray-700 truncate">{c.title}</span>
+                      <span className="text-xs text-slate-700 truncate">{c.title}</span>
                     </div>
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); handleUnlinkControl(c.id); }}
-                      className="ml-2 shrink-0 text-gray-400 hover:text-red-500 transition-colors"
+                      className="ml-2 shrink-0 text-slate-400 hover:text-red-500 transition-colors"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>

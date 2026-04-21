@@ -255,7 +255,7 @@ export function AddControlDialog({ open, onOpenChange, onSuccess }: AddControlDi
               id="status"
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="Pending">Pending</option>
               <option value="Completed">Completed</option>
@@ -283,13 +283,13 @@ export function AddControlDialog({ open, onOpenChange, onSuccess }: AddControlDi
               </Badge>
             </div>
 
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 hover:bg-gray-100 transition-colors">
+            <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 bg-slate-50 hover:bg-slate-100 transition-colors">
               <div className="text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                   <Upload className="w-6 h-6 text-blue-600" />
                 </div>
-                <p className="text-sm font-medium text-gray-900 mb-1">Upload Evidence Files</p>
-                <p className="text-xs text-gray-500 mb-3">Files will be automatically added to Evidence Bank</p>
+                <p className="text-sm font-medium text-slate-900 mb-1">Upload Evidence Files</p>
+                <p className="text-xs text-slate-500 mb-3">Files will be automatically added to Evidence Bank</p>
                 <Button
                   type="button"
                   variant="outline"
@@ -313,18 +313,18 @@ export function AddControlDialog({ open, onOpenChange, onSuccess }: AddControlDi
             {uploadedFiles.length > 0 && (
               <div className="space-y-2">
                 {uploadedFiles.map((file, index) => (
-                  <div key={`${file.name}-${index}`} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                  <div key={`${file.name}-${index}`} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
                         <FileText className="w-4 h-4 text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                        <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                        <p className="text-sm font-medium text-slate-900 truncate">{file.name}</p>
+                        <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
                       </div>
                     </div>
                     <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveFile(file.name)}>
-                      <X className="w-4 h-4 text-gray-400 hover:text-red-600" />
+                      <X className="w-4 h-4 text-slate-400 hover:text-red-600" />
                     </Button>
                   </div>
                 ))}

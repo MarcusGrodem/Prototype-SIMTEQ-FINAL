@@ -87,8 +87,8 @@ export function RiskRegister() {
       <div className="bg-white border-b border-slate-200 px-8 py-5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-base font-semibold text-slate-900 leading-none">Risk Register</h1>
-            <p className="text-xs text-slate-400 mt-1.5">Manage and monitor organisational risks</p>
+            <h1 className="text-xl font-semibold text-slate-900 leading-none">Risk Register</h1>
+            <p className="text-xs text-slate-400 mt-2">Manage and monitor organisational risks</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleExport} className="border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 gap-1.5 cursor-pointer">
@@ -103,29 +103,29 @@ export function RiskRegister() {
         </div>
       </div>
 
-      <div className="flex-1 p-8 space-y-6 max-w-7xl mx-auto w-full">
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-slate-400 shadow-none rounded-lg">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Total Risks</p>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{risks.length}</p>
-            <p className="text-xs text-slate-400 mt-3">in risk register</p>
-          </Card>
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-red-500 shadow-none rounded-lg">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">High Risk</p>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{risks.filter(r => r.risk_score >= 7).length}</p>
+      <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
+        {/* Stats strip */}
+        <div className="flex border border-slate-200 rounded-lg bg-white overflow-hidden divide-x divide-slate-200">
+          <div className="flex-1 px-6 py-5">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Total Risks</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-2">{risks.length}</p>
+            <p className="text-xs text-slate-400 mt-3">in register</p>
+          </div>
+          <div className="flex-1 px-6 py-5 bg-red-50/40">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">High Risk</p>
+            <p className="text-3xl font-bold text-red-600 tabular-nums mt-2">{risks.filter(r => r.risk_score >= 7).length}</p>
             <p className="text-xs text-red-500 mt-3 font-medium">score ≥ 7</p>
-          </Card>
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-amber-500 shadow-none rounded-lg">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Medium Risk</p>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{risks.filter(r => r.risk_score >= 4 && r.risk_score < 7).length}</p>
+          </div>
+          <div className="flex-1 px-6 py-5">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Medium Risk</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-2">{risks.filter(r => r.risk_score >= 4 && r.risk_score < 7).length}</p>
             <p className="text-xs text-slate-400 mt-3">score 4–6</p>
-          </Card>
-          <Card className="p-5 border-slate-200 border-l-[3px] border-l-emerald-500 shadow-none rounded-lg">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Low Risk</p>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{risks.filter(r => r.risk_score < 4).length}</p>
+          </div>
+          <div className="flex-1 px-6 py-5">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Low Risk</p>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-2">{risks.filter(r => r.risk_score < 4).length}</p>
             <p className="text-xs text-emerald-600 mt-3 font-medium">score &lt; 4</p>
-          </Card>
+          </div>
         </div>
 
         {/* Search and Filters */}
@@ -266,7 +266,28 @@ export function RiskRegister() {
             </tbody>
           </table>
           {filteredRisks.length === 0 && !loading && (
-            <div className="text-center py-12 text-sm text-slate-400">No risks found matching your search.</div>
+            <div className="text-center py-12 px-4">
+              {searchTerm || filterStatus.length > 0 || filterCategory.length > 0 || filterLikelihood.length > 0 ? (
+                <>
+                  <p className="text-sm font-medium text-slate-600">No risks match your search</p>
+                  <p className="text-xs text-slate-400 mt-1">Try adjusting your filters or search term.</p>
+                  <button
+                    onClick={() => { setSearchTerm(''); setFilterStatus([]); setFilterCategory([]); setFilterLikelihood([]); setFilterOpen(false); }}
+                    className="mt-3 text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors cursor-pointer"
+                  >
+                    Clear all filters
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-slate-600">No risks registered</p>
+                  <p className="text-xs text-slate-400 mt-1">Document organisational risks to monitor and mitigate exposure.</p>
+                  <button onClick={() => setAddDialogOpen(true)} className="mt-3 text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors cursor-pointer">
+                    Add first risk →
+                  </button>
+                </>
+              )}
+            </div>
           )}
         </div>
       </Card>

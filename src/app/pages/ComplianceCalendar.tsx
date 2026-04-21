@@ -105,47 +105,49 @@ export function ComplianceCalendar() {
   };
 
   return (
-    <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Compliance Calendar</h1>
-          <p className="text-sm text-gray-500 mt-1">Track control deadlines and audit schedules</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleReminderClick}>
-            <Bell className="w-4 h-4 mr-2" />
-            Set Reminders
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+    <div className="flex flex-col min-h-full">
+      <div className="bg-white border-b border-slate-200 px-8 py-5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900 leading-none">Compliance Calendar</h1>
+            <p className="text-xs text-slate-400 mt-2">Track control deadlines and audit schedules</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleReminderClick}>
+              <Bell className="w-4 h-4 mr-2" />
+              Set Reminders
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </div>
         </div>
       </div>
+      <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
         <Card className="p-4">
-          <p className="text-sm text-gray-500">This Month</p>
-          <p className="text-2xl font-semibold text-gray-900 mt-1">
+          <p className="text-sm text-slate-500">This Month</p>
+          <p className="text-2xl font-semibold text-slate-900 mt-1">
             {controlsByMonth[currentMonth].count}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-gray-500">Upcoming</p>
+          <p className="text-sm text-slate-500">Upcoming</p>
           <p className="text-2xl font-semibold text-blue-600 mt-1">
             {complianceEvents.filter(e => e.status === 'Upcoming').length}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-gray-500">Overdue</p>
+          <p className="text-sm text-slate-500">Overdue</p>
           <p className="text-2xl font-semibold text-red-600 mt-1">
             {complianceEvents.filter(e => e.status === 'Overdue').length}
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-gray-500">Completed</p>
+          <p className="text-sm text-slate-500">Completed</p>
           <p className="text-2xl font-semibold text-green-600 mt-1">
             {complianceEvents.filter(e => e.status === 'Completed').length}
           </p>
@@ -155,7 +157,7 @@ export function ComplianceCalendar() {
       {/* Year Wheel */}
       <Card className="p-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="font-semibold text-gray-900">{selectedYear} Control Schedule</h2>
+          <h2 className="font-semibold text-slate-900">{selectedYear} Control Schedule</h2>
           <div className="flex gap-2 items-center">
             <Button variant="outline" size="sm" onClick={() => { setSelectedYear(y => y - 1); setSelectedMonth(null); }}>
               <ChevronLeft className="w-4 h-4" />
@@ -266,8 +268,8 @@ export function ComplianceCalendar() {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="font-semibold text-gray-900">{months[selectedMonth]} Controls</h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <h2 className="font-semibold text-slate-900">{months[selectedMonth]} Controls</h2>
+              <p className="text-sm text-slate-500 mt-1">
                 {controlsByMonth[selectedMonth].count} control{controlsByMonth[selectedMonth].count !== 1 ? 's' : ''} due this month
               </p>
             </div>
@@ -279,17 +281,17 @@ export function ComplianceCalendar() {
           {controlsByMonth[selectedMonth].count > 0 ? (
             <div className="space-y-3">
               {controlsByMonth[selectedMonth].controls.map((control) => (
-                <div key={control.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div key={control.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-gray-900">{control.title}</span>
+                      <span className="text-sm font-medium text-slate-900">{control.title}</span>
                       <Badge variant="outline" className="text-xs">{control.category}</Badge>
                       <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">{control.frequency}</Badge>
                     </div>
                     <div className="flex items-center gap-3 mt-2">
-                      <span className="text-xs text-gray-500">Due: {control.next_due ?? 'N/A'}</span>
-                      <span className="text-xs text-gray-500">•</span>
-                      <span className="text-xs text-gray-500">Owner: {control.owner_name}</span>
+                      <span className="text-xs text-slate-500">Due: {control.next_due ?? 'N/A'}</span>
+                      <span className="text-xs text-slate-500">•</span>
+                      <span className="text-xs text-slate-500">Owner: {control.owner_name}</span>
                     </div>
                   </div>
                   <StatusBadge status={control.status} />
@@ -297,8 +299,8 @@ export function ComplianceCalendar() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              <CalendarIcon className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-8 text-slate-500">
+              <CalendarIcon className="w-12 h-12 mx-auto mb-3 text-slate-300" />
               <p>No controls due in {months[selectedMonth]}</p>
             </div>
           )}
@@ -308,11 +310,11 @@ export function ComplianceCalendar() {
       {/* Upcoming Events */}
       {upcomingEvents.length > 0 && (
         <Card className="p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">Upcoming Events & Deadlines</h2>
+          <h2 className="font-semibold text-slate-900 mb-4">Upcoming Events & Deadlines</h2>
 
           <div className="space-y-3">
             {upcomingEvents.map((event) => (
-              <div key={event.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div key={event.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
                 <div className="flex items-center gap-4 flex-1">
                   <div className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center ${
                     event.status === 'Overdue' ? 'bg-red-100 text-red-700' :
@@ -327,9 +329,9 @@ export function ComplianceCalendar() {
                     </span>
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{event.title}</p>
+                    <p className="text-sm font-medium text-slate-900">{event.title}</p>
                     <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-gray-500">{event.owner_name}</span>
+                      <span className="text-xs text-slate-500">{event.owner_name}</span>
                       <Badge variant="outline" className="text-xs">{event.type}</Badge>
                     </div>
                   </div>
@@ -342,41 +344,42 @@ export function ComplianceCalendar() {
       )}
 
       {/* Legend */}
-      <Card className="p-5 bg-gray-50">
-        <h3 className="text-sm font-medium text-gray-900 mb-3">Calendar Features</h3>
+      <Card className="p-5 bg-slate-50">
+        <h3 className="text-sm font-medium text-slate-900 mb-3">Calendar Features</h3>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-start gap-2">
             <div className="w-4 h-4 bg-blue-600 rounded mt-0.5"></div>
             <div>
-              <p className="text-sm font-medium text-gray-900">Current Month</p>
-              <p className="text-xs text-gray-500">Active control period</p>
+              <p className="text-sm font-medium text-slate-900">Current Month</p>
+              <p className="text-xs text-slate-500">Active control period</p>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <Bell className="w-4 h-4 text-blue-600 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-gray-900">Automated Reminders</p>
-              <p className="text-xs text-gray-500">Email notifications before deadlines</p>
+              <p className="text-sm font-medium text-slate-900">Automated Reminders</p>
+              <p className="text-xs text-slate-500">Email notifications before deadlines</p>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <div className="w-4 h-4 bg-red-100 rounded mt-0.5"></div>
             <div>
-              <p className="text-sm font-medium text-gray-900">Overdue Items</p>
-              <p className="text-xs text-gray-500">Require immediate attention</p>
+              <p className="text-sm font-medium text-slate-900">Overdue Items</p>
+              <p className="text-xs text-slate-500">Require immediate attention</p>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <CalendarIcon className="w-4 h-4 text-blue-600 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-gray-900">Year Navigation</p>
-              <p className="text-xs text-gray-500">Use arrows to navigate between years</p>
+              <p className="text-sm font-medium text-slate-900">Year Navigation</p>
+              <p className="text-xs text-slate-500">Use arrows to navigate between years</p>
             </div>
           </div>
         </div>
       </Card>
 
       <ReminderDialog open={reminderDialogOpen} onOpenChange={setReminderDialogOpen} />
+      </div>
     </div>
   );
 }

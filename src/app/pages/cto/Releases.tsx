@@ -25,11 +25,11 @@ const CHANGE_TYPES = ['Feature', 'Bug Fix', 'Security', 'Breaking Change', 'Perf
 
 const statusColor = (s: string) => {
   switch (s) {
-    case 'Planned': return 'bg-gray-100 text-gray-700 border-gray-200'
+    case 'Planned': return 'bg-slate-100 text-slate-700 border-slate-200'
     case 'In Progress': return 'bg-blue-100 text-blue-700 border-blue-200'
     case 'Released': return 'bg-green-100 text-green-700 border-green-200'
     case 'Rolled Back': return 'bg-red-100 text-red-700 border-red-200'
-    default: return 'bg-gray-100 text-gray-700 border-gray-200'
+    default: return 'bg-slate-100 text-slate-700 border-slate-200'
   }
 }
 
@@ -38,7 +38,7 @@ const envColor = (e: string) => {
     case 'Production': return 'bg-red-50 text-red-700 border-red-200'
     case 'Staging': return 'bg-yellow-50 text-yellow-700 border-yellow-200'
     case 'Development': return 'bg-green-50 text-green-700 border-green-200'
-    default: return 'bg-gray-50 text-gray-700 border-gray-200'
+    default: return 'bg-slate-50 text-slate-700 border-slate-200'
   }
 }
 
@@ -49,7 +49,7 @@ const changeTypeColor = (t: string) => {
     case 'Security': return 'bg-red-100 text-red-700'
     case 'Breaking Change': return 'bg-purple-100 text-purple-700'
     case 'Performance': return 'bg-teal-100 text-teal-700'
-    default: return 'bg-gray-100 text-gray-700'
+    default: return 'bg-slate-100 text-slate-700'
   }
 }
 
@@ -293,8 +293,8 @@ export function Releases() {
       <div className="p-8 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Products</h1>
-            <p className="text-sm text-gray-500 mt-1">Select a product to view its release history</p>
+            <h1 className="text-2xl font-semibold text-slate-900">Products</h1>
+            <p className="text-sm text-slate-500 mt-1">Select a product to view its release history</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setAddProductOpen(true)}>
@@ -309,21 +309,21 @@ export function Releases() {
         {/* Summary stats */}
         <div className="grid grid-cols-3 gap-4">
           <Card className="p-4">
-            <p className="text-xs text-gray-500 font-medium">Total Products</p>
-            <p className="text-2xl font-semibold text-gray-900 mt-1">{allProductNames.length}</p>
+            <p className="text-xs text-slate-500 font-medium">Total Products</p>
+            <p className="text-2xl font-semibold text-slate-900 mt-1">{allProductNames.length}</p>
           </Card>
           <Card className="p-4">
-            <p className="text-xs text-gray-500 font-medium">Total Releases</p>
+            <p className="text-xs text-slate-500 font-medium">Total Releases</p>
             <p className="text-2xl font-semibold text-blue-600 mt-1">{releases.length}</p>
           </Card>
           <Card className="p-4">
-            <p className="text-xs text-gray-500 font-medium">Released</p>
+            <p className="text-xs text-slate-500 font-medium">Released</p>
             <p className="text-2xl font-semibold text-green-600 mt-1">{releases.filter(r => r.status === 'Released').length}</p>
           </Card>
         </div>
 
         {loading ? (
-          <div className="text-center py-16 text-gray-400">Loading...</div>
+          <div className="text-center py-16 text-slate-400">Loading...</div>
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {allProductNames.map(name => {
@@ -344,25 +344,25 @@ export function Releases() {
                         <Package className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <h3 className="text-base font-semibold text-gray-900">{name}</h3>
+                        <h3 className="text-base font-semibold text-slate-900">{name}</h3>
                         {product?.owner_name && (
-                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                          <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                             <User className="w-3 h-3" />{product.owner_name}
                           </p>
                         )}
                       </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 mt-1 transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-500 mt-1 transition-colors" />
                   </div>
 
                   {product?.description && (
-                    <p className="text-sm text-gray-500 mb-4 line-clamp-2">{product.description}</p>
+                    <p className="text-sm text-slate-500 mb-4 line-clamp-2">{product.description}</p>
                   )}
 
                   <div className="grid grid-cols-3 gap-3 mb-4">
-                    <div className="text-center p-2 bg-gray-50 rounded-lg">
-                      <p className="text-lg font-semibold text-gray-900">{rels.length}</p>
-                      <p className="text-[10px] text-gray-500">Versions</p>
+                    <div className="text-center p-2 bg-slate-50 rounded-lg">
+                      <p className="text-lg font-semibold text-slate-900">{rels.length}</p>
+                      <p className="text-[10px] text-slate-500">Versions</p>
                     </div>
                     <div className="text-center p-2 bg-green-50 rounded-lg">
                       <p className="text-lg font-semibold text-green-700">{released}</p>
@@ -375,15 +375,15 @@ export function Releases() {
                   </div>
 
                   {latest && (
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                       <div className="flex items-center gap-2">
-                        <Tag className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="text-xs text-gray-500">Latest:</span>
+                        <Tag className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-xs text-slate-500">Latest:</span>
                         <span className="text-xs font-mono font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">{latest.version}</span>
                         <Badge variant="outline" className={`text-[10px] ${statusColor(latest.status)}`}>{latest.status}</Badge>
                       </div>
                       {latest.release_date && (
-                        <span className="text-[10px] text-gray-400">{new Date(latest.release_date).toLocaleDateString('en-GB')}</span>
+                        <span className="text-[10px] text-slate-400">{new Date(latest.release_date).toLocaleDateString('en-GB')}</span>
                       )}
                     </div>
                   )}
@@ -392,9 +392,9 @@ export function Releases() {
             })}
 
             {allProductNames.length === 0 && (
-              <div className="col-span-2 text-center py-16 text-gray-400">
-                <Package className="w-12 h-12 mx-auto mb-3 text-gray-200" />
-                <p className="font-medium text-gray-500">No products yet</p>
+              <div className="col-span-2 text-center py-16 text-slate-400">
+                <Package className="w-12 h-12 mx-auto mb-3 text-slate-200" />
+                <p className="font-medium text-slate-500">No products yet</p>
                 <p className="text-sm mt-1">Create your first product to start tracking releases</p>
                 <Button className="mt-4" onClick={() => setAddProductOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />Add Product
@@ -418,12 +418,12 @@ export function Releases() {
         <div className="flex-1 p-8 space-y-6 overflow-auto">
           {/* Header */}
           <div className="flex items-center gap-3">
-            <button onClick={handleBack} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+            <button onClick={handleBack} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors">
               <ArrowLeft className="w-4 h-4" />
               Products
             </button>
-            <span className="text-gray-300">/</span>
-            <h1 className="text-xl font-semibold text-gray-900">{activeProduct}</h1>
+            <span className="text-slate-300">/</span>
+            <h1 className="text-xl font-semibold text-slate-900">{activeProduct}</h1>
           </div>
 
           <div className="flex items-center justify-between">
@@ -431,10 +431,10 @@ export function Releases() {
             <div className="flex gap-3">
               {STATUS_OPTIONS.map(s => (
                 <div key={s} className="text-center">
-                  <p className={`text-lg font-semibold ${s === 'Released' ? 'text-green-600' : s === 'In Progress' ? 'text-blue-600' : s === 'Rolled Back' ? 'text-red-600' : 'text-gray-700'}`}>
+                  <p className={`text-lg font-semibold ${s === 'Released' ? 'text-green-600' : s === 'In Progress' ? 'text-blue-600' : s === 'Rolled Back' ? 'text-red-600' : 'text-slate-700'}`}>
                     {filteredReleases.filter(r => r.status === s).length}
                   </p>
-                  <p className="text-[10px] text-gray-500">{s}</p>
+                  <p className="text-[10px] text-slate-500">{s}</p>
                 </div>
               ))}
             </div>
@@ -450,16 +450,16 @@ export function Releases() {
 
           {/* Search */}
           <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input placeholder="Search versions..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 h-9" />
           </div>
 
           {/* Timeline */}
           {loading ? (
-            <div className="text-center py-16 text-gray-400">Loading...</div>
+            <div className="text-center py-16 text-slate-400">Loading...</div>
           ) : filteredReleases.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
-              <Package className="w-10 h-10 mx-auto mb-3 text-gray-200" />
+            <div className="text-center py-16 text-slate-400">
+              <Package className="w-10 h-10 mx-auto mb-3 text-slate-200" />
               <p>No releases yet for this product</p>
               <Button className="mt-4" size="sm" onClick={() => setAddReleaseOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />Add first release
@@ -467,7 +467,7 @@ export function Releases() {
             </div>
           ) : (
             <div className="relative ml-4">
-              <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-200" />
+              <div className="absolute left-0 top-0 bottom-0 w-px bg-slate-200" />
               <div className="space-y-3">
                 {filteredReleases.map(rel => (
                   <div
@@ -478,7 +478,7 @@ export function Releases() {
                     <div className={`absolute -left-[25px] top-5 w-3 h-3 rounded-full border-2 border-white ${
                       rel.status === 'Released' ? 'bg-green-500' :
                       rel.status === 'In Progress' ? 'bg-blue-500' :
-                      rel.status === 'Rolled Back' ? 'bg-red-500' : 'bg-gray-300'
+                      rel.status === 'Rolled Back' ? 'bg-red-500' : 'bg-slate-300'
                     }`} />
                     <Card className="p-4 hover:shadow-md transition-all hover:border-blue-200">
                       <div className="flex items-start justify-between">
@@ -493,8 +493,8 @@ export function Releases() {
                               </span>
                             )}
                           </div>
-                          <h3 className="text-sm font-semibold text-gray-900 mt-1.5">{rel.title}</h3>
-                          <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
+                          <h3 className="text-sm font-semibold text-slate-900 mt-1.5">{rel.title}</h3>
+                          <div className="flex items-center gap-4 mt-1 text-xs text-slate-500">
                             {rel.release_date && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(rel.release_date).toLocaleDateString('en-GB')}</span>}
                             {rel.released_by_name && <span className="flex items-center gap-1"><User className="w-3 h-3" />{rel.released_by_name}</span>}
                             {rel.changes && rel.changes.length > 0 && (
@@ -511,7 +511,7 @@ export function Releases() {
                             </div>
                           )}
                         </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 mt-1 shrink-0 ml-2" />
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-500 mt-1 shrink-0 ml-2" />
                       </div>
                     </Card>
                   </div>
@@ -531,12 +531,12 @@ export function Releases() {
     return (
       <div className="p-8 space-y-6 max-w-3xl overflow-auto h-full">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <button onClick={() => { setView('products'); setActiveProduct(null); setSelectedRelease(null) }} className="hover:text-gray-900 transition-colors">Products</button>
+        <div className="flex items-center gap-2 text-sm text-slate-500">
+          <button onClick={() => { setView('products'); setActiveProduct(null); setSelectedRelease(null) }} className="hover:text-slate-900 transition-colors">Products</button>
           <ChevronRight className="w-3.5 h-3.5" />
-          <button onClick={handleBack} className="hover:text-gray-900 transition-colors">{activeProduct}</button>
+          <button onClick={handleBack} className="hover:text-slate-900 transition-colors">{activeProduct}</button>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-gray-900 font-medium">{selectedRelease.version}</span>
+          <span className="text-slate-900 font-medium">{selectedRelease.version}</span>
         </div>
 
         {/* Title */}
@@ -547,8 +547,8 @@ export function Releases() {
               <Badge variant="outline" className={`${envColor(selectedRelease.environment)}`}>{selectedRelease.environment}</Badge>
               <Badge variant="outline" className={`${statusColor(selectedRelease.status)}`}>{selectedRelease.status}</Badge>
             </div>
-            <h1 className="text-xl font-semibold text-gray-900">{selectedRelease.title}</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{selectedRelease.product_name}</p>
+            <h1 className="text-xl font-semibold text-slate-900">{selectedRelease.title}</h1>
+            <p className="text-sm text-slate-500 mt-0.5">{selectedRelease.product_name}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleExportCSV}>
@@ -562,26 +562,26 @@ export function Releases() {
 
         {/* Metadata card */}
         <Card className="p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Release Details</h2>
+          <h2 className="text-sm font-semibold text-slate-700 mb-4">Release Details</h2>
           <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
             <div>
-              <p className="text-xs text-gray-500 font-medium mb-0.5">Release Date</p>
-              <p className="text-gray-900">{selectedRelease.release_date ? new Date(selectedRelease.release_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '–'}</p>
+              <p className="text-xs text-slate-500 font-medium mb-0.5">Release Date</p>
+              <p className="text-slate-900">{selectedRelease.release_date ? new Date(selectedRelease.release_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '–'}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium mb-0.5">Environment</p>
+              <p className="text-xs text-slate-500 font-medium mb-0.5">Environment</p>
               <Badge variant="outline" className={`text-xs ${envColor(selectedRelease.environment)}`}>{selectedRelease.environment}</Badge>
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium mb-0.5">Released by</p>
-              <p className="text-gray-900 flex items-center gap-1"><User className="w-3.5 h-3.5 text-gray-400" />{selectedRelease.released_by_name ?? '–'}</p>
+              <p className="text-xs text-slate-500 font-medium mb-0.5">Released by</p>
+              <p className="text-slate-900 flex items-center gap-1"><User className="w-3.5 h-3.5 text-slate-400" />{selectedRelease.released_by_name ?? '–'}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium mb-0.5">Approved by</p>
+              <p className="text-xs text-slate-500 font-medium mb-0.5">Approved by</p>
               {selectedRelease.approved_by_name ? (
                 <p className="text-green-700 font-medium flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />{selectedRelease.approved_by_name}
-                  {selectedRelease.approved_at && <span className="text-xs text-gray-400 font-normal ml-1">({new Date(selectedRelease.approved_at).toLocaleDateString('en-GB')})</span>}
+                  {selectedRelease.approved_at && <span className="text-xs text-slate-400 font-normal ml-1">({new Date(selectedRelease.approved_at).toLocaleDateString('en-GB')})</span>}
                 </p>
               ) : (
                 <p className="text-orange-600">Pending approval</p>
@@ -590,9 +590,9 @@ export function Releases() {
           </div>
 
           {selectedRelease.description && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="text-xs text-gray-500 font-medium mb-1.5">Description</p>
-              <p className="text-sm text-gray-700 leading-relaxed">{selectedRelease.description}</p>
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <p className="text-xs text-slate-500 font-medium mb-1.5">Description</p>
+              <p className="text-sm text-slate-700 leading-relaxed">{selectedRelease.description}</p>
             </div>
           )}
         </Card>
@@ -613,16 +613,16 @@ export function Releases() {
         {/* Changelog */}
         <Card className="p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-700">Changelog ({selectedRelease.changes?.length ?? 0} entries)</h2>
+            <h2 className="text-sm font-semibold text-slate-700">Changelog ({selectedRelease.changes?.length ?? 0} entries)</h2>
             <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setAddChangeOpen(true)}>
               <Plus className="w-3.5 h-3.5 mr-1" />Add entry
             </Button>
           </div>
 
           {(!selectedRelease.changes || selectedRelease.changes.length === 0) ? (
-            <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg">
-              <FileText className="w-8 h-8 mx-auto mb-2 text-gray-200" />
-              <p className="text-sm text-gray-400">No changelog entries yet</p>
+            <div className="text-center py-8 border border-dashed border-slate-200 rounded-lg">
+              <FileText className="w-8 h-8 mx-auto mb-2 text-slate-200" />
+              <p className="text-sm text-slate-400">No changelog entries yet</p>
               <Button size="sm" variant="outline" className="mt-3 text-xs" onClick={() => setAddChangeOpen(true)}>
                 <Plus className="w-3.5 h-3.5 mr-1" />Add first entry
               </Button>
@@ -639,8 +639,8 @@ export function Releases() {
                     </div>
                     <ul className="space-y-1.5 pl-1">
                       {items.map(c => (
-                        <li key={c.id} className="flex gap-2 text-sm text-gray-700">
-                          <span className="text-gray-300 shrink-0 mt-0.5">•</span>
+                        <li key={c.id} className="flex gap-2 text-sm text-slate-700">
+                          <span className="text-slate-300 shrink-0 mt-0.5">•</span>
                           <span>{c.description}</span>
                         </li>
                       ))}
@@ -654,7 +654,7 @@ export function Releases() {
 
         {/* Dialogs */}
         <Dialog open={addChangeOpen} onOpenChange={setAddChangeOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Add Changelog Entry</DialogTitle>
               <DialogDescription>{selectedRelease.product_name} {selectedRelease.version}</DialogDescription>
@@ -662,13 +662,13 @@ export function Releases() {
             <div className="space-y-4 mt-4">
               <div>
                 <Label>Change Type</Label>
-                <select value={changeForm.change_type} onChange={e => setChangeForm(f => ({ ...f, change_type: e.target.value as typeof CHANGE_TYPES[number] }))} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select value={changeForm.change_type} onChange={e => setChangeForm(f => ({ ...f, change_type: e.target.value as typeof CHANGE_TYPES[number] }))} className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                   {CHANGE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div>
                 <Label>Description *</Label>
-                <textarea value={changeForm.description} onChange={e => setChangeForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe what changed..." className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={3} />
+                <textarea value={changeForm.description} onChange={e => setChangeForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe what changed..." className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={3} />
               </div>
               <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button variant="outline" onClick={() => setAddChangeOpen(false)}>Cancel</Button>
@@ -693,7 +693,7 @@ function AddProductDialog({ open, onClose, form, setForm, onSave }: {
 }) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>New Product</DialogTitle>
           <DialogDescription>Register a new product to track releases for.</DialogDescription>
@@ -709,7 +709,7 @@ function AddProductDialog({ open, onClose, form, setForm, onSave }: {
           </div>
           <div>
             <Label>Description</Label>
-            <textarea value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="What does this product do?" className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={2} />
+            <textarea value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="What does this product do?" className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={2} />
           </div>
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
@@ -730,7 +730,7 @@ function AddReleaseDialog({ open, onClose, form, setForm, productNames, onSave }
   const ENV_OPTIONS = ['Production', 'Staging', 'Development']
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>New Release</DialogTitle>
           <DialogDescription>Create a new versioned release entry.</DialogDescription>
@@ -738,7 +738,7 @@ function AddReleaseDialog({ open, onClose, form, setForm, productNames, onSave }
         <div className="space-y-4 mt-4">
           <div>
             <Label>Product *</Label>
-            <select value={form.product_name} onChange={e => setForm((f: any) => ({ ...f, product_name: e.target.value }))} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select value={form.product_name} onChange={e => setForm((f: any) => ({ ...f, product_name: e.target.value }))} className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Select product…</option>
               {productNames.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
@@ -750,7 +750,7 @@ function AddReleaseDialog({ open, onClose, form, setForm, productNames, onSave }
             </div>
             <div>
               <Label>Environment</Label>
-              <select value={form.environment} onChange={e => setForm((f: any) => ({ ...f, environment: e.target.value }))} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select value={form.environment} onChange={e => setForm((f: any) => ({ ...f, environment: e.target.value }))} className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {ENV_OPTIONS.map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
@@ -761,12 +761,12 @@ function AddReleaseDialog({ open, onClose, form, setForm, productNames, onSave }
           </div>
           <div>
             <Label>Description</Label>
-            <textarea value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="What's in this release?" className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={3} />
+            <textarea value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="What's in this release?" className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={3} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Status</Label>
-              <select value={form.status} onChange={e => setForm((f: any) => ({ ...f, status: e.target.value }))} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select value={form.status} onChange={e => setForm((f: any) => ({ ...f, status: e.target.value }))} className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
