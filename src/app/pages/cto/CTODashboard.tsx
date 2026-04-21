@@ -34,197 +34,199 @@ export function CTODashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Draft': return 'bg-gray-100 text-gray-700'
-      case 'Pending Approval': return 'bg-yellow-100 text-yellow-700'
-      case 'Approved': return 'bg-blue-100 text-blue-700'
-      case 'Deployed': return 'bg-green-100 text-green-700'
-      case 'Rejected': return 'bg-red-100 text-red-700'
-      default: return 'bg-gray-100 text-gray-700'
+      case 'Draft': return 'bg-slate-100 text-slate-600'
+      case 'Pending Approval': return 'bg-amber-50 text-amber-700'
+      case 'Approved': return 'bg-sky-50 text-sky-700'
+      case 'Deployed': return 'bg-emerald-50 text-emerald-700'
+      case 'Rejected': return 'bg-red-50 text-red-700'
+      default: return 'bg-slate-100 text-slate-600'
     }
   }
 
   const getReleaseStatusColor = (status: string) => {
     switch (status) {
-      case 'Planned': return 'bg-gray-100 text-gray-700'
-      case 'In Progress': return 'bg-blue-100 text-blue-700'
-      case 'Released': return 'bg-green-100 text-green-700'
-      case 'Rolled Back': return 'bg-red-100 text-red-700'
-      default: return 'bg-gray-100 text-gray-700'
+      case 'Planned': return 'bg-slate-100 text-slate-600'
+      case 'In Progress': return 'bg-sky-50 text-sky-700'
+      case 'Released': return 'bg-emerald-50 text-emerald-700'
+      case 'Rolled Back': return 'bg-red-50 text-red-700'
+      default: return 'bg-slate-100 text-slate-600'
     }
   }
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center justify-center">
-        <div className="text-center">
-          <svg className="animate-spin h-8 w-8 text-blue-600 mx-auto" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-        </div>
+      <div className="p-8 flex items-center justify-center min-h-96">
+        <svg className="animate-spin h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
       </div>
     )
   }
 
+  const now = new Date()
+  const period = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">CTO Overview</h1>
-          <p className="text-sm text-gray-500 mt-1">Technical change management and audit trail</p>
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" onClick={() => navigate('/cto/changelog')}>
-            <Plus className="w-4 h-4 mr-2" />
+    <div className="flex flex-col min-h-full">
+      {/* Page header */}
+      <div className="bg-white border-b border-slate-200 px-8 py-5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-base font-semibold text-slate-900 leading-none">CTO Overview</h1>
+            <p className="text-xs text-slate-400 mt-1.5">Reporting period: {period}</p>
+          </div>
+          <Button size="sm" onClick={() => navigate('/cto/changelog')} className="bg-slate-900 hover:bg-slate-800 text-white gap-1.5 cursor-pointer">
+            <Plus className="w-4 h-4" />
             New Change
           </Button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card className="p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Changes</p>
-              <p className="text-3xl font-semibold text-gray-900 mt-2">{changeLogs.length}</p>
+      <div className="flex-1 p-8 space-y-6 max-w-7xl mx-auto w-full">
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-4">
+          <Card className="p-5 border-slate-200 border-l-[3px] border-l-slate-400 shadow-none rounded-lg">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Changes</p>
+              <GitCommit className="w-4 h-4 text-slate-400" />
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <GitCommit className="w-6 h-6 text-blue-600" />
+            <p className="text-3xl font-bold text-slate-900 mt-2">{changeLogs.length}</p>
+            <p className="text-xs text-slate-400 mt-3">{deployedCount} deployed</p>
+          </Card>
+          <Card className="p-5 border-slate-200 border-l-[3px] border-l-amber-500 shadow-none rounded-lg">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Pending Approval</p>
+              <Clock className="w-4 h-4 text-amber-500" />
             </div>
+            <p className="text-3xl font-bold text-slate-900 mt-2">{pendingApprovals}</p>
+            <p className="text-xs text-amber-600 mt-3 font-medium">awaiting review</p>
+          </Card>
+          <Card className="p-5 border-slate-200 border-l-[3px] border-l-sky-500 shadow-none rounded-lg">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Releases</p>
+              <Package className="w-4 h-4 text-sky-500" />
+            </div>
+            <p className="text-3xl font-bold text-slate-900 mt-2">{releases.length}</p>
+            <p className="text-xs text-slate-400 mt-3">across all products</p>
+          </Card>
+          <Card className="p-5 border-slate-200 border-l-[3px] border-l-emerald-500 shadow-none rounded-lg">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">In Progress</p>
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            </div>
+            <p className="text-3xl font-bold text-slate-900 mt-2">{activeReleases}</p>
+            <p className="text-xs text-slate-400 mt-3">active releases</p>
+          </Card>
+        </div>
+
+        {/* Content Grid */}
+        <div className="grid grid-cols-2 gap-6">
+          {/* Recent Change Logs */}
+          <Card className="border-slate-200 shadow-none">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h2 className="text-sm font-semibold text-slate-900">Recent Changes</h2>
+              <a href="/cto/changelog" className="text-xs text-slate-500 hover:text-slate-700 font-medium transition-colors">View all</a>
+            </div>
+            <div className="p-3">
+              {changeLogs.slice(0, 5).map(cl => (
+                <div key={cl.id} className="flex items-start justify-between px-3 py-2.5 rounded-md hover:bg-slate-50 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900 truncate">{cl.title}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs text-slate-400">{cl.author_name}</span>
+                      <span className="text-xs text-slate-300">·</span>
+                      <span className="text-xs text-slate-400">{cl.change_type}</span>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ml-3 flex-shrink-0 ${getStatusColor(cl.status)}`}>{cl.status}</span>
+                </div>
+              ))}
+              {changeLogs.length === 0 && (
+                <p className="text-sm text-slate-400 text-center py-6">No changes yet</p>
+              )}
+            </div>
+          </Card>
+
+          {/* Recent Releases */}
+          <Card className="border-slate-200 shadow-none">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h2 className="text-sm font-semibold text-slate-900">Recent Releases</h2>
+              <a href="/cto/releases" className="text-xs text-slate-500 hover:text-slate-700 font-medium transition-colors">View all</a>
+            </div>
+            <div className="p-3">
+              {releases.slice(0, 4).map(rel => (
+                <div key={rel.id} className="flex items-start justify-between px-3 py-2.5 rounded-md hover:bg-slate-50 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{rel.version}</span>
+                      <p className="text-sm font-medium text-slate-900 truncate">{rel.title}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs text-slate-400">{rel.environment}</span>
+                      {rel.release_date && (
+                        <>
+                          <span className="text-xs text-slate-300">·</span>
+                          <span className="text-xs text-slate-400">{new Date(rel.release_date).toLocaleDateString()}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ml-3 flex-shrink-0 ${getReleaseStatusColor(rel.status)}`}>{rel.status}</span>
+                </div>
+              ))}
+              {releases.length === 0 && (
+                <p className="text-sm text-slate-400 text-center py-6">No releases yet</p>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Change Status Breakdown */}
+        <Card className="border-slate-200 shadow-none">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h2 className="text-sm font-semibold text-slate-900">Change Status Breakdown</h2>
+          </div>
+          <div className="p-6 grid grid-cols-5 gap-3">
+            {[
+              { status: 'Draft', cls: 'bg-slate-100 text-slate-700' },
+              { status: 'Pending Approval', cls: 'bg-amber-50 text-amber-800' },
+              { status: 'Approved', cls: 'bg-sky-50 text-sky-800' },
+              { status: 'Deployed', cls: 'bg-emerald-50 text-emerald-800' },
+              { status: 'Rejected', cls: 'bg-red-50 text-red-800' },
+            ].map(({ status, cls }) => {
+              const count = changeLogs.filter(c => c.status === status).length
+              return (
+                <div key={status} className={`p-4 rounded-lg text-center ${cls}`}>
+                  <p className="text-2xl font-bold tabular-nums">{count}</p>
+                  <p className="text-xs font-medium mt-1">{status}</p>
+                </div>
+              )
+            })}
           </div>
         </Card>
-        <Card className="p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Pending Approval</p>
-              <p className="text-3xl font-semibold text-yellow-600 mt-2">{pendingApprovals}</p>
-            </div>
-            <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-yellow-600" />
-            </div>
+
+        {/* Quick Actions */}
+        <Card className="border-slate-200 shadow-none">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h2 className="text-sm font-semibold text-slate-900">Quick Actions</h2>
           </div>
-        </Card>
-        <Card className="p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Releases</p>
-              <p className="text-3xl font-semibold text-gray-900 mt-2">{releases.length}</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Package className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-        </Card>
-        <Card className="p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">In Progress</p>
-              <p className="text-3xl font-semibold text-green-600 mt-2">{activeReleases}</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-green-600" />
-            </div>
+          <div className="px-6 py-4 flex gap-3">
+            <Button onClick={() => navigate('/cto/changelog')} className="bg-slate-900 hover:bg-slate-800 text-white gap-1.5 cursor-pointer">
+              <GitCommit className="w-4 h-4" />
+              Log a Change
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/cto/releases')} className="border-slate-200 text-slate-600 hover:bg-slate-50 gap-1.5 cursor-pointer">
+              <Package className="w-4 h-4" />
+              New Release
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/cto/access')} className="border-slate-200 text-slate-600 hover:bg-slate-50 gap-1.5 cursor-pointer">
+              <CheckCircle2 className="w-4 h-4" />
+              Review Access
+            </Button>
           </div>
         </Card>
       </div>
-
-      {/* Content Grid */}
-      <div className="grid grid-cols-2 gap-6">
-        {/* Recent Change Logs */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">Recent Changes</h2>
-            <a href="/cto/changelog" className="text-sm text-blue-600 hover:text-blue-700">View all</a>
-          </div>
-          <div className="space-y-3">
-            {changeLogs.slice(0, 5).map(cl => (
-              <div key={cl.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{cl.title}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-gray-500">{cl.author_name}</span>
-                    <span className="text-xs text-gray-400">•</span>
-                    <span className="text-xs text-gray-500">{cl.change_type}</span>
-                  </div>
-                </div>
-                <Badge className={`text-xs ml-2 ${getStatusColor(cl.status)}`}>{cl.status}</Badge>
-              </div>
-            ))}
-            {changeLogs.length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-4">No changes yet</p>
-            )}
-          </div>
-        </Card>
-
-        {/* Recent Releases */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900">Recent Releases</h2>
-            <a href="/cto/releases" className="text-sm text-blue-600 hover:text-blue-700">View all</a>
-          </div>
-          <div className="space-y-3">
-            {releases.slice(0, 4).map(rel => (
-              <div key={rel.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">{rel.version}</span>
-                    <p className="text-sm font-medium text-gray-900 truncate">{rel.title}</p>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-gray-500">{rel.environment}</span>
-                    {rel.release_date && (
-                      <>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500">{new Date(rel.release_date).toLocaleDateString()}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <Badge className={`text-xs ml-2 ${getReleaseStatusColor(rel.status)}`}>{rel.status}</Badge>
-              </div>
-            ))}
-            {releases.length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-4">No releases yet</p>
-            )}
-          </div>
-        </Card>
-      </div>
-
-      {/* Change Status Breakdown */}
-      <Card className="p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Change Status Breakdown</h2>
-        <div className="grid grid-cols-5 gap-4">
-          {['Draft', 'Pending Approval', 'Approved', 'Deployed', 'Rejected'].map(status => {
-            const count = changeLogs.filter(c => c.status === status).length
-            return (
-              <div key={status} className={`p-4 rounded-lg text-center ${getStatusColor(status)}`}>
-                <p className="text-2xl font-bold">{count}</p>
-                <p className="text-xs font-medium mt-1">{status}</p>
-              </div>
-            )
-          })}
-        </div>
-      </Card>
-
-      {/* Quick Actions */}
-      <Card className="p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="flex gap-3">
-          <Button onClick={() => navigate('/cto/changelog')} className="gap-2">
-            <GitCommit className="w-4 h-4" />
-            Log a Change
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/cto/releases')} className="gap-2">
-            <Package className="w-4 h-4" />
-            New Release
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/cto/access')} className="gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            Review Access
-          </Button>
-        </div>
-      </Card>
     </div>
   )
 }

@@ -89,7 +89,7 @@ export function AddRiskDialog({ open, onOpenChange, onSuccess }: AddRiskDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[850px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Risk</DialogTitle>
           <DialogDescription>

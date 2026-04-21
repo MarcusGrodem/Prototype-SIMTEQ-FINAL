@@ -143,7 +143,7 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Risk Assessment</DialogTitle>
           <DialogDescription>

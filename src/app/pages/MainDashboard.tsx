@@ -1,5 +1,4 @@
 import { Card } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
 import { Progress } from '../components/ui/progress';
 import { StatusBadge } from '../components/StatusBadge';
 import { RiskHeatmapDialog } from '../components/RiskHeatmapDialog';
@@ -16,11 +15,13 @@ import {
   Bell,
   Maximize2,
   Download,
-  Sparkles,
+  FileText,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  ArrowRight
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router';
 import { Button } from '../components/ui/button';
 import { supabase } from '../../lib/supabase';
 import { Risk, Control, Alert } from '../../lib/types';
@@ -71,251 +72,264 @@ export function MainDashboard() {
     );
   }
 
+  const now = new Date();
+  const period = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Risk & Control Dashboard</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Overview of compliance status and risk management</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <CatchUpNotification />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setExportDialogOpen(true)}
-            className="border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 gap-1.5"
-          >
-            <Download className="w-4 h-4" />
-            Export for Auditor
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => setAiReportDialogOpen(true)}
-            className="bg-slate-900 hover:bg-slate-800 text-white gap-1.5"
-          >
-            <Sparkles className="w-4 h-4" />
-            Generate AI Report
-          </Button>
-        </div>
-      </div>
-
-      {/* Alerts banner */}
-      {alerts.filter(a => a.type === 'error' || a.type === 'warning').length > 0 && (
-        <div className="flex items-start gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
-          <Bell className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-red-900">Action Required</p>
-            {alertsVisible && (
-              <div className="mt-1 space-y-0.5">
-                {alerts.filter(a => a.type === 'error').map(alert => (
-                  <p key={alert.id} className="text-sm text-red-700">· {alert.message}</p>
-                ))}
-                {alerts.filter(a => a.type === 'warning').slice(0, 2).map(alert => (
-                  <p key={alert.id} className="text-sm text-red-600">· {alert.message}</p>
-                ))}
-              </div>
-            )}
+    <div className="flex flex-col min-h-full">
+      {/* Page header */}
+      <div className="bg-white border-b border-slate-200 px-8 py-5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-base font-semibold text-slate-900 leading-none">Risk &amp; Control Dashboard</h1>
+            <p className="text-xs text-slate-400 mt-1.5">Reporting period: {period}</p>
           </div>
-          <button
-            onClick={() => setAlertsVisible(!alertsVisible)}
-            className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
-            title={alertsVisible ? 'Collapse' : 'Expand'}
-          >
-            {alertsVisible ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-        </div>
-      )}
-
-      {/* KPI cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card className="p-5 border-slate-200 shadow-none">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Compliance Score</p>
-            <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-emerald-600" />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-900">{complianceScore}%</p>
-          <Progress value={complianceScore} className="mt-3 h-1.5 bg-slate-100" />
-        </Card>
-
-        <Card className="p-5 border-slate-200 shadow-none">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Controls</p>
-            <div className="w-8 h-8 bg-sky-50 rounded-lg flex items-center justify-center">
-              <Shield className="w-4 h-4 text-sky-600" />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-900">{totalControls}</p>
-          <p className="text-xs text-emerald-600 font-medium mt-1">{completedControls} completed</p>
-        </Card>
-
-        <Card className="p-5 border-slate-200 shadow-none">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">High Risks</p>
-            <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-900">{highRisks}</p>
-          <p className="text-xs text-slate-400 font-medium mt-1">{totalRisks} total risks</p>
-        </Card>
-
-        <Card className="p-5 border-slate-200 shadow-none">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Overdue</p>
-            <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center">
-              <AlertCircle className="w-4 h-4 text-red-600" />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-900">{overdueControls}</p>
-          <p className="text-xs text-red-500 font-medium mt-1">Needs attention</p>
-        </Card>
-      </div>
-
-      {/* Main content */}
-      <div className="grid grid-cols-3 gap-6">
-        {/* Control status */}
-        <Card className="col-span-2 p-6 border-slate-200 shadow-none">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-sm font-semibold text-slate-900">Control Status Overview</h2>
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
-              {complianceScore}% complete
-            </span>
-          </div>
-
-          <div className="space-y-5">
-            {[
-              { label: 'Completed', count: completedControls, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', bar: 'bg-emerald-500' },
-              { label: 'Pending', count: pendingControls, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', bar: 'bg-amber-500' },
-              { label: 'Overdue', count: overdueControls, icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-50', bar: 'bg-red-500' },
-            ].map(({ label, count, icon: Icon, color, bg }) => (
-              <div key={label} className="flex items-center gap-4">
-                <div className={`w-9 h-9 ${bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                  <Icon className={`w-4 h-4 ${color}`} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm text-slate-700">{label}</span>
-                    <span className="text-sm font-semibold text-slate-900">{count}</span>
-                  </div>
-                  <Progress
-                    value={totalControls > 0 ? (count / totalControls) * 100 : 0}
-                    className="h-1.5 bg-slate-100"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Risk heatmap */}
-        <Card className="p-6 border-slate-200 shadow-none">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-slate-900">Risk Heatmap</h2>
-            <button
-              className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
-              onClick={handleOpenHeatmap}
+          <div className="flex items-center gap-2">
+            <CatchUpNotification />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExportDialogOpen(true)}
+              className="border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 gap-1.5 cursor-pointer"
             >
-              <Maximize2 className="w-3.5 h-3.5" />
-              Expand
+              <Download className="w-4 h-4" />
+              Export for Auditor
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setAiReportDialogOpen(true)}
+              className="bg-slate-900 hover:bg-slate-800 text-white gap-1.5 cursor-pointer"
+            >
+              <FileText className="w-4 h-4" />
+              ISAE 3402 Report
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 p-8 space-y-6 max-w-7xl mx-auto w-full">
+        {/* Alerts banner */}
+        {alerts.filter(a => a.type === 'error' || a.type === 'warning').length > 0 && (
+          <div className="flex items-start gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
+            <Bell className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-red-900">Action Required</p>
+              {alertsVisible && (
+                <div className="mt-1 space-y-0.5">
+                  {alerts.filter(a => a.type === 'error').map(alert => (
+                    <p key={alert.id} className="text-sm text-red-700">· {alert.message}</p>
+                  ))}
+                  {alerts.filter(a => a.type === 'warning').slice(0, 2).map(alert => (
+                    <p key={alert.id} className="text-sm text-red-600">· {alert.message}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => setAlertsVisible(!alertsVisible)}
+              className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0 cursor-pointer"
+              title={alertsVisible ? 'Collapse' : 'Expand'}
+            >
+              {alertsVisible ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
           </div>
+        )}
 
-          <div className="space-y-1.5">
-            <div className="grid grid-cols-4 gap-1.5 text-xs text-center">
-              <div />
-              <div className="font-medium text-slate-400">Low</div>
-              <div className="font-medium text-slate-400">Med</div>
-              <div className="font-medium text-slate-400">High</div>
+        {/* KPI cards */}
+        <div className="grid grid-cols-4 gap-4">
+          <Link to="/controls">
+            <Card className="p-5 border-slate-200 border-l-[3px] border-l-emerald-500 shadow-none rounded-lg hover:shadow-sm hover:border-emerald-300 transition-all cursor-pointer group">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Compliance Score</p>
+                <TrendingUp className="w-4 h-4 text-emerald-500" />
+              </div>
+              <p className="text-3xl font-bold text-slate-900 mt-2">{complianceScore}%</p>
+              <Progress value={complianceScore} className="mt-3 h-1 bg-slate-100" />
+              <p className="text-xs text-slate-400 mt-2 group-hover:text-emerald-600 transition-colors">{completedControls} of {totalControls} controls complete</p>
+            </Card>
+          </Link>
+
+          <Link to="/controls">
+            <Card className="p-5 border-slate-200 border-l-[3px] border-l-sky-500 shadow-none rounded-lg hover:shadow-sm hover:border-sky-300 transition-all cursor-pointer group">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Controls</p>
+                <Shield className="w-4 h-4 text-sky-500" />
+              </div>
+              <p className="text-3xl font-bold text-slate-900 mt-2">{totalControls}</p>
+              <p className="text-xs text-slate-400 mt-3 group-hover:text-sky-600 transition-colors">{pendingControls} pending review</p>
+            </Card>
+          </Link>
+
+          <Link to="/risks">
+            <Card className="p-5 border-slate-200 border-l-[3px] border-l-amber-500 shadow-none rounded-lg hover:shadow-sm hover:border-amber-300 transition-all cursor-pointer group">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">High Risks</p>
+                <AlertTriangle className="w-4 h-4 text-amber-500" />
+              </div>
+              <p className="text-3xl font-bold text-slate-900 mt-2">{highRisks}</p>
+              <p className="text-xs text-slate-400 mt-3 group-hover:text-amber-600 transition-colors">{totalRisks} risks in register</p>
+            </Card>
+          </Link>
+
+          <Link to="/controls">
+            <Card className="p-5 border-slate-200 border-l-[3px] border-l-red-500 shadow-none rounded-lg hover:shadow-sm hover:border-red-300 transition-all cursor-pointer group">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Overdue</p>
+                <AlertCircle className="w-4 h-4 text-red-500" />
+              </div>
+              <p className="text-3xl font-bold text-slate-900 mt-2">{overdueControls}</p>
+              <p className="text-xs text-red-500 mt-3 font-medium group-hover:text-red-700 transition-colors">Requires immediate attention</p>
+            </Card>
+          </Link>
+        </div>
+
+        {/* Main content */}
+        <div className="grid grid-cols-3 gap-6">
+          {/* Control status */}
+          <Card className="col-span-2 border-slate-200 shadow-none">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h2 className="text-sm font-semibold text-slate-900">Control Status Overview</h2>
+              <Link to="/controls" className="text-xs font-medium text-slate-400 hover:text-slate-700 flex items-center gap-1 transition-colors">
+                View all <ArrowRight className="w-3 h-3" />
+              </Link>
             </div>
-            {[
-              { label: 'High', cells: [
-                { filter: (r: Risk) => r.likelihood === 'High' && r.impact === 'Low', cls: 'bg-amber-100 text-amber-800' },
-                { filter: (r: Risk) => r.likelihood === 'High' && r.impact === 'Medium', cls: 'bg-orange-200 text-orange-900' },
-                { filter: (r: Risk) => r.likelihood === 'High' && r.impact === 'High', cls: 'bg-red-400 text-white' },
-              ]},
-              { label: 'Med', cells: [
-                { filter: (r: Risk) => r.likelihood === 'Medium' && r.impact === 'Low', cls: 'bg-emerald-100 text-emerald-800' },
-                { filter: (r: Risk) => r.likelihood === 'Medium' && r.impact === 'Medium', cls: 'bg-amber-200 text-amber-900' },
-                { filter: (r: Risk) => r.likelihood === 'Medium' && r.impact === 'High', cls: 'bg-orange-300 text-orange-900' },
-              ]},
-              { label: 'Low', cells: [
-                { filter: (r: Risk) => r.likelihood === 'Low' && r.impact === 'Low', cls: 'bg-emerald-200 text-emerald-900' },
-                { filter: (r: Risk) => r.likelihood === 'Low' && r.impact === 'Medium', cls: 'bg-emerald-100 text-emerald-800' },
-                { filter: (r: Risk) => r.likelihood === 'Low' && r.impact === 'High', cls: 'bg-amber-200 text-amber-900' },
-              ]},
-            ].map(row => (
-              <div key={row.label} className="grid grid-cols-4 gap-1.5 items-center">
-                <div className="text-xs font-medium text-slate-400">{row.label}</div>
-                {row.cells.map((cell, i) => (
-                  <div key={i} className={`h-11 ${cell.cls} rounded-md flex items-center justify-center text-sm font-semibold`}>
-                    {risks.filter(cell.filter).length}
+            <div className="p-6 space-y-5">
+              {[
+                { label: 'Completed', count: completedControls, icon: CheckCircle2, color: 'text-emerald-600', bar: 'bg-emerald-500' },
+                { label: 'Pending', count: pendingControls, icon: Clock, color: 'text-amber-600', bar: 'bg-amber-500' },
+                { label: 'Overdue', count: overdueControls, icon: AlertCircle, color: 'text-red-600', bar: 'bg-red-500' },
+              ].map(({ label, count, icon: Icon, color }) => (
+                <Link key={label} to="/controls" className="flex items-center gap-4 rounded-lg px-2 py-1 -mx-2 hover:bg-slate-50 transition-colors group">
+                  <Icon className={`w-4 h-4 ${color} flex-shrink-0`} />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">{label}</span>
+                      <span className="text-sm font-semibold text-slate-900 tabular-nums">{count}</span>
+                    </div>
+                    <Progress
+                      value={totalControls > 0 ? (count / totalControls) * 100 : 0}
+                      className="h-1.5 bg-slate-100"
+                    />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+
+          {/* Risk heatmap */}
+          <Card className="border-slate-200 shadow-none">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h2 className="text-sm font-semibold text-slate-900">Risk Matrix</h2>
+              <button
+                className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                onClick={handleOpenHeatmap}
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+                Expand
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="space-y-1.5">
+                <div className="grid grid-cols-4 gap-1.5 text-xs text-center mb-1">
+                  <div className="text-[10px] text-slate-400 font-medium text-left">Likelihood</div>
+                  <div className="font-medium text-slate-400">Low</div>
+                  <div className="font-medium text-slate-400">Med</div>
+                  <div className="font-medium text-slate-400">High</div>
+                </div>
+                {[
+                  { label: 'High', cells: [
+                    { filter: (r: Risk) => r.likelihood === 'High' && r.impact === 'Low', cls: 'bg-amber-100 text-amber-800 hover:bg-amber-200' },
+                    { filter: (r: Risk) => r.likelihood === 'High' && r.impact === 'Medium', cls: 'bg-orange-200 text-orange-900 hover:bg-orange-300' },
+                    { filter: (r: Risk) => r.likelihood === 'High' && r.impact === 'High', cls: 'bg-red-400 text-white hover:bg-red-500' },
+                  ]},
+                  { label: 'Med', cells: [
+                    { filter: (r: Risk) => r.likelihood === 'Medium' && r.impact === 'Low', cls: 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' },
+                    { filter: (r: Risk) => r.likelihood === 'Medium' && r.impact === 'Medium', cls: 'bg-amber-200 text-amber-900 hover:bg-amber-300' },
+                    { filter: (r: Risk) => r.likelihood === 'Medium' && r.impact === 'High', cls: 'bg-orange-300 text-orange-900 hover:bg-orange-400' },
+                  ]},
+                  { label: 'Low', cells: [
+                    { filter: (r: Risk) => r.likelihood === 'Low' && r.impact === 'Low', cls: 'bg-emerald-200 text-emerald-900 hover:bg-emerald-300' },
+                    { filter: (r: Risk) => r.likelihood === 'Low' && r.impact === 'Medium', cls: 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' },
+                    { filter: (r: Risk) => r.likelihood === 'Low' && r.impact === 'High', cls: 'bg-amber-200 text-amber-900 hover:bg-amber-300' },
+                  ]},
+                ].map(row => (
+                  <div key={row.label} className="grid grid-cols-4 gap-1.5 items-center">
+                    <div className="text-xs font-medium text-slate-400">{row.label}</div>
+                    {row.cells.map((cell, i) => (
+                      <Link key={i} to="/risks" className={`h-11 ${cell.cls} rounded-md flex items-center justify-center text-sm font-semibold tabular-nums transition-colors cursor-pointer`}>
+                        {risks.filter(cell.filter).length}
+                      </Link>
+                    ))}
                   </div>
                 ))}
+                <p className="text-[10px] text-slate-400 text-center pt-1.5">Impact →</p>
               </div>
-            ))}
-            <p className="text-[10px] text-slate-400 text-center pt-1">Impact →</p>
-          </div>
-        </Card>
-      </div>
+            </div>
+          </Card>
+        </div>
 
-      {/* Bottom section */}
-      <div className="grid grid-cols-2 gap-6">
-        {/* Recent controls */}
-        <Card className="p-6 border-slate-200 shadow-none">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-slate-900">Recent Controls</h2>
-            <a href="/risks" className="text-xs text-sky-600 hover:text-sky-700 font-medium">View risks →</a>
-          </div>
-          <div className="space-y-2">
-            {controls.slice(0, 5).map(control => (
-              <div key={control.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-50 transition-colors">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900 truncate">{control.title}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{control.owner_name} · Next: {control.next_due ?? 'N/A'}</p>
+        {/* Bottom section */}
+        <div className="grid grid-cols-2 gap-6">
+          {/* Recent controls */}
+          <Card className="border-slate-200 shadow-none">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h2 className="text-sm font-semibold text-slate-900">Recent Controls</h2>
+              <Link to="/controls" className="text-xs text-slate-400 hover:text-slate-700 font-medium flex items-center gap-1 transition-colors">
+                View all <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <div className="p-3">
+              {controls.slice(0, 5).map(control => (
+                <Link key={control.id} to="/controls" className="flex items-center justify-between px-3 py-2.5 rounded-md hover:bg-slate-50 transition-colors group">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900 truncate group-hover:text-sky-700 transition-colors">{control.title}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{control.owner_name} · Due: {control.next_due ?? 'N/A'}</p>
+                  </div>
+                  <div className="ml-4 flex-shrink-0">
+                    <StatusBadge status={control.status} />
+                  </div>
+                </Link>
+              ))}
+              {controls.length === 0 && (
+                <p className="text-sm text-slate-400 text-center py-6">No controls found</p>
+              )}
+            </div>
+          </Card>
+
+          {/* Compliance issues */}
+          <Card className="border-slate-200 shadow-none">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h2 className="text-sm font-semibold text-slate-900">Active Compliance Issues</h2>
+              {alerts.filter(a => a.type === 'error').length > 0 && (
+                <span className="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full tabular-nums">
+                  {alerts.filter(a => a.type === 'error').length} critical
+                </span>
+              )}
+            </div>
+            <div className="p-3">
+              {alerts.map(alert => (
+                <div key={alert.id} className="flex items-start gap-3 px-3 py-2.5 rounded-md hover:bg-slate-50 transition-colors">
+                  <div className={`w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0 ${
+                    alert.type === 'error' ? 'bg-red-500' :
+                    alert.type === 'warning' ? 'bg-amber-500' : 'bg-sky-500'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-slate-900 leading-snug">{alert.message}</p>
+                    {alert.date && <p className="text-xs text-slate-400 mt-0.5">{alert.date}</p>}
+                  </div>
                 </div>
-                <StatusBadge status={control.status} />
-              </div>
-            ))}
-          </div>
-        </Card>
+              ))}
+              {alerts.length === 0 && (
+                <p className="text-sm text-slate-400 text-center py-6">No active alerts</p>
+              )}
+            </div>
+          </Card>
+        </div>
 
-        {/* Compliance issues */}
-        <Card className="p-6 border-slate-200 shadow-none">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-slate-900">Active Compliance Issues</h2>
-            {alerts.filter(a => a.type === 'error').length > 0 && (
-              <span className="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-                {alerts.filter(a => a.type === 'error').length}
-              </span>
-            )}
-          </div>
-          <div className="space-y-2">
-            {alerts.map(alert => (
-              <div key={alert.id} className="flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 transition-colors">
-                <div className={`w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0 ${
-                  alert.type === 'error' ? 'bg-red-500' :
-                  alert.type === 'warning' ? 'bg-amber-500' : 'bg-sky-500'
-                }`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-slate-900">{alert.message}</p>
-                  {alert.date && <p className="text-xs text-slate-400 mt-0.5">{alert.date}</p>}
-                </div>
-              </div>
-            ))}
-            {alerts.length === 0 && (
-              <p className="text-sm text-slate-400 text-center py-6">No active alerts</p>
-            )}
-          </div>
-        </Card>
+        <RiskHeatmapDialog open={heatmapDialogOpen} onOpenChange={setHeatmapDialogOpen} />
+        <ExportDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} />
+        <AuditReportGenerator open={aiReportDialogOpen} onOpenChange={setAiReportDialogOpen} />
       </div>
-
-      <RiskHeatmapDialog open={heatmapDialogOpen} onOpenChange={setHeatmapDialogOpen} />
-      <ExportDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} />
-      <AuditReportGenerator open={aiReportDialogOpen} onOpenChange={setAiReportDialogOpen} />
     </div>
   );
 }

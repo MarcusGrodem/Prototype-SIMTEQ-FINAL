@@ -82,103 +82,110 @@ export function RiskRegister() {
   };
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Risk Register</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Manage and monitor organisational risks</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleExport} className="border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 gap-1.5">
-            <Download className="w-4 h-4" />
-            Export
-          </Button>
-          <Button size="sm" onClick={() => setAddDialogOpen(true)} className="bg-slate-900 hover:bg-slate-800 text-white gap-1.5">
-            <Plus className="w-4 h-4" />
-            Add Risk
-          </Button>
+    <div className="flex flex-col min-h-full">
+      {/* Page header */}
+      <div className="bg-white border-b border-slate-200 px-8 py-5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-base font-semibold text-slate-900 leading-none">Risk Register</h1>
+            <p className="text-xs text-slate-400 mt-1.5">Manage and monitor organisational risks</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleExport} className="border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 gap-1.5 cursor-pointer">
+              <Download className="w-4 h-4" />
+              Export
+            </Button>
+            <Button size="sm" onClick={() => setAddDialogOpen(true)} className="bg-slate-900 hover:bg-slate-800 text-white gap-1.5 cursor-pointer">
+              <Plus className="w-4 h-4" />
+              Add Risk
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card className="p-4 border-slate-200 shadow-none">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Risks</p>
-          <p className="text-2xl font-bold text-slate-900 mt-1.5">{risks.length}</p>
-        </Card>
-        <Card className="p-4 border-slate-200 shadow-none">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">High Risk</p>
-          <p className="text-2xl font-bold text-red-600 mt-1.5">{risks.filter(r => r.risk_score >= 7).length}</p>
-        </Card>
-        <Card className="p-4 border-slate-200 shadow-none">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Medium Risk</p>
-          <p className="text-2xl font-bold text-amber-600 mt-1.5">{risks.filter(r => r.risk_score >= 4 && r.risk_score < 7).length}</p>
-        </Card>
-        <Card className="p-4 border-slate-200 shadow-none">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Low Risk</p>
-          <p className="text-2xl font-bold text-emerald-600 mt-1.5">{risks.filter(r => r.risk_score < 4).length}</p>
-        </Card>
-      </div>
-
-      {/* Search and Filters */}
-      <Card className="p-4 border-slate-200 shadow-none">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="Search risks..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Button variant="outline" onClick={() => setFilterOpen(!filterOpen)}>
-            <Filter className="w-4 h-4 mr-2" />
-            Filter
-            {(filterStatus.length + filterCategory.length + filterLikelihood.length) > 0 && (
-              <Badge className="ml-2 bg-blue-600 text-white text-xs">
-                {filterStatus.length + filterCategory.length + filterLikelihood.length}
-              </Badge>
-            )}
-            <ChevronDown className="w-4 h-4 ml-1" />
-          </Button>
+      <div className="flex-1 p-8 space-y-6 max-w-7xl mx-auto w-full">
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-4">
+          <Card className="p-5 border-slate-200 border-l-[3px] border-l-slate-400 shadow-none rounded-lg">
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Total Risks</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">{risks.length}</p>
+            <p className="text-xs text-slate-400 mt-3">in risk register</p>
+          </Card>
+          <Card className="p-5 border-slate-200 border-l-[3px] border-l-red-500 shadow-none rounded-lg">
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">High Risk</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">{risks.filter(r => r.risk_score >= 7).length}</p>
+            <p className="text-xs text-red-500 mt-3 font-medium">score ≥ 7</p>
+          </Card>
+          <Card className="p-5 border-slate-200 border-l-[3px] border-l-amber-500 shadow-none rounded-lg">
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Medium Risk</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">{risks.filter(r => r.risk_score >= 4 && r.risk_score < 7).length}</p>
+            <p className="text-xs text-slate-400 mt-3">score 4–6</p>
+          </Card>
+          <Card className="p-5 border-slate-200 border-l-[3px] border-l-emerald-500 shadow-none rounded-lg">
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Low Risk</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">{risks.filter(r => r.risk_score < 4).length}</p>
+            <p className="text-xs text-emerald-600 mt-3 font-medium">score &lt; 4</p>
+          </Card>
         </div>
-        {filterOpen && (
-          <div className="mt-4 pt-4 border-t grid grid-cols-3 gap-6">
-            <div>
-              <p className="text-xs font-medium text-gray-700 mb-2">Status</p>
-              {['Active', 'Mitigated', 'Monitoring'].map(s => (
-                <label key={s} className="flex items-center gap-2 mb-1 cursor-pointer">
-                  <input type="checkbox" checked={filterStatus.includes(s)} onChange={() => toggleFilter(filterStatus, s, setFilterStatus)} className="rounded" />
-                  <span className="text-sm text-gray-700">{s}</span>
-                </label>
-              ))}
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-700 mb-2">Likelihood</p>
-              {['Low', 'Medium', 'High'].map(l => (
-                <label key={l} className="flex items-center gap-2 mb-1 cursor-pointer">
-                  <input type="checkbox" checked={filterLikelihood.includes(l)} onChange={() => toggleFilter(filterLikelihood, l, setFilterLikelihood)} className="rounded" />
-                  <span className="text-sm text-gray-700">{l}</span>
-                </label>
-              ))}
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-700 mb-2">Category</p>
-              {categories.slice(0, 6).map(c => (
-                <label key={c} className="flex items-center gap-2 mb-1 cursor-pointer">
-                  <input type="checkbox" checked={filterCategory.includes(c)} onChange={() => toggleFilter(filterCategory, c, setFilterCategory)} className="rounded" />
-                  <span className="text-sm text-gray-700 truncate">{c}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-      </Card>
 
-      {/* Risks Table */}
-      <Card className="border-slate-200 shadow-none overflow-hidden">
+        {/* Search and Filters */}
+        <Card className="border-slate-200 shadow-none">
+          <div className="px-4 py-3 flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Search risks by title, category, or owner…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 border-slate-200 focus:border-slate-400"
+              />
+            </div>
+            <Button variant="outline" onClick={() => setFilterOpen(!filterOpen)} className="border-slate-200 text-slate-600 hover:bg-slate-50 gap-1.5 cursor-pointer">
+              <Filter className="w-4 h-4" />
+              Filter
+              {(filterStatus.length + filterCategory.length + filterLikelihood.length) > 0 && (
+                <span className="ml-1 bg-slate-900 text-white text-xs px-1.5 py-0.5 rounded-full tabular-nums">
+                  {filterStatus.length + filterCategory.length + filterLikelihood.length}
+                </span>
+              )}
+              <ChevronDown className="w-4 h-4" />
+            </Button>
+          </div>
+          {filterOpen && (
+            <div className="px-4 pb-4 pt-3 border-t border-slate-100 grid grid-cols-3 gap-6">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Status</p>
+                {['Active', 'Mitigated', 'Monitoring'].map(s => (
+                  <label key={s} className="flex items-center gap-2 mb-1.5 cursor-pointer">
+                    <input type="checkbox" checked={filterStatus.includes(s)} onChange={() => toggleFilter(filterStatus, s, setFilterStatus)} className="rounded border-slate-300" />
+                    <span className="text-sm text-slate-700">{s}</span>
+                  </label>
+                ))}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Likelihood</p>
+                {['Low', 'Medium', 'High'].map(l => (
+                  <label key={l} className="flex items-center gap-2 mb-1.5 cursor-pointer">
+                    <input type="checkbox" checked={filterLikelihood.includes(l)} onChange={() => toggleFilter(filterLikelihood, l, setFilterLikelihood)} className="rounded border-slate-300" />
+                    <span className="text-sm text-slate-700">{l}</span>
+                  </label>
+                ))}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Category</p>
+                {categories.slice(0, 6).map(c => (
+                  <label key={c} className="flex items-center gap-2 mb-1.5 cursor-pointer">
+                    <input type="checkbox" checked={filterCategory.includes(c)} onChange={() => toggleFilter(filterCategory, c, setFilterCategory)} className="rounded border-slate-300" />
+                    <span className="text-sm text-slate-700 truncate">{c}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* Risks Table */}
+        <Card className="border-slate-200 shadow-none overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -258,26 +265,24 @@ export function RiskRegister() {
               ))}
             </tbody>
           </table>
+          {filteredRisks.length === 0 && !loading && (
+            <div className="text-center py-12 text-sm text-slate-400">No risks found matching your search.</div>
+          )}
         </div>
       </Card>
 
-      {filteredRisks.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">No risks found matching your search.</p>
-        </div>
-      )}
-
-      <EditRiskDialog
-        risk={selectedRisk}
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        onSuccess={loadData}
-      />
-      <AddRiskDialog
-        open={addDialogOpen}
-        onOpenChange={setAddDialogOpen}
-        onSuccess={loadData}
-      />
+        <EditRiskDialog
+          risk={selectedRisk}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSuccess={loadData}
+        />
+        <AddRiskDialog
+          open={addDialogOpen}
+          onOpenChange={setAddDialogOpen}
+          onSuccess={loadData}
+        />
+      </div>
     </div>
   );
 }
