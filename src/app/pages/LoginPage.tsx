@@ -5,11 +5,12 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { useAuth } from '../../contexts/AuthContext'
+import { supabase } from '../../lib/supabase'
 
 const demoUsers = [
-  { email: 'lars.hansen@simteq.no', role: 'CEO', name: 'Lars Hansen', color: 'bg-sky-50 border-sky-200 text-sky-700' },
-  { email: 'anna.johansen@simteq.no', role: 'CTO', name: 'Anna Johansen', color: 'bg-indigo-50 border-indigo-200 text-indigo-700' },
-  { email: 'kari.olsen@simteq.no', role: 'QA', name: 'Kari Olsen', color: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
+  { email: 'ceo@simteq.no', role: 'CEO', name: 'CEO', color: 'bg-sky-50 border-sky-200 text-sky-700' },
+  { email: 'cto@simteq.no', role: 'CTO', name: 'CTO', color: 'bg-indigo-50 border-indigo-200 text-indigo-700' },
+  { email: 'qa@simteq.no', role: 'QA', name: 'QA', color: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
 ]
 
 export function LoginPage() {
@@ -26,35 +27,37 @@ export function LoginPage() {
     setError(null)
     setLoading(true)
 
-    const { error: signInError } = await signIn(email, password)
+    try {
+      const { error: signInError } = await signIn(email, password)
 
-    if (signInError) {
-      setError('Invalid email or password.')
-      setLoading(false)
-      return
-    }
-
-    let attempts = 0
-    const checkProfile = async () => {
-      const { data: { session } } = await import('../../lib/supabase').then(m => m.supabase.auth.getSession())
-      if (session?.user) {
-        const { data: prof } = await import('../../lib/supabase').then(m =>
-          m.supabase.from('profiles').select('*').eq('id', session.user.id).single()
-        )
-        if (prof) {
-          const role = prof.role as 'ceo' | 'cto' | 'qa'
-          if (role === 'ceo') navigate('/')
-          else if (role === 'cto') navigate('/cto')
-          else navigate('/qa')
-          return
-        }
+      if (signInError) {
+        setError('Invalid email or password.')
+        setLoading(false)
+        return
       }
-      attempts++
-      if (attempts < 5) setTimeout(checkProfile, 300)
-      else navigate('/')
+
+      // Fetch profile and navigate based on role
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (session?.user) {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+
+        const role = prof?.role as 'ceo' | 'cto' | 'qa' | undefined
+        if (role === 'cto') navigate('/cto')
+        else if (role === 'qa') navigate('/qa')
+        else navigate('/')
+      } else {
+        navigate('/')
+      }
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
     }
-    await checkProfile()
-    setLoading(false)
   }
 
   const fillDemo = (demoEmail: string) => {
