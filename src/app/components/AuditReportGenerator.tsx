@@ -1115,117 +1115,127 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-[1400px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <DialogTitle>ISAE 3402 Report Generator</DialogTitle>
-              <p className="text-sm text-gray-500 mt-1">
-                Generate a structured compliance report based on Sentia ISAE 3402 Type II template
-              </p>
-            </div>
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+
+        {/* ── Header ── */}
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-200 shrink-0 pr-12">
+          <div className="w-9 h-9 bg-slate-900 rounded flex items-center justify-center shrink-0">
+            <Sparkles className="w-4 h-4 text-white" />
           </div>
-        </DialogHeader>
+          <div className="min-w-0">
+            <DialogTitle className="text-sm font-semibold text-slate-900 leading-none">ISAE 3402 Report Generator</DialogTitle>
+            <p className="text-xs text-slate-400 mt-1">SIMTEQ AS · Type II · Reporting period Jan–Dec 2025</p>
+          </div>
+        </div>
 
-        <div className="space-y-6 mt-4">
-          {/* Pre-generation state */}
+        {/* ── Scrollable body ── */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+
+          {/* PRE-GENERATION */}
           {!isGenerating && !reportGenerated && (
-            <>
-              <div className="grid grid-cols-4 gap-4">
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="w-4 h-4 text-blue-600" />
-                    <span className="text-xs text-blue-600 font-medium">Sections</span>
-                  </div>
-                  <p className="text-2xl font-semibold text-blue-900">13+</p>
-                  <p className="text-xs text-blue-600 mt-1">sections + appendices</p>
-                </div>
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText className="w-4 h-4 text-slate-600" />
-                    <span className="text-xs text-slate-600 font-medium">Domains</span>
-                  </div>
-                  <p className="text-2xl font-semibold text-slate-900">{ISO_DOMAINS.length}</p>
-                  <p className="text-xs text-slate-500 mt-1">ISO 27001 domains</p>
-                </div>
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                    <span className="text-xs text-green-600 font-medium">Live Data</span>
-                  </div>
-                  <p className="text-2xl font-semibold text-green-900">DB</p>
-                  <p className="text-xs text-green-600 mt-1">Supabase connected</p>
-                </div>
-                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="w-4 h-4 text-orange-600" />
-                    <span className="text-xs text-orange-600 font-medium">Period</span>
-                  </div>
-                  <p className="text-sm font-semibold text-orange-900">2025</p>
-                  <p className="text-xs text-orange-600 mt-1">Jan – Dec</p>
-                </div>
-              </div>
+            <div className="grid grid-cols-[1fr_280px] divide-x divide-slate-200 min-h-[520px]">
 
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Report Structure (Sentia Template)</h3>
-                <div className="grid grid-cols-2 gap-2">
+              {/* Left: overview */}
+              <div className="p-6 space-y-5">
+                {/* Info strip */}
+                <div className="grid grid-cols-4 gap-2">
                   {[
-                    '1. Scope, Objective & Applicability',
-                    '2. System Description',
-                    '3. Management Statement',
-                    '4. Complementary User Entity Controls',
-                    '5. Sub-service Organizations',
-                    '6. IT Control Environment',
-                    '7. Risk Register',
-                    "8. Independent Auditor's Report",
-                    '9. Control Objectives & Test Results',
-                    '10. Change Management Controls',
-                    '11. Business Continuity & Incident Mgmt',
-                    '12. Access Management & SoD',
-                    '13. Summary & Recommendations',
-                    'Appendix A: Complete Control Listing',
-                    'Appendix B: Glossary of Terms',
-                    'Cover page + Table of Contents',
-                  ].map((section, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs text-gray-600">
-                      <CheckCircle2 className="w-3 h-3 text-green-600 shrink-0" />
-                      {section}
+                    { icon: <Shield className="w-3.5 h-3.5" />, label: 'Sections', value: '13+', sub: 'incl. appendices' },
+                    { icon: <FileText className="w-3.5 h-3.5" />, label: 'Domains', value: String(ISO_DOMAINS.length), sub: 'ISO 27001' },
+                    { icon: <TrendingUp className="w-3.5 h-3.5" />, label: 'Data source', value: 'Live', sub: 'Supabase DB' },
+                    { icon: <Calendar className="w-3.5 h-3.5" />, label: 'Period', value: '2025', sub: 'Jan – Dec' },
+                  ].map(item => (
+                    <div key={item.label} className="border border-slate-200 rounded p-3">
+                      <div className="flex items-center gap-1.5 text-slate-400 mb-2">{item.icon}<span className="text-[10px] font-medium uppercase tracking-wide">{item.label}</span></div>
+                      <p className="text-xl font-semibold text-slate-900 leading-none">{item.value}</p>
+                      <p className="text-[11px] text-slate-400 mt-1">{item.sub}</p>
                     </div>
                   ))}
                 </div>
+
+                {/* Report sections */}
+                <div>
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Report Sections (Sentia Template)</p>
+                  <div className="grid grid-cols-2 gap-y-1.5 gap-x-4">
+                    {[
+                      '1. Scope, Objective & Applicability',
+                      '2. System Description',
+                      '3. Management Statement',
+                      '4. Complementary User Entity Controls',
+                      '5. Sub-service Organizations',
+                      '6. IT Control Environment',
+                      '7. Risk Register',
+                      "8. Independent Auditor's Report",
+                      '9. Control Objectives & Test Results',
+                      '10. Change Management Controls',
+                      '11. Business Continuity & Incident Mgmt',
+                      '12. Access Management & SoD',
+                      '13. Summary & Recommendations',
+                      'Appendix A: Complete Control Listing',
+                      'Appendix B: Glossary of Terms',
+                      'Cover page + Table of Contents',
+                    ].map((section, idx) => (
+                      <div key={idx} className="flex items-start gap-1.5 text-xs text-slate-600">
+                        <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0 mt-0.5" />
+                        <span>{section}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="instructions" className="text-sm font-medium text-gray-700 mb-2">
-                  Additional Notes (Optional)
-                </Label>
-                <Textarea
-                  id="instructions"
-                  placeholder="Enter any specific focus areas or additional context to include in the report..."
-                  value={customInstructions}
-                  onChange={(e) => setCustomInstructions(e.target.value)}
-                  className="mt-2 min-h-[80px]"
-                />
+              {/* Right: config + notes */}
+              <div className="p-6 flex flex-col gap-5">
+                <div>
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-3">Configuration</p>
+                  <div className="space-y-2.5">
+                    {[
+                      { label: 'Reporting period', value: 'Jan – Dec 2025' },
+                      { label: 'Standard', value: 'ISAE 3402 Type II' },
+                      { label: 'Format', value: 'DOCX + PDF' },
+                      { label: 'Language', value: 'English' },
+                      { label: 'Data source', value: 'Live (Supabase)' },
+                    ].map(row => (
+                      <div key={row.label} className="flex items-center justify-between text-xs border-b border-slate-100 pb-2">
+                        <span className="text-slate-400">{row.label}</span>
+                        <span className="font-medium text-slate-800">{row.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex-1 flex flex-col gap-2">
+                  <Label htmlFor="instructions" className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                    Additional Notes <span className="normal-case font-normal text-slate-300">(optional)</span>
+                  </Label>
+                  <Textarea
+                    id="instructions"
+                    placeholder="Specific focus areas or additional context for the report…"
+                    value={customInstructions}
+                    onChange={(e) => setCustomInstructions(e.target.value)}
+                    className="flex-1 resize-none min-h-[120px] text-xs"
+                  />
+                </div>
+
+                <Button onClick={handleGenerateReport} className="w-full bg-slate-900 hover:bg-slate-800 text-white h-9 text-sm">
+                  <Sparkles className="w-3.5 h-3.5 mr-2" />
+                  Generate Report
+                </Button>
               </div>
-            </>
+            </div>
           )}
 
-          {/* Generating */}
+          {/* GENERATING */}
           {isGenerating && (
-            <div className="py-12">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Loader2 className="w-8 h-8 text-white animate-spin" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Fetching Live Data</h3>
-                <p className="text-sm text-gray-500">Loading controls, risks, and compliance data from Supabase...</p>
+            <div className="flex flex-col items-center justify-center py-20 px-8">
+              <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center mb-4">
+                <Loader2 className="w-6 h-6 text-white animate-spin" />
               </div>
-              <div className="max-w-md mx-auto">
-                <Progress value={generationProgress} className="h-2 mb-2" />
-                <div className="flex justify-between text-xs text-gray-500">
+              <h3 className="text-sm font-semibold text-slate-900 mb-1">Fetching Live Data</h3>
+              <p className="text-xs text-slate-400 mb-8 text-center">Loading controls, risks, and compliance data from Supabase…</p>
+              <div className="w-full max-w-xs">
+                <Progress value={generationProgress} className="h-1.5 mb-2" />
+                <div className="flex justify-between text-[11px] text-slate-400">
                   <span>Progress</span>
                   <span>{generationProgress}%</span>
                 </div>
@@ -1233,114 +1243,141 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
             </div>
           )}
 
-          {/* Generated */}
+          {/* POST-GENERATION */}
           {reportGenerated && reportData && (
-            <>
-              <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  <div>
-                    <p className="text-sm font-medium text-green-900">Report Data Ready</p>
-                    <p className="text-xs text-green-600">{controls.length} controls · {risks.length} risks loaded from database</p>
-                  </div>
+            <div className="flex flex-col">
+              {/* Status banner */}
+              <div className="flex items-center justify-between px-6 py-3 bg-green-50 border-b border-green-200 shrink-0">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-900">Report Data Ready</span>
+                  <span className="text-xs text-green-600">{controls.length} controls · {risks.length} risks</span>
                 </div>
-                <Badge variant="outline" className="bg-white text-green-700 border-green-300">
+                <Badge variant="outline" className="bg-white text-green-700 border-green-200 text-xs">
                   <Clock className="w-3 h-3 mr-1" />
                   {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                 </Badge>
               </div>
 
-              {/* Metrics */}
-              <div className="grid grid-cols-4 gap-3">
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-blue-900">{complianceScore}%</p>
-                  <p className="text-xs text-blue-600">Compliance Score</p>
-                </div>
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-green-900">{completed}</p>
-                  <p className="text-xs text-green-600">Completed</p>
-                </div>
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-red-900">{overdue}</p>
-                  <p className="text-xs text-red-600">Overdue</p>
-                </div>
-                <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-orange-900">{highRisks}</p>
-                  <p className="text-xs text-orange-600">High Risks</p>
-                </div>
-              </div>
+              {/* Two-column content */}
+              <div className="grid grid-cols-[1fr_268px] divide-x divide-slate-200">
 
-              {/* Domain summary */}
-              <div className="border border-slate-200 rounded-lg overflow-hidden">
-                <div className="bg-slate-50 px-4 py-2 border-b border-slate-200">
-                  <span className="text-xs font-medium text-slate-700">Control Status by ISO 27001 Domain</span>
-                </div>
-                <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto">
-                  {ISO_DOMAINS.map(domain => {
-                    const dc = controls.filter(c => c.category === domain);
-                    if (dc.length === 0) return null;
-                    const symbol = getStatusSymbol(dc);
-                    const comp = dc.filter(c => c.status === 'Completed').length;
-                    return (
-                      <div key={domain} className="flex items-center justify-between px-4 py-2">
-                        <span className="text-xs text-slate-700 flex-1">{domain}</span>
-                        <div className="flex items-center gap-3 shrink-0 ml-2">
-                          <span className="text-xs text-slate-500">{comp}/{dc.length}</span>
-                          <span className={`text-sm font-bold ${symbol === '✓' ? 'text-green-600' : symbol === '⚠' ? 'text-yellow-600' : 'text-red-600'}`}>{symbol}</span>
-                        </div>
+                {/* Left: metrics + domain table */}
+                <div className="p-6 space-y-5">
+                  {/* 4 metrics */}
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { label: 'Compliance Score', value: `${complianceScore}%`, color: complianceScore >= 85 ? 'text-green-700' : complianceScore >= 70 ? 'text-amber-600' : 'text-red-600' },
+                      { label: 'Completed', value: String(completed), color: 'text-slate-900' },
+                      { label: 'Overdue', value: String(overdue), color: overdue > 0 ? 'text-red-600' : 'text-slate-900' },
+                      { label: 'High Risks', value: String(highRisks), color: highRisks > 0 ? 'text-amber-600' : 'text-slate-900' },
+                    ].map(m => (
+                      <div key={m.label} className="border border-slate-200 rounded p-3 text-center">
+                        <p className={`text-2xl font-bold leading-none ${m.color}`}>{m.value}</p>
+                        <p className="text-[11px] text-slate-400 mt-1.5">{m.label}</p>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+
+                  {/* Domain table */}
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Control Status by ISO 27001 Domain</p>
+                    <div className="border border-slate-200 rounded overflow-hidden">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200">
+                            <th className="text-left px-3 py-2 font-medium text-slate-500">Domain</th>
+                            <th className="text-right px-3 py-2 font-medium text-slate-500 w-20">Controls</th>
+                            <th className="text-center px-3 py-2 font-medium text-slate-500 w-16">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {ISO_DOMAINS.map(domain => {
+                            const dc = controls.filter(c => c.category === domain);
+                            if (dc.length === 0) return null;
+                            const symbol = getStatusSymbol(dc);
+                            const comp = dc.filter(c => c.status === 'Completed').length;
+                            return (
+                              <tr key={domain} className="hover:bg-slate-50/50">
+                                <td className="px-3 py-1.5 text-slate-700">{domain}</td>
+                                <td className="px-3 py-1.5 text-right text-slate-400">{comp}/{dc.length}</td>
+                                <td className="px-3 py-1.5 text-center">
+                                  <span className={`font-bold text-sm ${symbol === '✓' ? 'text-green-600' : symbol === '⚠' ? 'text-amber-500' : 'text-red-600'}`}>{symbol}</span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: export options */}
+                <div className="p-6 flex flex-col gap-4">
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Export</p>
+
+                  <button
+                    onClick={handleDownloadWord}
+                    className="flex items-start gap-3 p-3.5 border border-slate-200 rounded hover:border-slate-400 hover:bg-slate-50 transition-colors text-left w-full group"
+                  >
+                    <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center shrink-0 mt-0.5">
+                      <FileText className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">Word (.docx)</p>
+                      <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">Fully formatted with tables, heading styles, and company branding</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={handleDownloadPdf}
+                    className="flex items-start gap-3 p-3.5 border border-slate-200 rounded hover:border-slate-400 hover:bg-slate-50 transition-colors text-left w-full group"
+                  >
+                    <div className="w-8 h-8 bg-slate-700 rounded flex items-center justify-center shrink-0 mt-0.5">
+                      <Download className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">PDF</p>
+                      <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">Print-ready A4, suitable for distribution to auditors</p>
+                    </div>
+                  </button>
+
+                  <div className="mt-auto">
+                    <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Report includes</div>
+                    <div className="space-y-1">
+                      {['Cover page + Table of Contents', '13 compliance sections', 'Full control test results', 'Risk register snapshot', 'Appendices A & B'].map(item => (
+                        <div key={item} className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <CheckCircle2 className="w-3 h-3 text-slate-300 shrink-0" />
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded p-3 leading-relaxed">
+                    For official ISAE 3402 Type II certification, engage a qualified third-party auditor.
+                  </div>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>Download as <strong>Word (.docx)</strong> for a fully formatted document with tables and styling, or <strong>PDF</strong> for a print-ready version.</span>
-              </div>
-            </>
+            </div>
           )}
-
-          {/* Actions */}
-          <div className="flex justify-between items-center border-t pt-4">
-            <div>
-              {reportGenerated && (
-                <Button variant="outline" onClick={handleReset}>
-                  Generate New Report
-                </Button>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Close
-              </Button>
-              {!reportGenerated && !isGenerating && (
-                <Button onClick={handleGenerateReport} className="bg-slate-900 hover:bg-slate-800 text-white">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Report
-                </Button>
-              )}
-              {reportGenerated && (
-                <>
-                  <Button variant="outline" onClick={handleDownloadPdf}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Download PDF
-                  </Button>
-                  <Button onClick={handleDownloadWord} className="bg-blue-600 hover:bg-blue-700">
-                    <FileText className="w-4 h-4 mr-2" />
-                    Download Word
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="text-xs text-amber-800">
-              <strong>Note:</strong> This report is for preliminary compliance assessment. For official ISAE 3402 Type II certification, engage a qualified third-party auditor (ISAE-certified).
-            </p>
-          </div>
         </div>
+
+        {/* ── Footer ── */}
+        <div className="flex items-center justify-between px-6 py-3 border-t border-slate-200 shrink-0">
+          <div>
+            {reportGenerated && (
+              <Button variant="outline" size="sm" onClick={handleReset} className="h-7 text-xs px-3">
+                New Report
+              </Button>
+            )}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="h-7 text-xs px-3">
+            Close
+          </Button>
+        </div>
+
       </DialogContent>
     </Dialog>
   );
