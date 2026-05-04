@@ -9,6 +9,8 @@ import {
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
 import { toast } from 'sonner';
 import { Risk, Control } from '../../lib/types';
 import { supabase } from '../../lib/supabase';
@@ -17,6 +19,7 @@ import { Search, X, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { ControlDetailsDialog } from './ControlDetailsDialog';
+import { useCategories } from '../hooks/useCategories';
 
 interface EditRiskDialogProps {
   open: boolean;
@@ -26,6 +29,11 @@ interface EditRiskDialogProps {
 }
 
 export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRiskDialogProps) {
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<Risk['status']>('Active');
   const [likelihood, setLikelihood] = useState<RiskLevel>('Low');
   const [impact, setImpact] = useState<RiskLevel>('Low');
   const [saving, setSaving] = useState(false);
@@ -37,9 +45,15 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
   const [selectedLinkedControl, setSelectedLinkedControl] = useState<Control | null>(null);
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { categories } = useCategories();
 
   useEffect(() => {
     if (risk && open) {
+      setTitle(risk.title);
+      setCategory(risk.category);
+      setOwnerName(risk.owner_name);
+      setDescription((risk as Risk & { description?: string | null }).description ?? '');
+      setStatus(risk.status);
       setLikelihood(risk.likelihood);
       setImpact(risk.impact);
       loadLinkedControls();
@@ -113,10 +127,25 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
 
   const handleSave = async () => {
     if (!risk) return;
+    if (!title.trim()) { toast.error('Title is required'); return; }
+    if (!category.trim()) { toast.error('Category is required'); return; }
+    if (!ownerName.trim()) { toast.error('Owner is required'); return; }
+
     setSaving(true);
     const { error } = await supabase
       .from('risks')
-      .update({ likelihood, impact, risk_score: riskScore, updated_at: new Date().toISOString() })
+      .update({
+        title: title.trim(),
+        category,
+        owner_name: ownerName.trim(),
+        description: description || null,
+        status,
+        likelihood,
+        impact,
+        risk_score: riskScore,
+        last_review: new Date().toISOString().split('T')[0],
+        updated_at: new Date().toISOString()
+      })
       .eq('id', risk.id);
 
     if (error) {
@@ -125,7 +154,7 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
       return;
     }
 
-    toast.success('Risk updated successfully!', { description: `${risk.title} has been updated.` });
+    toast.success('Risk updated successfully!', { description: `${title} has been updated.` });
     setSaving(false);
     onOpenChange(false);
     onSuccess?.();
@@ -145,26 +174,66 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Risk Assessment</DialogTitle>
+          <DialogTitle>Edit Risk</DialogTitle>
           <DialogDescription>
-            Adjust the likelihood, impact, and linked controls.
+            Update risk details, score, and linked controls.
           </DialogDescription>
         </DialogHeader>
 
         <div className="mt-4 space-y-6">
-          {/* Risk Details */}
-          <div className="p-4 bg-slate-50 rounded-lg">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-900">{risk.title}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className="text-xs">{risk.id}</Badge>
-                  <Badge variant="outline" className="text-xs">{risk.category}</Badge>
-                </div>
-              </div>
+          {/* Risk metadata */}
+          <div className="p-4 bg-slate-50 rounded-lg space-y-4">
+            <div className="flex items-center justify-between">
+              <Badge variant="outline" className="text-xs">{risk.id}</Badge>
               <Badge variant="outline" className={`text-xs font-semibold border ${getRiskScoreColor(riskScore)}`}>
                 Score: {riskScore}
               </Badge>
+            </div>
+
+            <div>
+              <Label htmlFor="risk-title" className="text-sm font-medium text-slate-700">Title *</Label>
+              <Input id="risk-title" value={title} onChange={e => setTitle(e.target.value)} className="mt-1.5" />
+            </div>
+
+            <div>
+              <Label htmlFor="risk-desc" className="text-sm font-medium text-slate-700">Description</Label>
+              <Textarea id="risk-desc" value={description} onChange={e => setDescription(e.target.value)} rows={2} className="mt-1.5" />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label htmlFor="risk-cat" className="text-sm font-medium text-slate-700">Category *</Label>
+                <select
+                  id="risk-cat"
+                  value={category}
+                  onChange={e => setCategory(e.target.value)}
+                  className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {!categories.find(c => c.name === category) && category && (
+                    <option value={category}>{category}</option>
+                  )}
+                  {categories.map(c => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="risk-owner" className="text-sm font-medium text-slate-700">Owner *</Label>
+                <Input id="risk-owner" value={ownerName} onChange={e => setOwnerName(e.target.value)} className="mt-1.5" />
+              </div>
+              <div>
+                <Label htmlFor="risk-status" className="text-sm font-medium text-slate-700">Status</Label>
+                <select
+                  id="risk-status"
+                  value={status}
+                  onChange={e => setStatus(e.target.value as Risk['status'])}
+                  className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Mitigated">Mitigated</option>
+                  <option value="Monitoring">Monitoring</option>
+                </select>
+              </div>
             </div>
           </div>
 

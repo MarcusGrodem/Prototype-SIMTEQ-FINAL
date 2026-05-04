@@ -23,6 +23,7 @@ import { Upload, FileText, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { generateNextId, formatFileSize } from '../utils/riskUtils';
+import { useCategories } from '../hooks/useCategories';
 
 interface AddControlDialogProps {
   open: boolean;
@@ -51,6 +52,7 @@ export function AddControlDialog({ open, onOpenChange, onSuccess }: AddControlDi
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [saving, setSaving] = useState(false);
   const { profile } = useAuth();
+  const { categories } = useCategories();
 
   const handleCancel = useCallback(() => {
     onOpenChange(false);
@@ -192,19 +194,9 @@ export function AddControlDialog({ open, onOpenChange, onSuccess }: AddControlDi
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Organisatoriske foranstaltninger">Organisatoriske foranstaltninger</SelectItem>
-                  <SelectItem value="Tilgangskontroll">Tilgangskontroll</SelectItem>
-                  <SelectItem value="Leverandørstyring">Leverandørstyring</SelectItem>
-                  <SelectItem value="Sikkerhetshendelser">Sikkerhetshendelser</SelectItem>
-                  <SelectItem value="Kontinuitet">Kontinuitet</SelectItem>
-                  <SelectItem value="Etterlevelse">Etterlevelse</SelectItem>
-                  <SelectItem value="Personal">Personal</SelectItem>
-                  <SelectItem value="Fysisk sikkerhet">Fysisk sikkerhet</SelectItem>
-                  <SelectItem value="Datasikkerhet">Datasikkerhet</SelectItem>
-                  <SelectItem value="Teknologi">Teknologi</SelectItem>
-                  <SelectItem value="Drift">Drift</SelectItem>
-                  <SelectItem value="Nettverkssikkerhet">Nettverkssikkerhet</SelectItem>
-                  <SelectItem value="Applikasjonssikkerhet">Applikasjonssikkerhet</SelectItem>
+                  {categories.map(c => (
+                    <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

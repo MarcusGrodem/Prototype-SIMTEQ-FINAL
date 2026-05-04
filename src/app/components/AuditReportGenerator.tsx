@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -18,7 +18,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { Risk, Control } from '../../lib/types';
+import { Risk, Control, ReportTemplate, ReportTemplateSection } from '../../lib/types';
 import {
   Document,
   Packer,
@@ -93,10 +93,34 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
   const [reportGenerated, setReportGenerated] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [customInstructions, setCustomInstructions] = useState('');
+  const [template, setTemplate] = useState<ReportTemplate | null>(null);
+  const [sectionMap, setSectionMap] = useState<Record<string, ReportTemplateSection>>({});
   const [reportData, setReportData] = useState<{
     controls: Control[];
     risks: Risk[];
   } | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data: tpls } = await supabase
+        .from('report_templates')
+        .select('*')
+        .order('is_default', { ascending: false })
+        .limit(1);
+      const tpl = (tpls || [])[0] as ReportTemplate | undefined;
+      if (!tpl) return;
+      setTemplate(tpl);
+      const { data: secs } = await supabase
+        .from('report_template_sections')
+        .select('*')
+        .eq('template_id', tpl.id)
+        .order('position');
+      const map: Record<string, ReportTemplateSection> = {};
+      (secs || []).forEach(s => { map[s.section_key] = s as ReportTemplateSection; });
+      setSectionMap(map);
+    })();
+  }, [open]);
 
   const handleGenerateReport = async () => {
     setIsGenerating(true);
@@ -123,16 +147,70 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
 
   const getReportMeta = () => {
     const now = new Date();
-    const periodStart = 'January 1, 2025';
-    const periodEnd = 'December 31, 2025';
+    const periodStart = template?.period_start ?? 'January 1, 2025';
+    const periodEnd = template?.period_end ?? 'December 31, 2025';
+    const company = template?.company_name ?? 'SIMTEQ AS';
     const generated = now.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
-    return { periodStart, periodEnd, generated };
+    return { periodStart, periodEnd, generated, company };
+  };
+
+  // Substitute template placeholders ({{company}}, {{periodStart}}, {{periodEnd}})
+  const substitute = (text: string): string => {
+    const m = getReportMeta();
+    return text
+      .replace(/\{\{company\}\}/g, m.company)
+      .replace(/\{\{periodStart\}\}/g, m.periodStart)
+      .replace(/\{\{periodEnd\}\}/g, m.periodEnd);
+  };
+
+  // Returns a section's body (with substitutions) if visible in template, else fallback.
+  // Returns null if section exists but is hidden -> caller should skip it.
+  const tplBody = (key: string, fallback: string): string | null => {
+    const s = sectionMap[key];
+    if (!s) return substitute(fallback);
+    if (!s.visible) return null;
+    return substitute(s.body || fallback);
+  };
+
+  const tplTitle = (key: string, fallback: string): string => {
+    const s = sectionMap[key];
+    if (!s || !s.visible) return substitute(fallback);
+    return substitute(s.title || fallback);
   };
 
   const handleDownloadWord = async () => {
     if (!reportData) return;
     const { controls, risks } = reportData;
-    const { periodStart, periodEnd, generated } = getReportMeta();
+    const { periodStart, periodEnd, generated, company } = getReportMeta();
+
+    // Convert a multiline body into Paragraph[].
+    // Blank line = paragraph break. Lines starting with "•" or "-" are bullets.
+    const bodyParagraphs = (body: string): Paragraph[] => {
+      const out: Paragraph[] = [];
+      const blocks = body.split(/\n\s*\n/);
+      for (const block of blocks) {
+        const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+        for (const line of lines) {
+          if (line.startsWith('•') || line.startsWith('-')) {
+            out.push(new Paragraph({ text: line, spacing: { after: 120 } }));
+          } else {
+            out.push(new Paragraph({ text: line, spacing: { after: 200 } }));
+          }
+        }
+      }
+      return out;
+    };
+
+    // Helper: render a templated subsection (heading + body), or skip if hidden in template.
+    const tplSubsection = (key: string, fallbackTitle: string, fallbackBody: string): (Paragraph | Table)[] => {
+      const body = tplBody(key, fallbackBody);
+      if (body === null) return [];
+      const title = tplTitle(key, fallbackTitle);
+      return [
+        new Paragraph({ text: title, heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+        ...bodyParagraphs(body),
+      ];
+    };
 
     const completed = controls.filter(c => c.status === 'Completed').length;
     const overdue = controls.filter(c => c.status === 'Overdue').length;
@@ -167,10 +245,12 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     const children: (Paragraph | Table)[] = [];
 
     // ── COVER PAGE ──────────────────────────────────────────────────────────
+    const coverSubtitle = tplBody('cover_subtitle', 'Independent Assurance Report on Controls at a Service Organization')
+      ?? 'Independent Assurance Report on Controls at a Service Organization';
     children.push(
       new Paragraph({ text: '', spacing: { after: 2400 } }),
       new Paragraph({
-        children: [new TextRun({ text: 'SIMTEQ AS', bold: true, size: 56, color: '1e3a8a' })],
+        children: [new TextRun({ text: company, bold: true, size: 56, color: '1e3a8a' })],
         alignment: AlignmentType.CENTER,
         spacing: { after: 400 },
       }),
@@ -180,7 +260,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         spacing: { after: 200 },
       }),
       new Paragraph({
-        children: [new TextRun({ text: 'Independent Assurance Report on Controls at a Service Organization', size: 28, color: '374151' })],
+        children: [new TextRun({ text: coverSubtitle, size: 28, color: '374151' })],
         alignment: AlignmentType.CENTER,
         spacing: { after: 800 },
       }),
@@ -243,27 +323,16 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
       new Paragraph({ text: '1.  Scope, Objective and Applicability', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      new Paragraph({ text: '1.1  Purpose of this Report', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`This report has been prepared by SIMTEQ AS in accordance with the International Standard on Assurance Engagements (ISAE) 3402 – "Assurance Reports on Controls at a Service Organization." The purpose of this report is to provide SIMTEQ AS's user entities (customers) and their independent auditors with information about the controls in place at SIMTEQ AS that are likely to be relevant to user entities' internal control over financial reporting and information security.`),
-      p('The report covers the design and operating effectiveness of controls throughout the reporting period. It is intended to assist user entities in understanding the nature of controls operated by SIMTEQ AS and to support their own risk assessments and auditor engagement processes.'),
-      new Paragraph({ text: '1.2  Scope of Services Covered', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('This report covers the general IT controls and information security controls operated by SIMTEQ AS in connection with the following services provided to user entities:'),
-      p('• Managed IT infrastructure services, including server hosting, network management, and endpoint management.'),
-      p('• Cloud platform services, including provisioning, monitoring, and management of cloud environments (Azure, AWS).'),
-      p('• IT security operations, including vulnerability management, patch management, and security monitoring.'),
-      p('• Data management and backup services, including data storage, backup execution, and recovery testing.'),
-      p('• Service desk and change management services for user entities.'),
-      new Paragraph({ text: '1.3  Period Covered', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`This report covers the period from ${periodStart} to ${periodEnd}. Controls have been tested throughout this entire period to confirm operating effectiveness, consistent with ISAE 3402 Type II requirements.`),
-      new Paragraph({ text: '1.4  Intended Users', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('This report is intended solely for the use of SIMTEQ AS management, existing user entities, and their independent auditors. It should not be distributed to or relied upon by any party other than those specified. SIMTEQ AS accepts no responsibility for any party acting, or refraining from action, in reliance on this report other than the intended users.'),
-      new Paragraph({ text: '1.5  Applicable Standards and Frameworks', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('Controls described in this report are designed and operated with reference to the following standards and frameworks:'),
-      p('• ISAE 3402 – International Standard on Assurance Engagements (Type II)'),
-      p('• ISO/IEC 27001:2022 – Information Security Management Systems'),
-      p('• ISO/IEC 27002:2022 – Information Security Controls'),
-      p('• NIST SP 800-53 – Security and Privacy Controls for Information Systems'),
-      p('• Norwegian Personal Data Act (Personopplysningsloven) and EU GDPR'),
+      ...tplSubsection('sec_1_1', '1.1  Purpose of this Report',
+        `This report has been prepared by ${company} in accordance with the International Standard on Assurance Engagements (ISAE) 3402.\n\nThe report covers the design and operating effectiveness of controls throughout the reporting period.`),
+      ...tplSubsection('sec_1_2', '1.2  Scope of Services Covered',
+        `This report covers the general IT controls and information security controls operated by ${company} in connection with the services provided to user entities.`),
+      ...tplSubsection('sec_1_3', '1.3  Period Covered',
+        `This report covers the period from ${periodStart} to ${periodEnd}. Controls have been tested throughout this entire period.`),
+      ...tplSubsection('sec_1_4', '1.4  Intended Users',
+        `This report is intended solely for the use of ${company} management, existing user entities, and their independent auditors.`),
+      ...tplSubsection('sec_1_5', '1.5  Applicable Standards and Frameworks',
+        '• ISAE 3402\n• ISO/IEC 27001:2022\n• ISO/IEC 27002:2022\n• NIST SP 800-53\n• GDPR'),
       new Paragraph({ text: '', spacing: { after: 300 } }),
     );
 
@@ -271,11 +340,10 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
       new Paragraph({ text: '2.  System Description', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      new Paragraph({ text: '2.1  Overview of SIMTEQ AS', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('SIMTEQ AS is a Norwegian IT services company headquartered in Norway. The company provides managed services, cloud solutions, and IT infrastructure support to a diverse customer base across private and public sector organizations. SIMTEQ AS employs a team of certified IT professionals dedicated to ensuring the availability, confidentiality, and integrity of the services it provides.'),
-      p('SIMTEQ AS operates primary data center facilities in Norway, with redundant systems to ensure business continuity. All data processing and storage activities are conducted within the European Economic Area (EEA), in compliance with applicable data protection regulations.'),
+      ...tplSubsection('sec_2_1', `2.1  Overview of ${company}`,
+        `${company} is a Norwegian IT services company.`),
       new Paragraph({ text: '2.2  Infrastructure and Technology Components', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('The SIMTEQ AS service delivery infrastructure comprises the following key components:'),
+      p(`The ${company} service delivery infrastructure comprises the following key components:`),
     );
 
     const infraRows = [
@@ -298,38 +366,34 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         })),
       }),
       new Paragraph({ text: '', spacing: { after: 300 } }),
-      new Paragraph({ text: '2.3  Data Flow and Processing', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('Customer data is received by SIMTEQ AS through encrypted channels (TLS 1.2 or higher) and processed within isolated environments. Data classification is applied upon ingestion and governs retention, encryption, and access policies. SIMTEQ AS does not process personal data beyond what is strictly necessary for service delivery, and all such processing is governed by data processing agreements (DPAs) with each user entity.'),
-      p('Data in transit is encrypted using industry-standard protocols. Data at rest is encrypted using AES-256. Encryption keys are managed through a dedicated key management service with rotation policies enforced on a rolling basis.'),
-      new Paragraph({ text: '2.4  Personnel and Organizational Structure', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('SIMTEQ AS maintains a dedicated Information Security function led by the Chief Information Security Officer (CISO), reporting directly to senior management. The organization employs qualified personnel with certifications including CISSP, CISM, ISO 27001 Lead Auditor, and relevant vendor certifications.'),
-      p('All personnel with access to customer data or systems undergo background checks prior to employment and receive annual information security awareness training. Access privileges are reviewed quarterly and are revoked immediately upon termination of employment.'),
+      ...tplSubsection('sec_2_3', '2.3  Data Flow and Processing',
+        `Customer data is received by ${company} through encrypted channels and processed within isolated environments.`),
+      ...tplSubsection('sec_2_4', '2.4  Personnel and Organizational Structure',
+        `${company} maintains a dedicated Information Security function led by the CISO.`),
     );
 
     // ── SECTION 3: MANAGEMENT STATEMENT ────────────────────────────────────
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
       new Paragraph({ text: '3.  Management Statement and Assertion', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      new Paragraph({ text: '3.1  Statement by SIMTEQ Management', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`SIMTEQ AS management confirms that this report accurately describes the company's general IT controls and information security controls for the period ${periodStart} to ${periodEnd}. The description covers the control objectives established by management, the actual controls implemented, and the conditions under which these controls operate.`),
-      p('Management is responsible for designing, implementing, and maintaining effective internal controls. This report has been prepared to provide relevant information to user entities and their auditors regarding the controls in place at SIMTEQ AS. Management accepts responsibility for the completeness and accuracy of the description contained herein.'),
-      p('SIMTEQ AS management confirms that no significant changes were made to the control environment during the reporting period without appropriate authorization and that the description of the system is complete and accurate in all material respects.'),
+      ...tplSubsection('sec_3_1', `3.1  Statement by ${company} Management`,
+        `${company} management confirms that this report accurately describes the company's general IT controls and information security controls for the period ${periodStart} to ${periodEnd}.`),
       new Paragraph({ text: '3.2  Management Assertion', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('Based on the criteria established in the ISAE 3402 standard, SIMTEQ AS management asserts that:'),
-      p('(i)   The description of the system fairly presents SIMTEQ AS\'s system as designed and implemented throughout the period from ' + periodStart + ' to ' + periodEnd + '.'),
+      p(`Based on the criteria established in the ISAE 3402 standard, ${company} management asserts that:`),
+      p(`(i)   The description of the system fairly presents ${company}'s system as designed and implemented throughout the period from ${periodStart} to ${periodEnd}.`),
       p('(ii)  The controls related to the stated control objectives were suitably designed throughout the specified period to provide reasonable assurance that those objectives would be achieved if the controls operated effectively.'),
       p('(iii) The controls tested operated effectively throughout the specified period to provide reasonable assurance that the related control objectives were achieved.'),
-      p('(iv)  SIMTEQ AS has implemented complementary sub-service organization controls where applicable, and relies on the controls of sub-service organizations for certain objectives as described in Section 5.'),
+      p(`(iv)  ${company} has implemented complementary sub-service organization controls where applicable, and relies on the controls of sub-service organizations for certain objectives as described in Section 5.`),
       new Paragraph({ text: '3.3  Responsibility Statement', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('Management of SIMTEQ AS acknowledges its responsibility for monitoring the ongoing performance of controls. Any exceptions or control failures identified during the period have been investigated, root causes determined, and remediation actions completed or scheduled. Identified exceptions and management responses are documented in Section 9 of this report.'),
+      p(`Management of ${company} acknowledges its responsibility for monitoring the ongoing performance of controls.`),
     );
 
     // ── SECTION 4: CUEC ─────────────────────────────────────────────────────
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
       new Paragraph({ text: '4.  Complementary User Entity Controls (CUEC)', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      new Paragraph({ text: '4.1  Overview', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('The controls described in this report are designed with the assumption that user entities have implemented certain complementary controls. SIMTEQ AS\'s controls alone are not sufficient to achieve all control objectives; user entities must implement complementary controls to complete the overall control environment. User entity auditors should evaluate whether these complementary controls have been effectively implemented.'),
+      ...tplSubsection('sec_4_1', '4.1  Overview',
+        `The controls described in this report are designed with the assumption that user entities have implemented certain complementary controls. ${company}'s controls alone are not sufficient to achieve all control objectives.`),
       new Paragraph({ text: '4.2  Required Complementary User Entity Controls', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
     );
 
@@ -359,8 +423,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
       new Paragraph({ text: '5.  Sub-service Organizations', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      new Paragraph({ text: '5.1  Use of Sub-service Organizations', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('SIMTEQ AS uses certain sub-service organizations in the delivery of services to user entities. This report uses the carve-out method for the following sub-service organizations, meaning the description and tests of controls do not include controls at these organizations. User entities and their auditors should obtain separate assurance reports for the following sub-service providers where relevant.'),
+      ...tplSubsection('sec_5_1', '5.1  Use of Sub-service Organizations',
+        `${company} uses certain sub-service organizations in the delivery of services to user entities.`),
     );
 
     const subRows = [
@@ -386,13 +450,13 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     children.push(
       new Paragraph({ text: '6.  Description of the IT Control Environment', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
       new Paragraph({ text: '6.1  Control Framework', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('SIMTEQ AS has implemented a comprehensive IT control framework aligned with ISO/IEC 27001:2022. The framework is organized into thirteen control domains, each containing specific control objectives designed to address identified risks to the confidentiality, integrity, and availability of information assets.'),
+      p(`${company} has implemented a comprehensive IT control framework aligned with ISO/IEC 27001:2022. The framework is organized into thirteen control domains, each containing specific control objectives designed to address identified risks to the confidentiality, integrity, and availability of information assets.`),
       p(`As of ${periodEnd}, the control environment comprises ${controls.length} individual controls across ${ISO_DOMAINS.filter(d => controls.some(c => c.category === d)).length} active domains, with an overall completion rate of ${complianceScore}%.`),
       new Paragraph({ text: '6.2  Control Environment Components', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
     );
 
     const envRows2 = [
-      ['Component', 'Implementation at SIMTEQ AS'],
+      ['Component', `Implementation at ${company}`],
       ['Control Environment', 'Tone at the top is set by the CISO and senior management. An information security policy is published and reviewed annually.'],
       ['Risk Assessment', `Formal risk assessments are conducted twice-yearly. ${risks.length} risks are currently tracked in the risk register.`],
       ['Control Activities', `${controls.length} controls span preventive, detective, and corrective categories across ${ISO_DOMAINS.length} domains.`],
@@ -412,7 +476,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       }),
       new Paragraph({ text: '', spacing: { after: 300 } }),
       new Paragraph({ text: '6.3  Governance and Oversight', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('SIMTEQ AS maintains an Information Security Steering Committee that meets quarterly to review the status of the control environment, approve material changes to security policies, and review the risk register. The committee is chaired by the CISO and includes representatives from IT Operations, Legal, Compliance, and senior management.'),
+      p(`${company} maintains an Information Security Steering Committee that meets quarterly to review the status of the control environment, approve material changes to security policies, and review the risk register. The committee is chaired by the CISO and includes representatives from IT Operations, Legal, Compliance, and senior management.`),
       p('Internal compliance reviews are conducted semi-annually and findings are tracked in the compliance management system. All findings are assigned an owner, a remediation target date, and a severity rating. Unresolved critical findings are escalated to the Board of Directors.'),
     );
 
@@ -421,7 +485,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     children.push(
       new Paragraph({ text: '7.  Risk Register', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
       new Paragraph({ text: '7.1  Risk Management Methodology', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('SIMTEQ AS uses a structured risk management methodology based on ISO 31000 and ISO 27005. Risks are identified through periodic threat assessments, vulnerability scans, incident reviews, and internal audits. Each risk is evaluated using a likelihood × impact scoring matrix on a scale of 1–9, yielding a composite risk score that determines the risk rating and required response.'),
+      p(`${company} uses a structured risk management methodology based on ISO 31000 and ISO 27005. Risks are identified through periodic threat assessments, vulnerability scans, incident reviews, and internal audits. Each risk is evaluated using a likelihood × impact scoring matrix on a scale of 1–9, yielding a composite risk score that determines the risk rating and required response.`),
     );
 
     const riskMatrix = [
@@ -488,10 +552,14 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
 
     // ── SECTION 8: AUDITOR'S REPORT ─────────────────────────────────────────
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
+    {
+      const introBody = tplBody('sec_8_intro', `To: The Management of ${company} and its User Entities.\n\nWe have examined the description of ${company}'s General IT Controls and information security controls for the period ${periodStart} to ${periodEnd}.`);
+      children.push(
+        new Paragraph({ text: tplTitle('sec_8_intro', "8.  Independent Auditor's Assurance Report"), heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
+        ...(introBody !== null ? bodyParagraphs(introBody) : []),
+      );
+    }
     children.push(
-      new Paragraph({ text: "8.  Independent Auditor's Assurance Report", heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      p('To: The Management of SIMTEQ AS and its User Entities'),
-      p(`We have examined the description of SIMTEQ AS's General IT Controls and information security controls for the period ${periodStart} to ${periodEnd}, and have performed tests of the design and operating effectiveness of those controls necessary to form an opinion in accordance with ISAE 3402.`),
       new Paragraph({ text: '8.1  Auditor Responsibilities', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
       p('Our responsibility is to express an opinion on the fairness of the presentation of the description and on the design and operating effectiveness of the controls to achieve the related control objectives, based on our examination. We conducted our engagement in accordance with the International Standard on Assurance Engagements (ISAE) 3402, "Assurance Reports on Controls at a Service Organization."'),
       p('That standard requires that we comply with ethical requirements and plan and perform our procedures to obtain reasonable assurance about whether, in all material respects, the description fairly presents the system as designed and implemented, the controls were suitably designed, and the controls operated effectively throughout the stated period.'),
@@ -499,13 +567,13 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       p('Our procedures included examining evidence supporting the description and the design and operating effectiveness of the controls. Our tests of controls included inquiry, observation, inspection of documents and records, and re-performance of controls. We believe our examination provides a reasonable basis for our opinion.'),
       new Paragraph({ text: '8.3  Our Conclusion', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
       p(`Based on our examination, in our opinion, in all material respects, as at ${periodEnd}:`),
-      p('(i)   The description fairly presents SIMTEQ AS\'s system as designed and implemented throughout the period.'),
+      p(`(i)   The description fairly presents ${company}'s system as designed and implemented throughout the period.`),
       p('(ii)  The controls related to the stated control objectives were suitably designed throughout the period.'),
       p(complianceScore >= 85
         ? `(iii) The controls tested operated effectively throughout the period ${periodStart} to ${periodEnd}, with no material exceptions noted.`
         : `(iii) The controls tested operated with ${overdue} exception(s) noted. Details and management responses are provided in Section 9.`),
       new Paragraph({ text: '8.4  Basis of Opinion', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('Our examination was conducted in accordance with the criteria established by SIMTEQ AS management and set out in Section 6 of this report. We believe the criteria used are suitable and available to user entities and their auditors. Our independence and quality management policies have been applied throughout the engagement.'),
+      p(`Our examination was conducted in accordance with the criteria established by ${company} management and set out in Section 6 of this report. We believe the criteria used are suitable and available to user entities and their auditors. Our independence and quality management policies have been applied throughout the engagement.`),
       new Paragraph({ text: '8.5  Legend', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
       p('✓  No material deviations noted — controls operated effectively throughout the period'),
       p('⚠  Some weaknesses identified — improvements recommended; controls substantially effective'),
@@ -729,14 +797,15 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       );
     }
 
-    children.push(
-      new Paragraph({ text: 'Recommendations', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`1. ${overdue > 0 ? `Prioritize remediation of the ${overdue} overdue control(s) identified above. Assign dedicated owners and set target completion dates within 30 days.` : 'Maintain the current strong control completion rate and continue quarterly control reviews.'}`),
-      p(`2. ${highRisks > 0 ? `Develop and implement formal mitigation plans for the ${highRisks} high-priority risk(s) identified. Senior management should review progress monthly.` : 'Continue proactive risk identification and maintain the risk register with semi-annual formal reviews.'}`),
-      p('3. Ensure all user entities have reviewed and implemented the Complementary User Entity Controls (CUECs) documented in Section 4 of this report.'),
-      p('4. Continue annual testing of the Business Continuity and Disaster Recovery plans, incorporating lessons learned from the current reporting period.'),
-      p('5. Review and update the Access Control Matrix following any organizational changes to ensure least-privilege principles are maintained.'),
-    );
+    {
+      const recsBody = tplBody('sec_13_recs', `1. ${overdue > 0 ? `Prioritize remediation of the ${overdue} overdue control(s) identified above. Assign dedicated owners and set target completion dates within 30 days.` : 'Maintain the current strong control completion rate and continue quarterly control reviews.'}\n\n2. ${highRisks > 0 ? `Develop and implement formal mitigation plans for the ${highRisks} high-priority risk(s) identified. Senior management should review progress monthly.` : 'Continue proactive risk identification and maintain the risk register with semi-annual formal reviews.'}\n\n3. Ensure all user entities have reviewed and implemented the Complementary User Entity Controls (CUECs) documented in Section 4 of this report.\n\n4. Continue annual testing of the Business Continuity and Disaster Recovery plans, incorporating lessons learned from the current reporting period.\n\n5. Review and update the Access Control Matrix following any organizational changes to ensure least-privilege principles are maintained.`);
+      if (recsBody !== null) {
+        children.push(
+          new Paragraph({ text: tplTitle('sec_13_recs', 'Recommendations'), heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+          ...bodyParagraphs(recsBody),
+        );
+      }
+    }
 
     if (customInstructions) {
       children.push(
@@ -813,16 +882,16 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       }),
       new Paragraph({ text: '', spacing: { after: 400 } }),
       new Paragraph({
-        children: [new TextRun({ text: 'This report was generated by ComplianceOS on behalf of SIMTEQ AS. For official ISAE 3402 Type II certification, engage a qualified third-party auditor holding ISAE accreditation.', size: 18, color: '9ca3af', italics: true })],
+        children: [new TextRun({ text: tplBody('footer', `This report was generated by ComplianceOS on behalf of ${company}. For official ISAE 3402 Type II certification, engage a qualified third-party auditor holding ISAE accreditation.`) ?? '', size: 18, color: '9ca3af', italics: true })],
         spacing: { before: 600 },
         border: { top: { style: BorderStyle.SINGLE, size: 4, color: 'e5e7eb' } },
       }),
     );
 
     const doc = new Document({
-      creator: 'ComplianceOS – SIMTEQ AS',
+      creator: `ComplianceOS – ${company}`,
       title: 'ISAE 3402 Type II Report',
-      description: `ISAE 3402 compliance report for SIMTEQ AS – ${periodStart} to ${periodEnd}`,
+      description: `ISAE 3402 compliance report for ${company} – ${periodStart} to ${periodEnd}`,
       sections: [{ children }],
     });
 
@@ -830,7 +899,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `SIMTEQ_ISAE3402_${new Date().toISOString().split('T')[0]}.docx`;
+    a.download = `${company.replace(/\s+/g, '_')}_ISAE3402_${new Date().toISOString().split('T')[0]}.docx`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -840,7 +909,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
   const handleDownloadPdf = () => {
     if (!reportData) return;
     const { controls, risks } = reportData;
-    const { periodStart, periodEnd, generated } = getReportMeta();
+    const { periodStart, periodEnd, generated, company } = getReportMeta();
 
     const completed = controls.filter(c => c.status === 'Completed').length;
     const overdue = controls.filter(c => c.status === 'Overdue').length;
@@ -921,7 +990,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(28);
     doc.setTextColor(255, 255, 255);
-    doc.text('SIMTEQ AS', pageW / 2, 28, { align: 'center' });
+    doc.text(company, pageW / 2, 28, { align: 'center' });
     doc.setFontSize(18);
     doc.text('ISAE 3402 TYPE II', pageW / 2, 44, { align: 'center' });
 
@@ -982,7 +1051,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     addPage();
     h1('1.  Management Statement');
     h2('1a.  Statement by SIMTEQ Management');
-    body(`SIMTEQ AS management confirms that this report accurately describes the company's general IT controls for the period ${periodStart} to ${periodEnd}. The description covers the control objectives established by management, the actual controls implemented, and the conditions under which these controls operate.`);
+    body(`${company} management confirms that this report accurately describes the company's general IT controls for the period ${periodStart} to ${periodEnd}. The description covers the control objectives established by management, the actual controls implemented, and the conditions under which these controls operate.`);
     body('Management is responsible for designing, implementing, and maintaining effective controls. This report has been prepared to provide relevant information to user entities and their auditors.');
     y += 4;
     h2('1b.  Management Assertion');
@@ -995,7 +1064,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     y += 6;
     h1('2.  Description of the IT Control Environment');
     h2('2a.  Overview of Services');
-    body('SIMTEQ AS is a Norwegian IT services company providing managed services, cloud solutions, and IT infrastructure support. The company processes and stores customer data on behalf of its clients, making robust internal controls essential for maintaining trust and compliance.');
+    body(`${company} is a Norwegian IT services company providing managed services, cloud solutions, and IT infrastructure support. The company processes and stores customer data on behalf of its clients, making robust internal controls essential for maintaining trust and compliance.`);
     y += 4;
     h2('2b.  Control Environment Summary');
     const envCols = ['Component', 'Details'];
@@ -1012,9 +1081,9 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     y += 8;
     checkPage(60);
     h1("3.  Independent Auditor's Assurance Report");
-    body('To: SIMTEQ AS and its User Entities');
+    body(`To: ${company} and its User Entities`);
     y += 2;
-    body('We have examined the description of SIMTEQ AS\'s General IT Controls and have performed tests of controls necessary to form an opinion on the design and operating effectiveness of those controls.');
+    body(`We have examined the description of ${company}'s General IT Controls and have performed tests of controls necessary to form an opinion on the design and operating effectiveness of those controls.`);
     y += 4;
     h2('Legend');
     body('✓  No material deviations noted during the period');
@@ -1087,14 +1156,14 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       doc.setFontSize(7);
       doc.setTextColor(156, 163, 175);
       doc.text(
-        `SIMTEQ AS – ISAE 3402 Type II – ${periodStart} to ${periodEnd}  |  Page ${i} of ${pageCount}`,
+        `${company} – ISAE 3402 Type II – ${periodStart} to ${periodEnd}  |  Page ${i} of ${pageCount}`,
         pageW / 2,
         290,
         { align: 'center' }
       );
     }
 
-    doc.save(`SIMTEQ_ISAE3402_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`${company.replace(/\s+/g, '_')}_ISAE3402_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   const handleReset = () => {
@@ -1124,7 +1193,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
           </div>
           <div className="min-w-0">
             <DialogTitle className="text-sm font-semibold text-slate-900 leading-none">ISAE 3402 Report Generator</DialogTitle>
-            <p className="text-xs text-slate-400 mt-1">SIMTEQ AS · Type II · Reporting period Jan–Dec 2025</p>
+            <p className="text-xs text-slate-400 mt-1">{template?.company_name ?? 'SIMTEQ AS'} · Type II · {template ? `${template.period_start} – ${template.period_end}` : 'Reporting period'}</p>
           </div>
         </div>
 

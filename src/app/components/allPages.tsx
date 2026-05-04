@@ -1,6 +1,7 @@
 import {
   LayoutDashboard, AlertTriangle, Shield, Calendar,
-  GitCommit, Package, Users, FileText, BookOpen
+  GitCommit, Package, Users, FileText, BookOpen,
+  Tag, Bell, FileEdit
 } from 'lucide-react'
 
 export interface PageDef {
@@ -13,10 +14,14 @@ export interface PageDef {
 
 export const ALL_PAGES: PageDef[] = [
   // CEO
-  { key: 'ceo_dashboard', name: 'Dashboard',      href: '/',              view: 'CEO', icon: LayoutDashboard },
-  { key: 'ceo_risks',     name: 'Risk Register',  href: '/risks',         view: 'CEO', icon: AlertTriangle },
-  { key: 'ceo_controls',  name: 'Controls',       href: '/controls',      view: 'CEO', icon: Shield },
-  { key: 'ceo_calendar',  name: 'Calendar',       href: '/calendar',      view: 'CEO', icon: Calendar },
+  { key: 'ceo_dashboard',     name: 'Dashboard',         href: '/',                  view: 'CEO', icon: LayoutDashboard },
+  { key: 'ceo_risks',         name: 'Risk Register',     href: '/risks',             view: 'CEO', icon: AlertTriangle },
+  { key: 'ceo_controls',      name: 'Controls',          href: '/controls',          view: 'CEO', icon: Shield },
+  { key: 'ceo_calendar',      name: 'Calendar',          href: '/calendar',          view: 'CEO', icon: Calendar },
+  { key: 'ceo_categories',    name: 'Risk Categories',   href: '/categories',        view: 'CEO', icon: Tag },
+  { key: 'ceo_users',         name: 'Users',             href: '/users',             view: 'CEO', icon: Users },
+  { key: 'ceo_report_tpl',    name: 'Report Template',   href: '/report-template',   view: 'CEO', icon: FileEdit },
+  { key: 'ceo_notifications', name: 'Notification Log',  href: '/notifications',     view: 'CEO', icon: Bell },
   // CTO
   { key: 'cto_overview',  name: 'Overview',       href: '/cto',           view: 'CTO', icon: LayoutDashboard },
   { key: 'cto_changelog', name: 'Change Log',     href: '/cto/changelog', view: 'CTO', icon: GitCommit },
@@ -33,7 +38,7 @@ export const ALL_PAGES: PageDef[] = [
 export const PAGE_BY_KEY = Object.fromEntries(ALL_PAGES.map(p => [p.key, p]))
 
 export const VIEW_DEFAULTS: Record<string, string[]> = {
-  ceo: ['ceo_dashboard', 'ceo_risks', 'ceo_controls', 'ceo_calendar'],
+  ceo: ['ceo_dashboard', 'ceo_risks', 'ceo_controls', 'ceo_calendar', 'ceo_categories', 'ceo_users', 'ceo_report_tpl', 'ceo_notifications'],
   cto: ['cto_overview', 'cto_changelog', 'cto_releases', 'cto_access'],
   qa:  ['qa_overview', 'qa_controls', 'qa_evidence', 'qa_calendar', 'qa_policies'],
 }

@@ -5,6 +5,7 @@ import { Input } from '../components/ui/input';
 import { StatusBadge } from '../components/StatusBadge';
 import { AddControlDialog } from '../components/AddControlDialog';
 import { ControlDetailsDialog } from '../components/ControlDetailsDialog';
+import { EditControlDialog } from '../components/EditControlDialog';
 import {
   Search,
   Filter,
@@ -13,7 +14,8 @@ import {
   Upload,
   FileCheck,
   Calendar,
-  ChevronDown
+  ChevronDown,
+  Pencil
 } from 'lucide-react';
 import { Control } from '../../lib/types';
 import { useState, useEffect, useCallback } from 'react';
@@ -29,6 +31,8 @@ export function ControlManagement() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [controlToEdit, setControlToEdit] = useState<Control | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterCategory, setFilterCategory] = useState<string[]>([]);
@@ -321,15 +325,26 @@ export function ControlManagement() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => handleUploadEvidence(e, control)}
-                        title="Upload evidence"
-                        className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 cursor-pointer"
-                      >
-                        <Upload className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); setControlToEdit(control); setEditDialogOpen(true); }}
+                          title="Edit control"
+                          className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 cursor-pointer"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => handleUploadEvidence(e, control)}
+                          title="Upload evidence"
+                          className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 cursor-pointer"
+                        >
+                          <Upload className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -364,6 +379,7 @@ export function ControlManagement() {
 
         <AddControlDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} onSuccess={loadData} />
         <ControlDetailsDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} control={selectedControl} onSuccess={loadData} />
+        <EditControlDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} control={controlToEdit} onSuccess={loadData} />
       </div>
     </div>
   );

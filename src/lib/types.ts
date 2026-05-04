@@ -153,6 +153,47 @@ export interface Release {
   changes?: ReleaseChange[]
 }
 
+export interface RiskCategory {
+  id: string
+  name: string
+  color: string
+  description: string | null
+  created_at: string
+}
+
+export interface ReportTemplate {
+  id: string
+  name: string
+  company_name: string
+  period_start: string
+  period_end: string
+  is_default: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ReportTemplateSection {
+  id: string
+  template_id: string
+  section_key: string
+  title: string
+  body: string
+  position: number
+  visible: boolean
+}
+
+export interface NotificationLogEntry {
+  id: string
+  kind: string
+  recipient_email: string
+  subject: string
+  body: string | null
+  related_type: string | null
+  related_id: string | null
+  status: string
+  created_at: string
+}
+
 export interface Policy {
   id: string
   title: string

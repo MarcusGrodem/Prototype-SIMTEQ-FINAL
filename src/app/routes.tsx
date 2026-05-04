@@ -8,6 +8,10 @@ import { MainDashboard } from './pages/MainDashboard';
 import { RiskRegister } from './pages/RiskRegister';
 import { ControlManagement } from './pages/ControlManagement';
 import { ComplianceCalendar } from './pages/ComplianceCalendar';
+import { RiskCategoriesPage } from './pages/RiskCategoriesPage';
+import { UserManagementPage } from './pages/UserManagementPage';
+import { ReportTemplateEditor } from './pages/ReportTemplateEditor';
+import { NotificationLogPage } from './pages/NotificationLogPage';
 // QA pages
 import { QADashboard } from './pages/qa/QADashboard';
 import { Evidence } from './pages/Evidence';
@@ -34,7 +38,11 @@ export const router = createBrowserRouter([
       { index: true, element: <MainDashboard /> },
       { path: 'risks', element: <RiskRegister /> },
       { path: 'controls', element: <ControlManagement /> },
-      { path: 'calendar', element: <ComplianceCalendar /> }
+      { path: 'calendar', element: <ComplianceCalendar /> },
+      { path: 'categories', element: <RiskCategoriesPage /> },
+      { path: 'users', element: <UserManagementPage /> },
+      { path: 'report-template', element: <ReportTemplateEditor /> },
+      { path: 'notifications', element: <NotificationLogPage /> }
     ]
   },
   {

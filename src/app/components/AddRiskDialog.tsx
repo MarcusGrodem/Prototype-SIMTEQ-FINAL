@@ -14,6 +14,7 @@ import { Badge } from './ui/badge';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { RiskLevel, calculateRiskScore, getRiskScoreColor, generateNextId } from '../utils/riskUtils';
+import { useCategories } from '../hooks/useCategories';
 
 interface AddRiskDialogProps {
   open: boolean;
@@ -29,6 +30,7 @@ export function AddRiskDialog({ open, onOpenChange, onSuccess }: AddRiskDialogPr
   const [likelihood, setLikelihood] = useState<RiskLevel>('Low');
   const [impact, setImpact] = useState<RiskLevel>('Low');
   const [saving, setSaving] = useState(false);
+  const { categories } = useCategories();
 
   const riskScore = calculateRiskScore(likelihood, impact);
 
@@ -131,19 +133,10 @@ export function AddRiskDialog({ open, onOpenChange, onSuccess }: AddRiskDialogPr
                   onChange={(e) => setCategory(e.target.value)}
                   className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select category...</option>
-                  <option value="Ledelse">Ledelse</option>
-                  <option value="Sikkerhet">Sikkerhet</option>
-                  <option value="Leverandørstyring">Leverandørstyring</option>
-                  <option value="Sikkerhetshendelser">Sikkerhetshendelser</option>
-                  <option value="Kontinuitet">Kontinuitet</option>
-                  <option value="Etterlevelse">Etterlevelse</option>
-                  <option value="Personal">Personal</option>
-                  <option value="Fysisk sikkerhet">Fysisk sikkerhet</option>
-                  <option value="Datasikkerhet">Datasikkerhet</option>
-                  <option value="Teknologi">Teknologi</option>
-                  <option value="Nettverkssikkerhet">Nettverkssikkerhet</option>
-                  <option value="Applikasjonssikkerhet">Applikasjonssikkerhet</option>
+                  <option value="">Select category…</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
                 </select>
               </div>
 
