@@ -32,6 +32,15 @@
 -- ============================================================
 -- RISKS  (R001 – R013)
 -- ============================================================
+insert into public.roles (key, label, description) values
+  ('ceo', 'CEO', 'Executive view and user administration'),
+  ('cto', 'CTO', 'Technical controls, releases, and access oversight'),
+  ('qa', 'QA', 'Quality assurance and evidence operations'),
+  ('auditor', 'Auditor', 'External or internal audit reviewer')
+on conflict (key) do update set
+  label = excluded.label,
+  description = excluded.description;
+
 insert into public.risks (id, title, category, likelihood, impact, risk_score, status, owner_name, description, last_review) values
   ('R001','Unauthorized Data Access','Tilgangskontroll','High','High',9,'Active','Lars Hansen','Risk of unauthorized users gaining access to sensitive customer data through privilege escalation or stolen credentials.','2025-11-15'),
   ('R002','Third-Party Vendor Breach','Leverandørstyring','Medium','High',6,'Active','Maria Chen','Critical business data processed by third-party vendors may be exposed due to inadequate security controls.','2025-11-20'),
@@ -106,6 +115,18 @@ insert into public.controls (id, title, category, frequency, status, owner_name,
   ('C053','Risk Register Review','Etterlevelse','Quarterly','Completed','Lena Bakke','Quarterly review and update of the risk register.','2025-12-31','2026-03-31');
 
 -- ============================================================
+-- RISK_CATEGORIES  (managed lookup from risks + controls)
+-- ============================================================
+insert into public.risk_categories (name)
+select distinct category
+from (
+  select category from public.risks where category is not null
+  union
+  select category from public.controls where category is not null
+) categories
+on conflict (name) do nothing;
+
+-- ============================================================
 -- RISK_CONTROLS  (mappings)
 -- ============================================================
 insert into public.risk_controls (risk_id, control_id) values
@@ -171,7 +192,7 @@ insert into public.change_logs (change_id, title, description, author_name, stat
 -- ============================================================
 -- RELEASES  (v2.1.0 – v2.5.0)
 -- ============================================================
-insert into public.releases (version, title, description, status, release_date, author_name) values
+insert into public.releases (version, title, description, status, release_date, released_by_name) values
   ('v2.1.0','Security Hardening Release','Enforcement of MFA, legacy TLS deprecation, firewall rule cleanup and automated patch deployment pipeline.','Released','2026-01-15','Mads Grude'),
   ('v2.2.0','Database & Performance Update','PostgreSQL 16 migration, query optimisation, connection pooling improvements and index tuning.','Released','2026-02-10','Mads Grude'),
   ('v2.3.0','Threat Detection Enhancement','New SIEM rules for ransomware and lateral movement detection, API rate limiting, WAF rule updates.','Released','2026-03-05','Thomas Berg'),
@@ -194,3 +215,39 @@ insert into public.policies (title, category, version, status, owner_name, revie
   ('Change Management Policy','Teknologi','2.0','Active','Mads Grude','2026-06-30','Formal change management process covering request, assessment, approval, implementation and review of all changes to production systems.'),
   ('Vulnerability Management Policy','Teknologi','1.1','Active','Jonas Pettersen','2026-09-30','Requirements for regular vulnerability scanning, risk-based patching and penetration testing of IT systems and applications.'),
   ('Data Retention and Disposal Policy','Etterlevelse','1.2','Draft','Erik Sørensen','2026-03-31','Policy defining retention periods for different categories of data and secure disposal procedures to meet legal and regulatory requirements.');
+
+-- ============================================================
+-- REPORT_TEMPLATES  (default audit report template)
+-- ============================================================
+insert into public.report_templates (name, is_default)
+values ('ISAE 3402 Type II - default', true)
+on conflict do nothing;
+
+insert into public.report_template_sections (template_id, section_key, title, body, position)
+select
+  t.id,
+  s.section_key,
+  s.title,
+  s.body,
+  s.position
+from public.report_templates t
+cross join (
+  values
+    ('cover_subtitle', 'Cover subtitle', 'Independent Assurance Report on Controls at a Service Organization', 0),
+    ('sec_1_1', '1.1  Purpose of this Report', 'This report has been prepared by {{company}} in accordance with ISAE 3402. The purpose is to provide user entities and their auditors with information about controls relevant to financial reporting and information security.', 10),
+    ('sec_1_2', '1.2  Scope of Services Covered', 'This report covers general IT controls and information security controls operated by {{company}} for managed services, cloud services, IT security operations, backup services, and service desk/change management services.', 20),
+    ('sec_1_3', '1.3  Period Covered', 'This report covers the period from {{periodStart}} to {{periodEnd}}.', 30),
+    ('sec_1_4', '1.4  Intended Users', 'This report is intended for {{company}} management, existing user entities, and their independent auditors.', 40),
+    ('sec_1_5', '1.5  Applicable Standards and Frameworks', 'Controls are designed and operated with reference to ISAE 3402, ISO/IEC 27001, ISO/IEC 27002, NIST SP 800-53, GDPR, and applicable Norwegian data protection requirements.', 50),
+    ('sec_2_1', '2.1  Overview of {{company}}', '{{company}} provides managed services, cloud solutions, IT infrastructure support, and information security operations.', 60),
+    ('sec_2_3', '2.3  Data Flow and Processing', 'Customer data is processed through secured channels, protected by encryption in transit and at rest, and governed by documented access and retention controls.', 70),
+    ('sec_2_4', '2.4  Personnel and Organizational Structure', '{{company}} maintains assigned security and compliance responsibilities, background checks where appropriate, and recurring security awareness training.', 80),
+    ('sec_3_1', '3.1  Statement by Management', '{{company}} management is responsible for designing, implementing, and maintaining effective internal controls for the reporting period.', 90),
+    ('sec_4_1', '4.  Complementary User Entity Controls (CUEC)', 'The controls described in this report assume that user entities have implemented relevant complementary controls.', 100),
+    ('sec_5_1', '5.  Sub-service Organizations', '{{company}} uses sub-service organizations where relevant. User entities should obtain separate assurance where needed.', 110),
+    ('sec_8_intro', '8.  Independent Auditor''s Assurance Report', 'To: The Management of {{company}} and its User Entities.', 120),
+    ('sec_13_recs', '13.  Recommendations', '1. Prioritize remediation of overdue controls.\n\n2. Maintain formal mitigation plans for high-priority risks.\n\n3. Review complementary user entity controls with relevant customers.', 130),
+    ('footer', 'Closing note', 'This report was generated by ComplianceOS on behalf of {{company}}.', 140)
+) as s(section_key, title, body, position)
+where t.is_default
+on conflict (template_id, section_key) do nothing;

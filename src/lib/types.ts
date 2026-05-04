@@ -3,10 +3,18 @@
 export interface Profile {
   id: string
   full_name: string
-  role: 'ceo' | 'cto' | 'qa'
+  role: string
   email: string | null
+  department: string | null
   created_at: string
   updated_at: string
+}
+
+export interface RoleOption {
+  key: string
+  label: string
+  description: string | null
+  created_at: string
 }
 
 export interface Risk {

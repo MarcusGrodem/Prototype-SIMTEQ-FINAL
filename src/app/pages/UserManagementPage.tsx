@@ -1,21 +1,35 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Profile } from '../../lib/types'
+import { Profile, RoleOption } from '../../lib/types'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Badge } from '../components/ui/badge'
 import { Card } from '../components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog'
-import { Plus, Pencil, Mail, ShieldAlert, Copy, Check } from 'lucide-react'
+import { Plus, Pencil, Mail, ShieldAlert, Copy, Check, ShieldPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '../../contexts/AuthContext'
 
-const ROLE_LABEL: Record<string, string> = { ceo: 'CEO', cto: 'CTO', qa: 'QA' }
+const DEFAULT_ROLES: RoleOption[] = [
+  { key: 'ceo', label: 'CEO', description: 'Executive view and user administration', created_at: '' },
+  { key: 'cto', label: 'CTO', description: 'Technical controls, releases, and access oversight', created_at: '' },
+  { key: 'qa', label: 'QA', description: 'Quality assurance and evidence operations', created_at: '' },
+]
+
 const ROLE_COLOR: Record<string, string> = {
   ceo: 'bg-blue-50 text-blue-700 border-blue-200',
   cto: 'bg-purple-50 text-purple-700 border-purple-200',
   qa:  'bg-emerald-50 text-emerald-700 border-emerald-200',
+  auditor: 'bg-amber-50 text-amber-700 border-amber-200',
+}
+
+function roleKeyFromLabel(label: string) {
+  return label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
 }
 
 function generateTempPassword() {
@@ -28,23 +42,30 @@ function generateTempPassword() {
 export function UserManagementPage() {
   const { profile: me } = useAuth()
   const [users, setUsers] = useState<Profile[]>([])
+  const [roles, setRoles] = useState<RoleOption[]>(DEFAULT_ROLES)
   const [loading, setLoading] = useState(true)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [roleOpen, setRoleOpen] = useState(false)
   const [editing, setEditing] = useState<Profile | null>(null)
   const [editOpen, setEditOpen] = useState(false)
 
   // invite form
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteName, setInviteName] = useState('')
-  const [inviteRole, setInviteRole] = useState<'ceo' | 'cto' | 'qa'>('qa')
+  const [inviteRole, setInviteRole] = useState('qa')
   const [inviteDept, setInviteDept] = useState('')
   const [creating, setCreating] = useState(false)
   const [createdCreds, setCreatedCreds] = useState<{ email: string; password: string } | null>(null)
   const [copied, setCopied] = useState(false)
 
+  // role form
+  const [roleLabel, setRoleLabel] = useState('')
+  const [roleDescription, setRoleDescription] = useState('')
+  const [roleSaving, setRoleSaving] = useState(false)
+
   // edit form
   const [editName, setEditName] = useState('')
-  const [editRole, setEditRole] = useState<'ceo' | 'cto' | 'qa'>('qa')
+  const [editRole, setEditRole] = useState('qa')
   const [editDept, setEditDept] = useState('')
   const [editSaving, setEditSaving] = useState(false)
 
@@ -52,13 +73,42 @@ export function UserManagementPage() {
 
   const load = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false })
+    const [{ data, error }, { data: roleData, error: roleError }] = await Promise.all([
+      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+      supabase.from('roles').select('*').order('label'),
+    ])
     if (error) toast.error('Failed to load users')
     else setUsers(data || [])
+
+    if (!roleError && roleData && roleData.length > 0) {
+      setRoles(roleData)
+    } else {
+      setRoles(DEFAULT_ROLES)
+    }
     setLoading(false)
+  }
+
+  const roleName = (key: string) => roles.find(r => r.key === key)?.label || key
+  const roleColor = (key: string) => ROLE_COLOR[key] || 'bg-slate-50 text-slate-700 border-slate-200'
+
+  const handleCreateRole = async () => {
+    if (!roleLabel.trim()) { toast.error('Role name is required'); return }
+    const key = roleKeyFromLabel(roleLabel)
+    if (!key) { toast.error('Role name must contain letters or numbers'); return }
+    if (roles.some(r => r.key === key)) { toast.error('Role already exists'); return }
+
+    setRoleSaving(true)
+    const row = { key, label: roleLabel.trim(), description: roleDescription.trim() || null }
+    const { error } = await supabase.from('roles').insert(row)
+    if (error) { toast.error(error.message); setRoleSaving(false); return }
+
+    toast.success('Role created')
+    setRoles(prev => [...prev, { ...row, created_at: new Date().toISOString() }].sort((a, b) => a.label.localeCompare(b.label)))
+    setInviteRole(key)
+    setRoleLabel('')
+    setRoleDescription('')
+    setRoleSaving(false)
+    setRoleOpen(false)
   }
 
   const handleCreate = async () => {
@@ -92,7 +142,7 @@ export function UserManagementPage() {
         kind: 'invite',
         recipient_email: inviteEmail.trim(),
         subject: 'Welcome to ComplianceOS',
-        body: `Hi ${inviteName.trim()},\n\nYour account has been created with role ${ROLE_LABEL[inviteRole]}. Sign in at the ComplianceOS portal with the temporary password your administrator will share, then set a new password from your account settings.`,
+        body: `Hi ${inviteName.trim()},\n\nYour account has been created with role ${roleName(inviteRole)}. Sign in at the ComplianceOS portal with the temporary password your administrator will share, then set a new password from your account settings.`,
         related_type: 'user',
         related_id: data.user.id,
         status: 'mock',
@@ -123,8 +173,8 @@ export function UserManagementPage() {
   const openEdit = (u: Profile) => {
     setEditing(u)
     setEditName(u.full_name)
-    setEditRole((u.role as 'ceo' | 'cto' | 'qa') || 'qa')
-    setEditDept((u as Profile & { department?: string | null }).department || '')
+    setEditRole(u.role || 'qa')
+    setEditDept(u.department || '')
     setEditOpen(true)
   }
 
@@ -151,9 +201,14 @@ export function UserManagementPage() {
             <h1 className="text-xl font-semibold text-slate-900 leading-none">User Management</h1>
             <p className="text-xs text-slate-400 mt-2">Invite users and manage roles</p>
           </div>
-          <Button size="sm" onClick={() => setInviteOpen(true)} className="bg-slate-900 hover:bg-slate-800 text-white gap-1.5">
-            <Plus className="w-4 h-4" /> New user
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setRoleOpen(true)} className="border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 gap-1.5">
+              <ShieldPlus className="w-4 h-4" /> New role
+            </Button>
+            <Button size="sm" onClick={() => setInviteOpen(true)} className="bg-slate-900 hover:bg-slate-800 text-white gap-1.5">
+              <Plus className="w-4 h-4" /> New user
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -190,9 +245,9 @@ export function UserManagementPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">{u.email}</td>
                     <td className="px-4 py-3">
-                      <Badge variant="outline" className={`text-xs ${ROLE_COLOR[u.role] || ''}`}>{ROLE_LABEL[u.role] || u.role}</Badge>
+                      <Badge variant="outline" className={`text-xs ${roleColor(u.role)}`}>{roleName(u.role)}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{(u as Profile & { department?: string | null }).department || <span className="text-slate-300">—</span>}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{u.department || <span className="text-slate-300">—</span>}</td>
                     <td className="px-4 py-3 text-sm text-slate-500 tabular-nums">{new Date(u.created_at).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-right">
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(u)}><Pencil className="w-4 h-4 text-slate-500" /></Button>
@@ -236,12 +291,12 @@ export function UserManagementPage() {
                   <select
                     id="i-role"
                     value={inviteRole}
-                    onChange={e => setInviteRole(e.target.value as 'ceo' | 'cto' | 'qa')}
+                    onChange={e => setInviteRole(e.target.value)}
                     className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="ceo">CEO</option>
-                    <option value="cto">CTO</option>
-                    <option value="qa">QA</option>
+                    {roles.map(role => (
+                      <option key={role.key} value={role.key}>{role.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -287,6 +342,50 @@ export function UserManagementPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Role dialog */}
+      <Dialog open={roleOpen} onOpenChange={setRoleOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create role</DialogTitle>
+            <DialogDescription>Add a role that can be assigned to users.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label htmlFor="r-label">Role name *</Label>
+              <Input
+                id="r-label"
+                value={roleLabel}
+                onChange={e => setRoleLabel(e.target.value)}
+                className="mt-1.5"
+                placeholder="Auditor"
+              />
+              {roleLabel.trim() && (
+                <p className="text-[11px] text-slate-400 mt-1">Key: {roleKeyFromLabel(roleLabel)}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="r-desc">Description</Label>
+              <Input
+                id="r-desc"
+                value={roleDescription}
+                onChange={e => setRoleDescription(e.target.value)}
+                className="mt-1.5"
+                placeholder="External audit reviewer"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-2 pt-3 border-t">
+            <Button variant="outline" onClick={() => setRoleOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateRole} disabled={roleSaving}>
+              <ShieldPlus className="w-4 h-4 mr-1.5" />
+              {roleSaving ? 'Creating...' : 'Create role'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="sm:max-w-md">
@@ -306,13 +405,13 @@ export function UserManagementPage() {
                 <select
                   id="e-role"
                   value={editRole}
-                  onChange={e => setEditRole(e.target.value as 'ceo' | 'cto' | 'qa')}
+                  onChange={e => setEditRole(e.target.value)}
                   className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled={editing?.id === me?.id}
                 >
-                  <option value="ceo">CEO</option>
-                  <option value="cto">CTO</option>
-                  <option value="qa">QA</option>
+                  {roles.map(role => (
+                    <option key={role.key} value={role.key}>{role.label}</option>
+                  ))}
                 </select>
                 {editing?.id === me?.id && <p className="text-[11px] text-slate-400 mt-1">You can&apos;t change your own role.</p>}
               </div>

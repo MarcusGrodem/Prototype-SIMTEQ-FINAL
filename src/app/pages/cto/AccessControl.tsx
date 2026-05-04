@@ -9,8 +9,14 @@ import {
 } from '../../components/ui/dialog'
 import { Search, Users, UserPlus, Mail } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
-import { Profile } from '../../../lib/types'
+import { Profile, RoleOption } from '../../../lib/types'
 import { toast } from 'sonner'
+
+const DEFAULT_ROLES: RoleOption[] = [
+  { key: 'ceo', label: 'CEO', description: null, created_at: '' },
+  { key: 'cto', label: 'CTO', description: null, created_at: '' },
+  { key: 'qa', label: 'QA', description: null, created_at: '' },
+]
 
 const roleColor = (role: string) => {
   switch (role) {
@@ -23,23 +29,26 @@ const roleColor = (role: string) => {
 
 export function AccessControl() {
   const [profiles, setProfiles] = useState<Profile[]>([])
+  const [roles, setRoles] = useState<RoleOption[]>(DEFAULT_ROLES)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole] = useState<'ceo' | 'cto' | 'qa'>('qa')
+  const [inviteRole, setInviteRole] = useState('qa')
   const [inviteLoading, setInviteLoading] = useState(false)
 
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false })
+    const [{ data, error }, { data: roleData, error: roleError }] = await Promise.all([
+      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+      supabase.from('roles').select('*').order('label'),
+    ])
     if (error) toast.error('Failed to load users')
     else setProfiles(data || [])
+    if (!roleError && roleData && roleData.length > 0) setRoles(roleData)
+    else setRoles(DEFAULT_ROLES)
     setLoading(false)
   }
 
@@ -48,7 +57,9 @@ export function AccessControl() {
     (p.email ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
-  const handleChangeRole = async (userId: string, newRole: 'ceo' | 'cto' | 'qa') => {
+  const roleName = (key: string) => roles.find(role => role.key === key)?.label || key
+
+  const handleChangeRole = async (userId: string, newRole: string) => {
     const { error } = await supabase
       .from('profiles')
       .update({ role: newRole, updated_at: new Date().toISOString() })
@@ -152,7 +163,7 @@ export function AccessControl() {
                     </div>
                   </td>
                   <td className="p-4">
-                    <Badge className={`text-xs ${roleColor(p.role)}`}>{p.role.toUpperCase()}</Badge>
+                    <Badge className={`text-xs ${roleColor(p.role)}`}>{roleName(p.role)}</Badge>
                   </td>
                   <td className="p-4">
                     <span className="text-sm text-slate-700">{new Date(p.created_at).toLocaleDateString()}</span>
@@ -160,12 +171,12 @@ export function AccessControl() {
                   <td className="p-4">
                     <select
                       value={p.role}
-                      onChange={e => handleChangeRole(p.id, e.target.value as 'ceo' | 'cto' | 'qa')}
+                      onChange={e => handleChangeRole(p.id, e.target.value)}
                       className="px-2 py-1 border border-gray-200 rounded text-xs text-slate-700 hover:border-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     >
-                      <option value="ceo">CEO</option>
-                      <option value="cto">CTO</option>
-                      <option value="qa">QA</option>
+                      {roles.map(role => (
+                        <option key={role.key} value={role.key}>{role.label}</option>
+                      ))}
                     </select>
                   </td>
                 </tr>
@@ -194,10 +205,10 @@ export function AccessControl() {
             </div>
             <div>
               <Label>Role</Label>
-              <select value={inviteRole} onChange={e => setInviteRole(e.target.value as 'ceo' | 'cto' | 'qa')} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="ceo">CEO</option>
-                <option value="cto">CTO</option>
-                <option value="qa">QA</option>
+              <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {roles.map(role => (
+                  <option key={role.key} value={role.key}>{role.label}</option>
+                ))}
               </select>
             </div>
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">

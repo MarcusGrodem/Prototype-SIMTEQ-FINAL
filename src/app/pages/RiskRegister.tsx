@@ -19,6 +19,7 @@ import { supabase } from '../../lib/supabase';
 import { downloadCSV } from '../utils/exportUtils';
 import { getRiskScoreColor } from '../utils/riskUtils';
 import { toast } from 'sonner';
+import { useCategories } from '../hooks/useCategories';
 
 export function RiskRegister() {
   const [risks, setRisks] = useState<Risk[]>([]);
@@ -31,6 +32,7 @@ export function RiskRegister() {
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterCategory, setFilterCategory] = useState<string[]>([]);
   const [filterLikelihood, setFilterLikelihood] = useState<string[]>([]);
+  const { categories: dbCategories } = useCategories();
 
   useEffect(() => { loadData(); }, []);
 
@@ -50,7 +52,12 @@ export function RiskRegister() {
     setEditDialogOpen(true);
   }, []);
 
-  const categories = [...new Set(risks.map(r => r.category))].sort();
+  const categories = [
+    ...new Set([
+      ...dbCategories.map(c => c.name),
+      ...risks.map(r => r.category),
+    ]),
+  ].sort();
 
   const filteredRisks = risks.filter(risk => {
     const matchSearch = risk.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

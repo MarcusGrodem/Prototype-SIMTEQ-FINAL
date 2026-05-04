@@ -23,6 +23,7 @@ import { supabase } from '../../lib/supabase';
 import { downloadCSV } from '../utils/exportUtils';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCategories } from '../hooks/useCategories';
 
 export function ControlManagement() {
   const [controls, setControls] = useState<Control[]>([]);
@@ -38,6 +39,7 @@ export function ControlManagement() {
   const [filterCategory, setFilterCategory] = useState<string[]>([]);
   const [filterFrequency, setFilterFrequency] = useState<string[]>([]);
   const { profile } = useAuth();
+  const { categories: dbCategories } = useCategories();
 
   useEffect(() => { loadData(); }, []);
 
@@ -59,7 +61,12 @@ export function ControlManagement() {
     setDetailsDialogOpen(true);
   }, []);
 
-  const categories = [...new Set(controls.map(c => c.category))].sort();
+  const categories = [
+    ...new Set([
+      ...dbCategories.map(c => c.name),
+      ...controls.map(c => c.category),
+    ]),
+  ].sort();
 
   const filteredControls = controls.filter(control => {
     const matchSearch = control.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

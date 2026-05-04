@@ -46,7 +46,7 @@ export function LoginPage() {
           .eq('id', session.user.id)
           .single()
 
-        const role = prof?.role as 'ceo' | 'cto' | 'qa' | undefined
+        const role = prof?.role
         if (role === 'cto') navigate('/cto')
         else if (role === 'qa') navigate('/qa')
         else navigate('/')

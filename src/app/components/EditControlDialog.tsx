@@ -87,7 +87,7 @@ export function EditControlDialog({ open, onOpenChange, control, onSuccess }: Ed
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-white text-slate-900">
         <DialogHeader>
           <DialogTitle>Edit control · {control.id}</DialogTitle>
           <DialogDescription>Update fields for this control.</DialogDescription>
@@ -95,16 +95,16 @@ export function EditControlDialog({ open, onOpenChange, control, onSuccess }: Ed
 
         <div className="space-y-4 mt-4">
           <div>
-            <Label htmlFor="ec-title">Title *</Label>
-            <Input id="ec-title" value={title} onChange={e => setTitle(e.target.value)} className="mt-1.5" />
+            <Label htmlFor="ec-title" className="text-slate-700">Title *</Label>
+            <Input id="ec-title" value={title} onChange={e => setTitle(e.target.value)} className="mt-1.5 bg-white text-slate-900 border-slate-300" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="ec-cat">Category *</Label>
+              <Label htmlFor="ec-cat" className="text-slate-700">Category *</Label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger id="ec-cat" className="mt-1.5"><SelectValue placeholder="Select category" /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger id="ec-cat" className="mt-1.5 bg-white text-slate-900 border-slate-300"><SelectValue placeholder="Select category" /></SelectTrigger>
+                <SelectContent className="bg-white text-slate-900">
                   {!categories.find(c => c.name === category) && category && (
                     <SelectItem value={category}>{category}</SelectItem>
                   )}
@@ -115,10 +115,10 @@ export function EditControlDialog({ open, onOpenChange, control, onSuccess }: Ed
               </Select>
             </div>
             <div>
-              <Label htmlFor="ec-freq">Frequency *</Label>
+              <Label htmlFor="ec-freq" className="text-slate-700">Frequency *</Label>
               <Select value={frequency} onValueChange={v => setFrequency(v as Control['frequency'])}>
-                <SelectTrigger id="ec-freq" className="mt-1.5"><SelectValue /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger id="ec-freq" className="mt-1.5 bg-white text-slate-900 border-slate-300"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-white text-slate-900">
                   <SelectItem value="Monthly">Monthly</SelectItem>
                   <SelectItem value="Quarterly">Quarterly</SelectItem>
                   <SelectItem value="Yearly">Yearly</SelectItem>
@@ -129,16 +129,16 @@ export function EditControlDialog({ open, onOpenChange, control, onSuccess }: Ed
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="ec-owner">Owner *</Label>
-              <Input id="ec-owner" value={ownerName} onChange={e => setOwnerName(e.target.value)} className="mt-1.5" />
+              <Label htmlFor="ec-owner" className="text-slate-700">Owner *</Label>
+              <Input id="ec-owner" value={ownerName} onChange={e => setOwnerName(e.target.value)} className="mt-1.5 bg-white text-slate-900 border-slate-300" />
             </div>
             <div>
-              <Label htmlFor="ec-status">Status</Label>
+              <Label htmlFor="ec-status" className="text-slate-700">Status</Label>
               <select
                 id="ec-status"
                 value={status}
                 onChange={e => setStatus(e.target.value as Control['status'])}
-                className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400"
               >
                 <option value="Pending">Pending</option>
                 <option value="Completed">Completed</option>
@@ -149,18 +149,18 @@ export function EditControlDialog({ open, onOpenChange, control, onSuccess }: Ed
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="ec-last">Last execution</Label>
-              <Input id="ec-last" type="date" value={lastExecution} onChange={e => setLastExecution(e.target.value)} className="mt-1.5" />
+              <Label htmlFor="ec-last" className="text-slate-700">Last execution</Label>
+              <Input id="ec-last" type="date" value={lastExecution} onChange={e => setLastExecution(e.target.value)} className="mt-1.5 bg-white text-slate-900 border-slate-300 [color-scheme:light]" />
             </div>
             <div>
-              <Label htmlFor="ec-next">Next due</Label>
-              <Input id="ec-next" type="date" value={nextDue} onChange={e => setNextDue(e.target.value)} className="mt-1.5" />
+              <Label htmlFor="ec-next" className="text-slate-700">Next due</Label>
+              <Input id="ec-next" type="date" value={nextDue} onChange={e => setNextDue(e.target.value)} className="mt-1.5 bg-white text-slate-900 border-slate-300 [color-scheme:light]" />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="ec-desc">Description</Label>
-            <Textarea id="ec-desc" value={description} onChange={e => setDescription(e.target.value)} rows={3} className="mt-1.5" />
+            <Label htmlFor="ec-desc" className="text-slate-700">Description</Label>
+            <Textarea id="ec-desc" value={description} onChange={e => setDescription(e.target.value)} rows={3} className="mt-1.5 bg-white text-slate-900 border-slate-300" />
           </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t">
