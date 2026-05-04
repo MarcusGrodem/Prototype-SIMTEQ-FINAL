@@ -1,260 +1,250 @@
-# Project Context – SIMTEQ ISAE 3402 Compliance System
+# Project Context - SIMTEQ ISAE 3402 Compliance System
 
-## Project definition
+## Project Definition
 
 ```yaml
 project:
   name: "SIMTEQ ISAE 3402 System"
   domain: "Compliance / Risk Management / Internal Controls"
   purpose: >
-    Design a simplified IT system to support documentation, execution,
-    and auditability of internal controls in accordance with ISAE 3402.
+    Provide a simplified IT system for documenting, executing, and auditing
+    internal controls in accordance with ISAE 3402.
 ```
 
----
+This repository contains a working prototype of a role-based compliance management dashboard for Simteq AS. The main product problem is documentation and auditability: users need a clear way to prove which controls were performed, by whom, when, with what evidence, and under which approval flow.
 
-## Problem context
+## Problem Context
 
-### Current state (pain points)
-- Documentation of internal controls is fragmented across multiple tools
-- Processes are manual and time-consuming
-- Lack of clear ownership and accountability
-- Difficult to track who did what, when, and why
-- Unclear what qualifies as sufficient documentation (evidence)
-- High risk of errors and missing documentation
-- Poor visibility for management
-- Difficult for auditors to verify compliance
+### Current Pain Points
 
-### Desired state
-- Centralized system for risks, controls, and documentation
-- Clear ownership of tasks and controls
-- Full traceability (who, what, when)
-- Standardized documentation process
-- Easy access for auditors
-- Reduced manual work and duplication
-- Clear overview via dashboards
+- Internal control documentation is fragmented across tools.
+- Processes are manual and time-consuming.
+- Ownership and accountability are unclear.
+- Traceability is weak: it is hard to verify who did what, when, and why.
+- Evidence requirements are often ambiguous.
+- Management lacks a reliable compliance overview.
+- Auditors spend too much time requesting and validating documentation.
 
-### Core problem
-> The main challenge is not *performing* controls, but *documenting* them correctly and ensuring auditability.
+### Desired State
 
----
+- Centralized risks, controls, evidence, policies, releases, and reports.
+- Clear control ownership and due dates.
+- Standardized evidence upload and version history.
+- Approval and review workflows that preserve traceability.
+- Dashboards for management, technical owners, and QA/compliance.
+- Easy auditor access to complete documentation trails.
 
-## Actors & roles
+### Core Problem
+
+The main challenge is not performing controls. The challenge is documenting controls correctly and making that documentation audit-ready.
+
+## Actors And Roles
 
 | Actor | Description | Key needs |
 |---|---|---|
-| **Employee** | Performs controls and uploads documentation | Clear requirements, fast process, avoid rework |
-| **CEO** | Needs overview of risks and compliance status | Dashboard, control status, risk overview |
-| **CTO** | Responsible for technical processes and traceability | Who did what/when, link between releases and controls |
-| **QA / Compliance** | Ensures processes are followed and documented correctly | Approval flows, consistent structure |
-| **Auditor** | External reviewer of ISAE compliance | Easy access to documentation, clear traceability |
+| Employee | Performs controls and uploads documentation | Clear requirements, fast process, avoid rework |
+| CEO | Needs executive visibility into risk and compliance | Dashboard metrics, risk status, control status, calendar |
+| CTO | Owns technical processes and traceability | Change logs, releases, access reviews, approvals |
+| QA / Compliance | Ensures processes are followed and documented | Approval flows, control evidence, policies, reporting |
+| Auditor | External reviewer of ISAE compliance | Easy access to evidence, traceability, and report outputs |
 
----
+The implemented app currently exposes `ceo`, `cto`, and `qa` roles. The auditor demo user is seeded as a CEO-style profile.
 
-## Core entities & relations
+## What This System Is
 
-```
-User ──owns──► Control ──has_many──► Evidence
-     └─creates──► Evidence           └──belongs_to──► User
-     └─approves──► Approval
-     └─receives──► Notification
+A Supabase-backed prototype for ISAE 3402 audit readiness with:
 
-Risk ──has_many──► Control
-     └─updated_by──► User
-
-Control ──belongs_to──► Risk
-        ──assigned_to──► User
-        ──has_many──► Evidence, Approval, Issue
-
-Report ──generated_from──► Control, Risk, Evidence
-```
-
----
-
-## Core processes
-
-### Control execution flow
-1. Receive notification
-2. Open assigned control
-3. Perform control
-4. Upload evidence
-5. Submit for approval
-6. Receive approval or feedback
-
-### Audit flow
-1. Auditor accesses system
-2. Reviews controls and evidence
-3. Checks traceability
-4. Requests clarification if needed
-
----
-
-## Functional requirements
-
-- Register risks
-- Create and manage controls
-- Assign responsibility
-- Upload and link documentation
-- Track status of controls
-- Approval workflow
-- Notifications and reminders
-- Dashboard overview
-- Audit reporting
-
-## Non-functional requirements
-
-- Must be simple and intuitive
-- Reduce manual work
-- High traceability
-- Support both technical and non-technical users
-- Reliable for audits
-- Scalable for future needs
-
----
-
-## CATWOE analysis (SSM)
-
-| Element | Description |
-|---|---|
-| **Customers** | SIMTEQ customers, Auditors, Employees |
-| **Actors** | Employees, Management |
-| **Transformation** | Manual, fragmented documentation → Structured digital system with full traceability |
-| **Worldview** | Trust and credibility are critical when handling sensitive data. Compliance is necessary to maintain business relationships. |
-| **Owner** | SIMTEQ management |
-| **Environment** | ISAE 3402 requirements, resource constraints, resistance to change, GDPR, technical limitations |
-
----
-
-## Key insights
-
-- The biggest pain point is **documentation**, not execution
-- Users need guidance on what "good documentation" means
-- Lack of visibility creates uncertainty for management
-- Traceability is critical for CTO and auditors
-- Simplicity is key for adoption
-
----
-
-## What this system is
-
-A prototype ISAE 3402 compliance management dashboard for Simteq AS (Norwegian IT services company). The application is role-based and serves three types of users:
-
-- **CEO** – high-level compliance overview, risk register (with linked controls), compliance calendar
-- **CTO** – technical change log, release management, access control / user management
-- **QA** – control management, evidence upload, policy management, QA dashboard
-
-The project uses Supabase as a fully hosted backend (PostgreSQL database, Auth, Storage).
-
----
+- Role-based authentication and routing.
+- Risk register and risk category management.
+- Internal control management with status, owner, frequency, evidence, and review workflows.
+- Evidence bank with file upload, version history, and links to risks/controls.
+- Compliance calendar generated from controls and events.
+- CTO change log, release management, product registry, and access control.
+- QA dashboard and policy inventory.
+- CEO user management, role options, report template editor, and notification log.
+- DOCX audit report generation and CSV/JSON/PDF export helpers.
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
 | Frontend framework | React 18 + TypeScript |
-| Build tool | Vite |
+| Build tool | Vite 6 |
 | Styling | Tailwind CSS v4 |
-| Routing | React Router v7 |
-| Backend / DB | Supabase (PostgreSQL 15) |
-| Auth | Supabase Auth (email + password) |
-| File storage | Supabase Storage (bucket: `evidence`) |
+| Routing | React Router v7 (`react-router`) |
+| Backend / DB | Supabase (PostgreSQL, Auth, Storage) |
+| File storage | Supabase Storage bucket: `evidence` |
 | Charts | Recharts |
-| Notifications | Sonner (toast) |
+| Notifications | Sonner |
 | Icons | Lucide React |
-| UI primitives | Custom components under `src/app/components/ui/` |
+| UI primitives | shadcn/Radix components under `src/app/components/ui/` |
+| Documents / exports | `docx`, `jspdf`, CSV/JSON utilities |
 
----
+## Folder Structure
 
-## Folder structure
-
-```
+```text
 src/
   app/
-    components/       # Shared layout and dialog components
-      ui/             # Primitive UI components (Button, Dialog, Badge, etc.)
-    pages/
+    App.tsx
+    routes.tsx
+    components/       # Layouts, dialogs, report generator, sidebar tooling
+      ui/             # shadcn/Radix primitive UI components
+    hooks/            # Sidebar config and category helpers
+    pages/            # CEO/shared pages
       cto/            # CTO-role pages
       qa/             # QA-role pages
-    utils/            # Helpers (exportUtils, etc.)
+    utils/            # Export and ID/category helpers
+    data/             # Legacy mock/demo data used by a few helper components
   contexts/
     AuthContext.tsx   # Supabase auth + profile context
   lib/
     supabase.ts       # Supabase client
     types.ts          # TypeScript interfaces matching DB schema
+  styles/             # Tailwind, theme, fonts, global CSS
 supabase/
-  schema.sql          # Full DB schema – run first in Supabase SQL Editor
-  seed.sql            # Seed/mock data – run after schema.sql
+  schema.sql          # Full DB schema, RLS, policies, triggers
+  seed.sql            # Demo seed data
 ```
 
----
+## Routes And Role Access
 
-## Database tables
+| Role | Root route | Pages |
+|---|---|---|
+| `ceo` | `/` | dashboard, risks, controls, calendar, categories, users, report template, notifications |
+| `cto` | `/cto` | overview, change log, releases, access control |
+| `qa` | `/qa` | overview, controls, evidence, calendar, policies |
+
+`ProtectedRoute` checks Supabase authentication and the `role` field from `profiles`. `LoginPage` redirects authenticated users to the correct role root.
+
+Concrete routes:
+
+- CEO: `/`, `/risks`, `/controls`, `/calendar`, `/categories`, `/users`, `/report-template`, `/notifications`
+- CTO: `/cto`, `/cto/changelog`, `/cto/releases`, `/cto/access`
+- QA: `/qa`, `/qa/controls`, `/qa/evidence`, `/qa/calendar`, `/qa/policies`
+
+## Core Entities And Relations
+
+```text
+Profile/User
+  owns controls, uploads documents, receives reminders, appears in notification logs
+
+Risk
+  has many controls through risk_controls
+  belongs to a risk category by category name
+
+Control
+  can be linked to many risks
+  can have evidence documents and document versions
+  appears in calendar due dates and report generation
+
+Document
+  has many document_versions
+  links to risks or controls through document_links
+
+ChangeLog / Product / Release / ReleaseChange
+  support CTO traceability from technical changes to approvals and releases
+
+ReportTemplate / ReportTemplateSection
+  define reusable audit report content
+```
+
+## Database Tables
 
 | Table | Purpose |
 |---|---|
-| `profiles` | Extends `auth.users` with `full_name`, `role`, `department` |
-| `risks` | Risk register (R001–R013+) |
-| `controls` | Internal controls (C001–C053+) |
+| `profiles` | Extends `auth.users` with `full_name`, `role`, `email`, `department` |
+| `roles` | Configurable app role options shown in user/access management |
+| `risks` | Risk register |
+| `controls` | Internal controls |
+| `risk_categories` | Editable category registry for risks and controls |
 | `risk_controls` | Many-to-many mapping between risks and controls |
-| `documents` | Document metadata (name, type, size, current version) |
-| `document_versions` | Version history for each document |
-| `document_links` | Attaches a document to any entity (control, risk, policy, release) |
-| `compliance_events` | Calendar events (audits, deadlines, reviews, training) |
-| `alerts` | System-wide notifications |
-| `reminders` | Per-user email reminders linked to control due dates |
-| `change_logs` | IT change requests and their approval status |
-| `products` | Product registry (name, description, owner) |
-| `releases` | Software release tracking per product (version, status, environment, approvals) |
-| `release_changes` | Changelog items per release (Feature/Bug Fix/Security/Breaking Change/Performance/Other) |
-| `policies` | ISO 27001 / GDPR policy inventory |
+| `documents` | Evidence/document metadata |
+| `document_versions` | Version history for documents |
+| `document_links` | Links documents to risks or controls |
+| `compliance_events` | Calendar events such as audits, reviews, and deadlines |
+| `alerts` | Dashboard alerts |
+| `notification_log` | Logged notification/invite/reminder events |
+| `reminders` | Per-user email reminder settings |
+| `change_logs` | CTO change request records |
+| `products` | Product registry |
+| `releases` | Product release tracking |
+| `release_changes` | Release-level changelog items |
+| `policies` | ISO/GDPR/security policy inventory |
+| `report_templates` | Audit report template headers and defaults |
+| `report_template_sections` | Ordered report template section content |
 
----
+All tables have RLS enabled. Most policies allow authenticated users full access. `reminders` is scoped per user. Storage policies require authentication for the private `evidence` bucket.
 
-## Roles and routing
+## Core Processes
 
-| Role | Login URL → redirect | Layout accent |
-|---|---|---|
-| `ceo` | `/` → `/dashboard` | Blue/slate sidebar |
-| `cto` | `/` → `/cto/dashboard` | Blue-700 sidebar |
-| `qa` | `/` → `/qa/dashboard` | Emerald-600 sidebar |
+### Control Execution
 
-Routes are protected by `ProtectedRoute` which checks both authentication and the `role` field on the user's profile.
+1. User reviews assigned or relevant controls.
+2. User performs the control activity.
+3. User uploads evidence or links an existing document.
+4. Evidence is versioned and attached to the control.
+5. Reviewer approves the control, which marks it completed.
+6. Calendar, dashboards, exports, and reports reflect the updated control state.
 
----
+### Evidence Management
 
-## Environment variables
+1. Upload document into the private `evidence` bucket.
+2. Insert metadata in `documents`.
+3. Insert an initial row in `document_versions`.
+4. Link the document to a risk or control through `document_links`.
+5. Later uploads create new versions and update `documents.current_version`.
 
-| Variable | Where to find it |
+### CTO Traceability
+
+1. Create change log entry.
+2. Associate change with environment, status, and optional risk/control references.
+3. Track product releases and release changes.
+4. Record approvals, release dates, and deployment status.
+
+### Reporting
+
+1. Configure default report template and ordered sections.
+2. Generate report content from controls, risks, evidence, and template sections.
+3. Export as DOCX through `AuditReportGenerator`.
+
+## Environment Variables
+
+| Variable | Description |
 |---|---|
-| `VITE_SUPABASE_URL` | Supabase project → Settings → API → Project URL |
-| `VITE_SUPABASE_ANON_KEY` | Supabase project → Settings → API → anon/public key |
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous/public API key |
 
-Set these in `.env.local` at the project root (never commit this file).
+Set these in `.env.local` at the project root. Never commit `.env.local`.
 
----
+## Demo Users
 
-## Demo users (after running seed.sql)
+After creating users in Supabase Auth, run `supabase/seed.sql` to update profile names, departments, and roles.
 
 | Email | Password | Role |
 |---|---|---|
-| `ceo@simteq.no` | `demo1234` | CEO |
-| `cto@simteq.no` | `demo1234` | CTO |
-| `qa@simteq.no` | `demo1234` | QA |
-| `qa2@simteq.no` | `demo1234` | QA |
-| `auditor@simteq.no` | `demo1234` | CEO |
+| `ceo@simteq.no` | `demo1234` | `ceo` |
+| `cto@simteq.no` | `demo1234` | `cto` |
+| `qa@simteq.no` | `demo1234` | `qa` |
+| `qa2@simteq.no` | `demo1234` | `qa` |
+| `auditor@simteq.no` | `demo1234` | `ceo` |
 
-Users must be created in Supabase Auth first (Authentication → Users → Add User), then `seed.sql` updates the profile rows with names, departments and roles.
+## Key Design Decisions
 
----
+1. Snake_case DB fields: TypeScript interfaces mirror Supabase column names. Keep React state and form payloads aligned with schema names.
+2. Role-based route roots: CEO uses `/`, CTO uses `/cto`, QA uses `/qa`; there is no `/dashboard` route.
+3. Configurable sidebars: `ALL_PAGES` and `VIEW_DEFAULTS` in `src/app/components/allPages.tsx` define visible page options per role. User-specific choices are persisted in `localStorage`.
+4. Inline Supabase calls: Pages and dialogs call Supabase directly. There is no centralized service layer.
+5. Evidence versioning: Active evidence workflows use `documents`, `document_versions`, and `document_links`.
+6. Report templates: Report content is stored in `report_templates` and `report_template_sections` and consumed by the DOCX generator.
+7. Legacy mock data: `src/app/data/mockData.ts` still supports a few helper/export components, but active app pages should prefer Supabase data.
 
-## Key design decisions
+## Local Commands
 
-1. **Snake_case DB fields** – all TypeScript interfaces in `src/lib/types.ts` use snake_case to match Supabase column names directly. The old mock data used camelCase; do not mix the two.
+```bash
+npm run dev
+npm run build
+npm run preview
+npm start
+```
 
-2. **Auto-generated IDs** – risks are `R001`–`R013`+, controls are `C001`–`C053`+. New records query the current max ID and increment. Change logs use `CHG-001` format (UUID primary key, `change_id` text field).
-
-3. **Evidence storage path** – files are stored at `controls/{controlId}/{docId}-{filename}` or `documents/{docId}/{filename}`. Download uses signed URLs (1 hour expiry).
-
-4. **Four-eye principle** – the `ControlDetailsDialog` "Approve" button changes control status to `Completed` and is intended to be used by a second reviewer.
-
-5. **RLS** – all tables have Row Level Security enabled. Most tables allow all authenticated users full access. `reminders` is scoped to the owning user only. The `evidence` storage bucket requires authentication.
+There is currently no configured unit test, integration test, or lint command. Use `npm run build` for TypeScript and production build verification.

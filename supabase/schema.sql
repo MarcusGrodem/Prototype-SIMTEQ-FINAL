@@ -320,7 +320,9 @@ alter table public.alerts            enable row level security;
 alter table public.notification_log  enable row level security;
 alter table public.reminders         enable row level security;
 alter table public.change_logs       enable row level security;
+alter table public.products          enable row level security;
 alter table public.releases          enable row level security;
+alter table public.release_changes   enable row level security;
 alter table public.policies          enable row level security;
 alter table public.report_templates         enable row level security;
 alter table public.report_template_sections enable row level security;
@@ -356,7 +358,9 @@ create policy "reminders_delete" on public.reminders for delete using (auth.uid(
 
 -- Change logs, releases, policies
 create policy "change_logs_all" on public.change_logs for all using (auth.role() = 'authenticated');
+create policy "products_all"    on public.products    for all using (auth.role() = 'authenticated');
 create policy "releases_all"    on public.releases    for all using (auth.role() = 'authenticated');
+create policy "release_changes_all" on public.release_changes for all using (auth.role() = 'authenticated');
 create policy "policies_all"    on public.policies    for all using (auth.role() = 'authenticated');
 create policy "report_templates_all"         on public.report_templates         for all using (auth.role() = 'authenticated');
 create policy "report_template_sections_all" on public.report_template_sections for all using (auth.role() = 'authenticated');
