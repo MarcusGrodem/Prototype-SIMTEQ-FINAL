@@ -4,6 +4,7 @@ import { Badge } from '../../components/ui/badge'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
+import { Textarea } from '../../components/ui/textarea'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '../../components/ui/dialog'
@@ -667,8 +668,14 @@ export function Releases() {
                 </select>
               </div>
               <div>
-                <Label>Description *</Label>
-                <textarea value={changeForm.description} onChange={e => setChangeForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe what changed..." className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={3} />
+                <Label htmlFor="release-change-description">Description *</Label>
+                <Textarea
+                  id="release-change-description"
+                  value={changeForm.description}
+                  onChange={e => setChangeForm(f => ({ ...f, description: e.target.value }))}
+                  placeholder="Describe what changed..."
+                  className="mt-1.5"
+                />
               </div>
               <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button variant="outline" onClick={() => setAddChangeOpen(false)}>Cancel</Button>
@@ -708,8 +715,14 @@ function AddProductDialog({ open, onClose, form, setForm, onSave }: {
             <Input value={form.owner_name} onChange={e => setForm((f: any) => ({ ...f, owner_name: e.target.value }))} placeholder="Responsible person or team" className="mt-1.5" />
           </div>
           <div>
-            <Label>Description</Label>
-            <textarea value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="What does this product do?" className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={2} />
+            <Label htmlFor="product-description">Description</Label>
+            <Textarea
+              id="product-description"
+              value={form.description}
+              onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))}
+              placeholder="What does this product do?"
+              className="mt-1.5"
+            />
           </div>
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
@@ -760,8 +773,14 @@ function AddReleaseDialog({ open, onClose, form, setForm, productNames, onSave }
             <Input value={form.title} onChange={e => setForm((f: any) => ({ ...f, title: e.target.value }))} placeholder="Release title" className="mt-1.5" />
           </div>
           <div>
-            <Label>Description</Label>
-            <textarea value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="What's in this release?" className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={3} />
+            <Label htmlFor="release-description">Description</Label>
+            <Textarea
+              id="release-description"
+              value={form.description}
+              onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))}
+              placeholder="What's in this release?"
+              className="mt-1.5"
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

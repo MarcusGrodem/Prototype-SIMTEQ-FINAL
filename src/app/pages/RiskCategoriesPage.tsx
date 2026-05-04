@@ -177,7 +177,7 @@ export function RiskCategoriesPage() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-white text-slate-900">
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit category' : 'New category'}</DialogTitle>
             <DialogDescription>
@@ -188,7 +188,12 @@ export function RiskCategoriesPage() {
           <div className="space-y-4 mt-2">
             <div>
               <Label htmlFor="cat-name">Name *</Label>
-              <Input id="cat-name" value={name} onChange={e => setName(e.target.value)} className="mt-1.5" />
+              <Input
+                id="cat-name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="mt-1.5 bg-white text-slate-900 border-slate-300"
+              />
             </div>
             <div>
               <Label>Color</Label>
@@ -204,9 +209,15 @@ export function RiskCategoriesPage() {
                 ))}
               </div>
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label htmlFor="cat-desc">Description</Label>
-              <Textarea id="cat-desc" value={description} onChange={e => setDescription(e.target.value)} rows={2} className="mt-1.5" />
+              <Textarea
+                id="cat-desc"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="Add a short description..."
+                className="min-h-[120px] w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:border-slate-500 focus-visible:ring-slate-300"
+              />
             </div>
           </div>
 

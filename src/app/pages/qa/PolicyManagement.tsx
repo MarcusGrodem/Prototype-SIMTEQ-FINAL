@@ -4,6 +4,7 @@ import { Badge } from '../../components/ui/badge'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
+import { Textarea } from '../../components/ui/textarea'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '../../components/ui/dialog'
@@ -293,8 +294,14 @@ export function PolicyManagement() {
               </div>
             </div>
             <div>
-              <Label>Description</Label>
-              <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={3} placeholder="Policy description..." />
+              <Label htmlFor="policy-description">Description</Label>
+              <Textarea
+                id="policy-description"
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                className="mt-1.5"
+                placeholder="Policy description..."
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

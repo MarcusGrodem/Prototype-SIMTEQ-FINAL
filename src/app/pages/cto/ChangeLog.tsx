@@ -4,6 +4,7 @@ import { Badge } from '../../components/ui/badge'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
+import { Textarea } from '../../components/ui/textarea'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '../../components/ui/dialog'
@@ -255,8 +256,14 @@ export function ChangeLogPage() {
               <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g., Deploy v2.1.0 to production" className="mt-1.5" />
             </div>
             <div>
-              <Label>Description</Label>
-              <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe the change..." className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" rows={3} />
+              <Label htmlFor="change-description">Description</Label>
+              <Textarea
+                id="change-description"
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="Describe the change..."
+                className="mt-1.5"
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

@@ -185,6 +185,7 @@ export function ReportTemplateEditor() {
                     value={s.body}
                     onChange={e => updateSection(s.id, { body: e.target.value })}
                     rows={6}
+                    aria-label={`Body for ${s.title || 'template section'}`}
                     className="font-mono text-xs"
                     placeholder="Section body. Separate paragraphs with a blank line. Lines starting with • become bullet points."
                   />

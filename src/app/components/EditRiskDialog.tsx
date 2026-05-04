@@ -197,7 +197,13 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
 
             <div>
               <Label htmlFor="risk-desc" className="text-sm font-medium text-slate-700">Description</Label>
-              <Textarea id="risk-desc" value={description} onChange={e => setDescription(e.target.value)} rows={2} className="mt-1.5" />
+              <Textarea
+                id="risk-desc"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="Add a short description..."
+                className="mt-1.5"
+              />
             </div>
 
             <div className="grid grid-cols-3 gap-3">

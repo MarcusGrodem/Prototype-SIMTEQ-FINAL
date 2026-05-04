@@ -160,7 +160,13 @@ export function EditControlDialog({ open, onOpenChange, control, onSuccess }: Ed
 
           <div>
             <Label htmlFor="ec-desc" className="text-slate-700">Description</Label>
-            <Textarea id="ec-desc" value={description} onChange={e => setDescription(e.target.value)} rows={3} className="mt-1.5 bg-white text-slate-900 border-slate-300" />
+            <Textarea
+              id="ec-desc"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Add a short description..."
+              className="mt-1.5"
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t">
