@@ -15,7 +15,8 @@ import {
   UserCheck,
   Eye,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Upload,
 } from 'lucide-react';
 import { Control, ControlExecution } from '../../lib/types';
 import { useState, useEffect } from 'react';
@@ -63,6 +64,7 @@ export function ControlDetailsDialog({ control, open, onOpenChange, onSuccess, o
   const [linkedDocs, setLinkedDocs] = useState<LinkedDoc[]>([]);
   const [executions, setExecutions] = useState<ControlExecution[]>([]);
   const [completingId, setCompletingId] = useState<string | null>(null);
+  const [uploadingForExecution, setUploadingForExecution] = useState<string | null>(null);
   const { profile } = useAuth();
   const { activePeriod } = useAuditPeriod();
 
@@ -161,6 +163,54 @@ export function ControlDetailsDialog({ control, open, onOpenChange, onSuccess, o
     toast.success('Execution marked as completed');
     loadExecutions();
     onSuccess?.();
+  };
+
+  const handleUploadForExecution = (execution: ControlExecution) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt';
+    input.onchange = async (ev) => {
+      const file = (ev.target as HTMLInputElement).files?.[0];
+      if (!file || !control) return;
+      setUploadingForExecution(execution.id);
+
+      const docId = crypto.randomUUID();
+      const path = `controls/${control.id}/executions/${execution.id}/${docId}-${file.name}`;
+
+      const { error: uploadError } = await supabase.storage.from('evidence').upload(path, file);
+      if (uploadError) { toast.error('Upload failed'); setUploadingForExecution(null); return; }
+
+      const { error: docError } = await supabase.from('documents').insert({
+        id: docId,
+        name: file.name,
+        file_type: file.type,
+        uploaded_by_name: currentUser,
+        file_path: path,
+        file_size: file.size,
+        current_version: 1,
+        reviewer_status: 'pending',
+      });
+      if (docError) { toast.error('Failed to save document record'); setUploadingForExecution(null); return; }
+
+      await supabase.from('document_versions').insert({
+        document_id: docId,
+        version: 1,
+        file_path: path,
+        file_size: file.size,
+        changelog: 'Initial upload',
+        uploaded_by_name: currentUser,
+      });
+
+      // Link to control AND to this specific execution
+      await supabase.from('document_links').insert([
+        { document_id: docId, link_type: 'control', link_id: control.id, execution_id: execution.id },
+      ]);
+
+      toast.success(`Evidence uploaded and linked to execution ${execution.scheduled_due_date}`);
+      setUploadingForExecution(null);
+      loadLinkedData();
+    };
+    input.click();
   };
 
   const handleDownloadDoc = async (doc: LinkedDoc) => {
@@ -352,6 +402,18 @@ export function ControlDetailsDialog({ control, open, onOpenChange, onSuccess, o
                               onClick={() => handleMarkExecutionComplete(ex)}
                             >
                               {completingId === ex.id ? '…' : 'Mark Done'}
+                            </Button>
+                          )}
+                          {ex.status === 'completed' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs gap-1"
+                              disabled={uploadingForExecution === ex.id}
+                              onClick={() => handleUploadForExecution(ex)}
+                            >
+                              <Upload className="w-3 h-3" />
+                              {uploadingForExecution === ex.id ? '…' : 'Upload Evidence'}
                             </Button>
                           )}
                         </div>

@@ -13,6 +13,8 @@ import { UserManagementPage } from './pages/UserManagementPage';
 import { ReportTemplateEditor } from './pages/ReportTemplateEditor';
 import { NotificationLogPage } from './pages/NotificationLogPage';
 import { AuditPeriodPage } from './pages/AuditPeriodPage';
+import { EvidenceReviewQueue } from './pages/EvidenceReviewQueue';
+import { DeviationRegister } from './pages/DeviationRegister';
 // QA pages
 import { QADashboard } from './pages/qa/QADashboard';
 import { Evidence } from './pages/Evidence';
@@ -44,7 +46,9 @@ export const router = createBrowserRouter([
       { path: 'users', element: <UserManagementPage /> },
       { path: 'report-template', element: <ReportTemplateEditor /> },
       { path: 'notifications', element: <NotificationLogPage /> },
-      { path: 'audit-period', element: <AuditPeriodPage /> }
+      { path: 'audit-period', element: <AuditPeriodPage /> },
+      { path: 'evidence-review', element: <EvidenceReviewQueue /> },
+      { path: 'deviations', element: <DeviationRegister /> }
     ]
   },
   {

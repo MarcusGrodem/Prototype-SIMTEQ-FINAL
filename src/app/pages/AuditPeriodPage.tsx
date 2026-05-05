@@ -112,6 +112,7 @@ export function AuditPeriodPage() {
   const [form, setForm] = useState<PeriodFormData>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState<string | null>(null);
 
   useEffect(() => {
     if (editingPeriod) {
@@ -174,6 +175,57 @@ export function AuditPeriodPage() {
     if (error) { toast.error('Failed to close period'); return; }
     toast.success('Period closed');
     refresh();
+  };
+
+  const handleSyncDeviations = async (period: AuditPeriod) => {
+    setSyncing(period.id);
+    const today = new Date().toISOString().split('T')[0];
+
+    // Find overdue executions: scheduled, past due, no existing deviation
+    const { data: overdueExecs } = await supabase
+      .from('control_executions')
+      .select('id, control_id, scheduled_due_date')
+      .eq('audit_period_id', period.id)
+      .eq('status', 'scheduled')
+      .lt('scheduled_due_date', today);
+
+    if (!overdueExecs || overdueExecs.length === 0) {
+      toast.info('No new overdue executions to sync');
+      setSyncing(null);
+      return;
+    }
+
+    // Get execution IDs that already have a deviation
+    const execIds = overdueExecs.map(e => e.id);
+    const { data: existingDevs } = await supabase
+      .from('deviations')
+      .select('execution_id')
+      .in('execution_id', execIds);
+
+    const alreadyLogged = new Set((existingDevs ?? []).map(d => d.execution_id));
+    const toCreate = overdueExecs.filter(e => !alreadyLogged.has(e.id));
+
+    if (toCreate.length === 0) {
+      toast.info('All overdue executions already have deviations');
+      setSyncing(null);
+      return;
+    }
+
+    const rows = toCreate.map(e => ({
+      control_id:      e.control_id,
+      execution_id:    e.id,
+      audit_period_id: period.id,
+      severity:        'medium',
+      type:            'late_execution',
+      description:     `Control execution due ${e.scheduled_due_date} was not completed on time`,
+      detected_date:   today,
+      status:          'open',
+    }));
+
+    const { error } = await supabase.from('deviations').insert(rows);
+    setSyncing(null);
+    if (error) { toast.error('Failed to create deviations'); return; }
+    toast.success(`Created ${toCreate.length} deviation${toCreate.length > 1 ? 's' : ''} for overdue executions`);
   };
 
   const handleGenerateExecutions = async (period: AuditPeriod) => {
@@ -339,6 +391,18 @@ export function AuditPeriodPage() {
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${generating === period.id ? 'animate-spin' : ''}`} />
                     {generating === period.id ? 'Generating…' : 'Generate Executions'}
+                  </Button>
+                )}
+                {period.status === 'active' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs text-orange-600 border-orange-200 hover:bg-orange-50"
+                    disabled={syncing === period.id}
+                    onClick={() => handleSyncDeviations(period)}
+                  >
+                    <AlertCircle className={`w-3.5 h-3.5 ${syncing === period.id ? 'animate-pulse' : ''}`} />
+                    {syncing === period.id ? 'Syncing…' : 'Sync Overdue'}
                   </Button>
                 )}
                 {period.status === 'planned' && (

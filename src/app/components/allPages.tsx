@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, AlertTriangle, Shield, Calendar,
   GitCommit, Package, Users, FileText, BookOpen,
-  Tag, Bell, FileEdit, CalendarDays
+  Tag, Bell, FileEdit, CalendarDays, ClipboardCheck, ShieldAlert
 } from 'lucide-react'
 
 export interface PageDef {
@@ -22,7 +22,9 @@ export const ALL_PAGES: PageDef[] = [
   { key: 'ceo_users',         name: 'Users',             href: '/users',             view: 'CEO', icon: Users },
   { key: 'ceo_report_tpl',    name: 'Report Template',   href: '/report-template',   view: 'CEO', icon: FileEdit },
   { key: 'ceo_notifications', name: 'Notification Log',  href: '/notifications',     view: 'CEO', icon: Bell },
-  { key: 'ceo_audit_period', name: 'Audit Periods',     href: '/audit-period',      view: 'CEO', icon: CalendarDays },
+  { key: 'ceo_audit_period',    name: 'Audit Periods',      href: '/audit-period',      view: 'CEO', icon: CalendarDays },
+  { key: 'ceo_evidence_review', name: 'Evidence Review',   href: '/evidence-review',   view: 'CEO', icon: ClipboardCheck },
+  { key: 'ceo_deviations',     name: 'Deviations',        href: '/deviations',        view: 'CEO', icon: ShieldAlert },
   // CTO
   { key: 'cto_overview',  name: 'Overview',       href: '/cto',           view: 'CTO', icon: LayoutDashboard },
   { key: 'cto_changelog', name: 'Change Log',     href: '/cto/changelog', view: 'CTO', icon: GitCommit },
@@ -39,7 +41,7 @@ export const ALL_PAGES: PageDef[] = [
 export const PAGE_BY_KEY = Object.fromEntries(ALL_PAGES.map(p => [p.key, p]))
 
 export const VIEW_DEFAULTS: Record<string, string[]> = {
-  ceo: ['ceo_dashboard', 'ceo_risks', 'ceo_controls', 'ceo_calendar', 'ceo_categories', 'ceo_users', 'ceo_report_tpl', 'ceo_notifications', 'ceo_audit_period'],
+  ceo: ['ceo_dashboard', 'ceo_risks', 'ceo_controls', 'ceo_calendar', 'ceo_categories', 'ceo_users', 'ceo_report_tpl', 'ceo_notifications', 'ceo_audit_period', 'ceo_evidence_review', 'ceo_deviations'],
   cto: ['cto_overview', 'cto_changelog', 'cto_releases', 'cto_access'],
   qa:  ['qa_overview', 'qa_controls', 'qa_evidence', 'qa_calendar', 'qa_policies'],
 }

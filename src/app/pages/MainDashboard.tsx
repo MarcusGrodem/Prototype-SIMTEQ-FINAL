@@ -22,6 +22,7 @@ import { Link } from 'react-router';
 import { Button } from '../components/ui/button';
 import { supabase } from '../../lib/supabase';
 import { Risk, Control, Alert } from '../../lib/types';
+import { useAuditPeriod } from '../../contexts/AuditPeriodContext';
 
 export function MainDashboard() {
   const [risks, setRisks] = useState<Risk[]>([]);
@@ -32,8 +33,12 @@ export function MainDashboard() {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [aiReportDialogOpen, setAiReportDialogOpen] = useState(false);
   const [alertsVisible, setAlertsVisible] = useState(true);
+  const [evidenceCompletenessRate, setEvidenceCompletenessRate] = useState<number | null>(null);
+  const [openDeviations, setOpenDeviations] = useState<{ total: number; critical: number } | null>(null);
 
-  useEffect(() => { loadData() }, []);
+  const { activePeriod } = useAuditPeriod();
+
+  useEffect(() => { loadData() }, [activePeriod]);
 
   const loadData = async () => {
     setLoading(true);
@@ -45,6 +50,49 @@ export function MainDashboard() {
     if (rRes.data) setRisks(rRes.data);
     if (cRes.data) setControls(cRes.data);
     if (aRes.data) setAlerts(aRes.data);
+
+    // Evidence Completeness Rate for active audit period
+    if (activePeriod) {
+      const { data: execs } = await supabase
+        .from('control_executions')
+        .select('id')
+        .eq('audit_period_id', activePeriod.id)
+        .eq('status', 'completed');
+
+      if (execs && execs.length > 0) {
+        const execIds = execs.map(e => e.id);
+        const { data: links } = await supabase
+          .from('document_links')
+          .select('execution_id, documents!inner(reviewer_status)')
+          .in('execution_id', execIds)
+          .eq('documents.reviewer_status', 'approved');
+
+        const execsWithApprovedEvidence = new Set(
+          (links ?? []).map((l: { execution_id: string }) => l.execution_id)
+        ).size;
+        setEvidenceCompletenessRate(Math.round((execsWithApprovedEvidence / execs.length) * 100));
+      } else {
+        setEvidenceCompletenessRate(null);
+      }
+    } else {
+      setEvidenceCompletenessRate(null);
+    }
+
+    // Open deviation counts (all periods, not just active — deviations are always relevant)
+    const { data: devData } = await supabase
+      .from('deviations')
+      .select('severity, status')
+      .not('status', 'in', '("closed","risk_accepted")');
+
+    if (devData) {
+      setOpenDeviations({
+        total:    devData.length,
+        critical: devData.filter(d => d.severity === 'critical').length,
+      });
+    } else {
+      setOpenDeviations(null);
+    }
+
     setLoading(false);
   };
 
@@ -157,6 +205,38 @@ export function MainDashboard() {
             <p className={`text-3xl font-bold tabular-nums mt-3 ${overdueControls > 0 ? 'text-red-600' : 'text-slate-900'}`}>{overdueControls}</p>
             <p className={`text-xs mt-3 font-medium ${overdueControls > 0 ? 'text-red-500' : 'text-slate-400'}`}>{overdueControls > 0 ? 'Requires immediate action' : 'All controls on track'}</p>
           </Link>
+          {evidenceCompletenessRate !== null && (
+            <Link
+              to="/evidence-review"
+              className={`flex-1 px-6 py-7 hover:bg-slate-50 transition-colors ${
+                evidenceCompletenessRate < 90 ? 'bg-red-50/60' : evidenceCompletenessRate < 98 ? 'bg-yellow-50/60' : ''
+              }`}
+            >
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Evidence Rate</p>
+              <p className={`text-3xl font-bold tabular-nums mt-3 ${
+                evidenceCompletenessRate < 90 ? 'text-red-600' : evidenceCompletenessRate < 98 ? 'text-yellow-600' : 'text-emerald-600'
+              }`}>
+                {evidenceCompletenessRate}<span className="text-lg font-semibold">%</span>
+              </p>
+              <p className="text-xs mt-3 text-slate-400">Approved evidence / completed</p>
+            </Link>
+          )}
+          {openDeviations !== null && (
+            <Link
+              to="/deviations"
+              className={`flex-1 px-6 py-7 hover:bg-slate-50 transition-colors ${
+                openDeviations.critical > 0 ? 'bg-red-50/60' : openDeviations.total > 0 ? 'bg-orange-50/40' : ''
+              }`}
+            >
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Open Deviations</p>
+              <p className={`text-3xl font-bold tabular-nums mt-3 ${
+                openDeviations.critical > 0 ? 'text-red-600' : openDeviations.total > 0 ? 'text-orange-600' : 'text-slate-900'
+              }`}>{openDeviations.total}</p>
+              <p className={`text-xs mt-3 font-medium ${openDeviations.critical > 0 ? 'text-red-500' : 'text-slate-400'}`}>
+                {openDeviations.critical > 0 ? `${openDeviations.critical} critical` : openDeviations.total > 0 ? 'Needs attention' : 'No open deviations'}
+              </p>
+            </Link>
+          )}
         </div>
 
         {/* Main content */}

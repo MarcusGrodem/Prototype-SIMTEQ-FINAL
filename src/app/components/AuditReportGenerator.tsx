@@ -195,7 +195,9 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     const s = sectionMap[key];
     if (!s) return substitute(normalizeTemplateBody(key, fallback));
     if (!s.visible) return null;
-    return substitute(normalizeTemplateBody(key, s.body || fallback));
+    // If the user explicitly saved content, trust it as-is — skip normalization.
+    if (s.body) return substitute(s.body);
+    return substitute(normalizeTemplateBody(key, fallback));
   };
 
   const tplTitle = (key: string, fallback: string): string => {
@@ -385,8 +387,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         company.toLowerCase().includes('simteq')
           ? SIMTEQ_COMPANY_OVERVIEW
           : `${company} operates services for user entities supported by documented general IT controls and information security controls.`),
-      new Paragraph({ text: '2.2  Infrastructure and Technology Components', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`The ${company} control environment comprises the following key components:`),
+      ...tplSubsection('sec_2_2', '2.2  Infrastructure and Technology Components',
+        `The ${company} control environment comprises the following key components:`),
     );
 
     const infraRows = company.toLowerCase().includes('simteq') ? [
@@ -420,8 +422,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         `Customer data is received by ${company} through encrypted channels (TLS 1.2 or higher) and processed within isolated tenant environments. The following data lifecycle applies to in-scope services:\n\n• Ingestion: Customer data is submitted via authenticated API endpoints or secure file transfer. All transmissions are encrypted in transit. Inbound data is authenticated and authorised before acceptance.\n• Validation and Processing: Received data is validated for format integrity and completeness prior to processing. Automated workflow engines apply business logic and transformations within compute resources isolated per tenant.\n• Storage: Processed data and documents are stored in encrypted data stores. Encryption at rest uses AES-256 or equivalent. Logical separation is enforced at the data and access layer; no cross-tenant data access is permitted.\n• Output and Delivery: Results (reports, notifications, exports) are delivered to authorised recipients via authenticated, encrypted channels. Delivery confirmations are logged.\n• Retention and Disposal: Customer data is retained in accordance with contractual terms and applicable legal requirements (including GDPR). At end-of-retention, data is securely deleted or anonymised using documented disposal procedures, and disposal is recorded.`),
       ...tplSubsection('sec_2_4', '2.4  Personnel and Organizational Structure',
         `${company} maintains a dedicated Information Security function. The CISO reports directly to senior management and chairs the Information Security Steering Committee. Key security roles include Information Security Manager, IT Operations Lead, Compliance Officer, Data Protection Officer (DPO), and a dedicated Security Operations function.\n\nAll personnel with access to in-scope systems undergo background checks prior to employment and sign confidentiality agreements. Role-specific security awareness training is completed during onboarding and repeated annually. Upon role change or departure, access rights are revoked within one business day as triggered by the HR system integration.`),
-      new Paragraph({ text: '2.5  Principal Service Commitments and System Requirements', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} has established the following principal service commitments applicable to the in-scope services. These commitments form the basis for the control objectives described in this report and are monitored on a continuous basis through the compliance management system.`),
+      ...tplSubsection('sec_2_5', '2.5  Principal Service Commitments and System Requirements',
+        `${company} has established the following principal service commitments applicable to the in-scope services. These commitments form the basis for the control objectives described in this report and are monitored on a continuous basis through the compliance management system.`),
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: [
@@ -445,14 +447,10 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       new Paragraph({ text: '3.  Management Statement and Assertion', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
       ...tplSubsection('sec_3_1', `3.1  Statement by ${company} Management`,
         `${company} management confirms that this report accurately describes the company's general IT controls and information security controls for the period ${periodStart} to ${periodEnd}.`),
-      new Paragraph({ text: '3.2  Management Assertion', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`Based on the criteria established in the ISAE 3402 standard, ${company} management asserts that:`),
-      p(`(i)   The description of the system fairly presents ${company}'s system as designed and implemented throughout the period from ${periodStart} to ${periodEnd}.`),
-      p('(ii)  The controls related to the stated control objectives were suitably designed throughout the specified period to provide reasonable assurance that those objectives would be achieved if the controls operated effectively.'),
-      p('(iii) The controls tested operated effectively throughout the specified period to provide reasonable assurance that the related control objectives were achieved.'),
-      p(`(iv)  ${company} has implemented complementary sub-service organization controls where applicable, and relies on the controls of sub-service organizations for certain objectives as described in Section 5.`),
-      new Paragraph({ text: '3.3  Responsibility Statement', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`Management of ${company} acknowledges its responsibility for monitoring the ongoing performance of controls.`),
+      ...tplSubsection('sec_3_2', '3.2  Management Assertion',
+        `Based on the criteria established in the ISAE 3402 standard, ${company} management asserts that:\n\n(i)   The description of the system fairly presents ${company}'s system as designed and implemented throughout the period from ${periodStart} to ${periodEnd}.\n\n(ii)  The controls related to the stated control objectives were suitably designed throughout the specified period to provide reasonable assurance that those objectives would be achieved if the controls operated effectively.\n\n(iii) The controls tested operated effectively throughout the specified period to provide reasonable assurance that the related control objectives were achieved.\n\n(iv)  ${company} has implemented complementary sub-service organization controls where applicable, and relies on the controls of sub-service organizations for certain objectives as described in Section 5.`),
+      ...tplSubsection('sec_3_3', '3.3  Responsibility Statement',
+        `Management of ${company} acknowledges its responsibility for monitoring the ongoing performance of controls.`),
     );
 
     // ── SECTION 4: CUEC ─────────────────────────────────────────────────────
@@ -461,7 +459,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       new Paragraph({ text: '4.  Complementary User Entity Controls (CUEC)', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
       ...tplSubsection('sec_4_1', '4.1  Overview',
         `The controls described in this report are designed with the assumption that user entities have implemented certain complementary controls. ${company}'s controls alone are not sufficient to achieve all control objectives.`),
-      new Paragraph({ text: '4.2  Required Complementary User Entity Controls', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      ...tplSubsection('sec_4_2', '4.2  Required Complementary User Entity Controls', ''),
     );
 
     const cuecRows = [
@@ -513,7 +511,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         })),
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      p(`${company} performs periodic due diligence reviews of sub-service organizations. Contracts with sub-service organizations should include appropriate security requirements, data processing agreements, and audit or assurance provisions where relevant.`),
+      ...(() => { const b = tplBody('sec_5_trail', `${company} performs periodic due diligence reviews of sub-service organizations. Contracts with sub-service organizations should include appropriate security requirements, data processing agreements, and audit or assurance provisions where relevant.`); return b !== null ? bodyParagraphs(b) : []; })(),
     );
 
     // ── SECTION 6: CONTROL ENVIRONMENT ─────────────────────────────────────
@@ -819,7 +817,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     children.push(
       new Paragraph({ text: '11.  Business Continuity and Incident Management', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
       new Paragraph({ text: '11.1  Business Continuity Planning', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('SIMTEQ AS maintains a Business Continuity Plan (BCP) and Disaster Recovery Plan (DRP) that are reviewed and tested annually. The plans define Recovery Time Objectives (RTO) and Recovery Point Objectives (RPO) for all critical services, as summarized below.'),
+      p(`${company} maintains a Business Continuity Plan (BCP) and Disaster Recovery Plan (DRP) that are reviewed and tested annually. The plans define Recovery Time Objectives (RTO) and Recovery Point Objectives (RPO) for all critical services, as summarized below.`),
     );
 
     const bcpRows = [
@@ -871,7 +869,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
       new Paragraph({ text: '12.3  Segregation of Duties', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('SIMTEQ AS enforces segregation of duties (SoD) across key IT processes. Roles with conflicting responsibilities — such as development and production deployment, or request and approval of access — are identified in the SoD matrix and are not permitted to be held by the same individual. Automated controls in the ITSM platform enforce this separation for change management and access request workflows.'),
+      p(`${company} enforces segregation of duties (SoD) across key IT processes. Roles with conflicting responsibilities — such as development and production deployment, or request and approval of access — are identified in the SoD matrix and are not permitted to be held by the same individual. Automated controls in the ITSM platform enforce this separation for change management and access request workflows.`),
       new Paragraph({ text: '12.4  Periodic Access Reviews', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
       p('All user access rights are reviewed quarterly by system owners. Privileged access is reviewed monthly. Any access rights that are no longer required are revoked within five business days of identification. Access is automatically disabled upon employee termination or role change as triggered by the HR system integration.'),
     );

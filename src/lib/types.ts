@@ -60,6 +60,10 @@ export interface Document {
   file_path: string | null
   file_size: number | null
   current_version: number
+  reviewer_status: 'pending' | 'approved' | 'rejected'
+  reviewer_comment: string | null
+  reviewed_by_name: string | null
+  reviewed_date: string | null
   created_at: string
   updated_at: string
   // Joined
@@ -82,6 +86,7 @@ export interface DocumentLink {
   document_id: string
   link_type: 'risk' | 'control'
   link_id: string
+  execution_id: string | null
   created_at: string
 }
 
@@ -227,6 +232,38 @@ export interface ControlExecution {
   reviewed_by_name: string | null
   reviewed_date: string | null
   comments: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Deviation {
+  id: string
+  control_id: string
+  execution_id: string | null
+  audit_period_id: string | null
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  type: 'missing_evidence' | 'late_execution' | 'failed_control' | 'incomplete_approval' | 'other'
+  description: string
+  detected_date: string
+  root_cause: string | null
+  audit_impact: string | null
+  status: 'open' | 'under_remediation' | 'retesting' | 'closed' | 'risk_accepted'
+  owner_name: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RemediationAction {
+  id: string
+  deviation_id: string
+  action_description: string
+  owner_name: string | null
+  due_date: string | null
+  closed_date: string | null
+  closure_evidence: string | null
+  retest_required: boolean
+  retest_result: 'passed' | 'failed' | 'not_tested' | null
+  status: 'open' | 'closed' | 'overdue'
   created_at: string
   updated_at: string
 }
