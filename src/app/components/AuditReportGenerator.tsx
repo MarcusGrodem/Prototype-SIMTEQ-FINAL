@@ -518,10 +518,10 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
       new Paragraph({ text: '6.  Description of the IT Control Environment', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      new Paragraph({ text: '6.1  Control Framework', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} has implemented a comprehensive IT control framework aligned with ISO/IEC 27001:2022. The framework is organized into thirteen control domains, each containing specific control objectives designed to address identified risks to the confidentiality, integrity, and availability of information assets.`),
+      ...tplSubsection('sec_6_1', '6.1  Control Framework',
+        `${company} has implemented a comprehensive IT control framework aligned with ISO/IEC 27001:2022. The framework is organized into thirteen control domains, each containing specific control objectives designed to address identified risks to the confidentiality, integrity, and availability of information assets.`),
       p(`As of ${periodEnd}, the control environment comprises ${controls.length} individual controls across ${ISO_DOMAINS.filter(d => controls.some(c => c.category === d)).length} active domains, with an overall completion rate of ${complianceScore}%.`),
-      new Paragraph({ text: '6.2  Control Environment Components', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      ...tplSubsection('sec_6_2', '6.2  Control Environment Components', ''),
     );
 
     const envRows2 = [
