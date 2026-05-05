@@ -544,11 +544,10 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         })),
       }),
       new Paragraph({ text: '', spacing: { after: 300 } }),
-      new Paragraph({ text: '6.3  Governance and Oversight', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} maintains an Information Security Steering Committee that meets quarterly to review the status of the control environment, approve material changes to security policies, and review the risk register. The committee is chaired by the CISO and includes representatives from IT Operations, Legal, Compliance, and senior management.`),
-      p('Internal compliance reviews are conducted semi-annually and findings are tracked in the compliance management system. All findings are assigned an owner, a remediation target date, and a severity rating. Unresolved critical findings are escalated to the Board of Directors.'),
-      new Paragraph({ text: '6.4  Security Policy Framework', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} maintains a comprehensive information security policy framework. All policies are approved by senior management, communicated to relevant personnel, and reviewed at least annually or following significant changes. The policy framework comprises the following key documents:`),
+      ...tplSubsection('sec_6_3', '6.3  Governance and Oversight',
+        `${company} maintains an Information Security Steering Committee that meets quarterly to review the status of the control environment, approve material changes to security policies, and review the risk register. The committee is chaired by the CISO and includes representatives from IT Operations, Legal, Compliance, and senior management.\n\nInternal compliance reviews are conducted semi-annually and findings are tracked in the compliance management system. All findings are assigned an owner, a remediation target date, and a severity rating. Unresolved critical findings are escalated to the Board of Directors.`),
+      ...tplSubsection('sec_6_4', '6.4  Security Policy Framework',
+        `${company} maintains a comprehensive information security policy framework. All policies are approved by senior management, communicated to relevant personnel, and reviewed at least annually or following significant changes. The policy framework comprises the following key documents:`),
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: [
@@ -570,8 +569,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         ],
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      new Paragraph({ text: '6.5  Security Awareness and Training Program', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} operates a structured security awareness and training program to ensure all personnel understand their information security responsibilities and are equipped to recognise and respond to current threats. Training completion is tracked centrally and reported to the CISO quarterly.`),
+      ...tplSubsection('sec_6_5', '6.5  Security Awareness and Training Program',
+        `${company} operates a structured security awareness and training program to ensure all personnel understand their information security responsibilities and are equipped to recognise and respond to current threats. Training completion is tracked centrally and reported to the CISO quarterly.`),
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: [
@@ -587,15 +586,15 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
           ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0 })) })),
         ],
       }),
-      p(`Non-completion of mandatory training within the defined window is escalated to the relevant line manager. Persistent non-completion is treated as a disciplinary matter in accordance with the company's Human Resources policy.`),
+      ...(() => { const b = tplBody('sec_6_5_trail', `Non-completion of mandatory training within the defined window is escalated to the relevant line manager. Persistent non-completion is treated as a disciplinary matter in accordance with the company's Human Resources policy.`); return b !== null ? bodyParagraphs(b) : []; })(),
     );
 
     // ── SECTION 7: RISK REGISTER ────────────────────────────────────────────
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
       new Paragraph({ text: '7.  Risk Register', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      new Paragraph({ text: '7.1  Risk Management Methodology', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} uses a structured risk management methodology based on ISO 31000 and ISO 27005. Risks are identified through periodic threat assessments, vulnerability scans, incident reviews, and internal audits. Each risk is evaluated using a likelihood × impact scoring matrix on a scale of 1–9, yielding a composite risk score that determines the risk rating and required response.`),
+      ...tplSubsection('sec_7_1', '7.1  Risk Management Methodology',
+        `${company} uses a structured risk management methodology based on ISO 31000 and ISO 27005. Risks are identified through periodic threat assessments, vulnerability scans, incident reviews, and internal audits. Each risk is evaluated using a likelihood × impact scoring matrix on a scale of 1–9, yielding a composite risk score that determines the risk rating and required response.`),
     );
 
     const riskMatrix = [
@@ -661,8 +660,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     }
 
     children.push(
-      new Paragraph({ text: '7.3  Risk Treatment Plan Summary', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`For each identified risk, ${company} selects and implements one of the following treatment options in accordance with its risk appetite and the requirements of ISO 31000. Treatment decisions are approved by the CISO and reviewed by the Information Security Steering Committee.`),
+      ...tplSubsection('sec_7_3', '7.3  Risk Treatment Plan Summary',
+        `For each identified risk, ${company} selects and implements one of the following treatment options in accordance with its risk appetite and the requirements of ISO 31000. Treatment decisions are approved by the CISO and reviewed by the Information Security Steering Committee.`),
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: [
@@ -676,7 +675,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         ],
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      p(`Residual risk (the risk remaining after treatment) is documented for each risk and reviewed at least semi-annually. All risks with a residual score above the defined risk appetite threshold (score ≥ 7) require formal written acceptance by the CISO and a time-bound mitigation plan. No high-scoring residual risks may remain untreated for more than 90 days without Board-level escalation.`),
+      ...(() => { const b = tplBody('sec_7_3_trail', `Residual risk (the risk remaining after treatment) is documented for each risk and reviewed at least semi-annually. All risks with a residual score above the defined risk appetite threshold (score ≥ 7) require formal written acceptance by the CISO and a time-bound mitigation plan. No high-scoring residual risks may remain untreated for more than 90 days without Board-level escalation.`); return b !== null ? bodyParagraphs(b) : []; })(),
       new Paragraph({ text: '', spacing: { after: 300 } }),
     );
 
@@ -690,24 +689,19 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       );
     }
     children.push(
-      new Paragraph({ text: '8.1  Auditor Responsibilities', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('Our responsibility is to express an opinion on the fairness of the presentation of the description and on the design and operating effectiveness of the controls to achieve the related control objectives, based on our examination. We conducted our engagement in accordance with the International Standard on Assurance Engagements (ISAE) 3402, "Assurance Reports on Controls at a Service Organization."'),
-      p('That standard requires that we comply with ethical requirements and plan and perform our procedures to obtain reasonable assurance about whether, in all material respects, the description fairly presents the system as designed and implemented, the controls were suitably designed, and the controls operated effectively throughout the stated period.'),
-      new Paragraph({ text: '8.2  Scope of Testing', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('Our procedures included examining evidence supporting the description and the design and operating effectiveness of the controls. Our tests of controls included inquiry, observation, inspection of documents and records, and re-performance of controls. We believe our examination provides a reasonable basis for our opinion.'),
-      new Paragraph({ text: '8.3  Our Conclusion', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`Based on our examination, in our opinion, in all material respects, as at ${periodEnd}:`),
-      p(`(i)   The description fairly presents ${company}'s system as designed and implemented throughout the period.`),
-      p('(ii)  The controls related to the stated control objectives were suitably designed throughout the period.'),
+      ...tplSubsection('sec_8_1', '8.1  Auditor Responsibilities',
+        `Our responsibility is to express an opinion on the fairness of the presentation of the description and on the design and operating effectiveness of the controls to achieve the related control objectives, based on our examination. We conducted our engagement in accordance with the International Standard on Assurance Engagements (ISAE) 3402, "Assurance Reports on Controls at a Service Organization."\n\nThat standard requires that we comply with ethical requirements and plan and perform our procedures to obtain reasonable assurance about whether, in all material respects, the description fairly presents the system as designed and implemented, the controls were suitably designed, and the controls operated effectively throughout the stated period.`),
+      ...tplSubsection('sec_8_2', '8.2  Scope of Testing',
+        'Our procedures included examining evidence supporting the description and the design and operating effectiveness of the controls. Our tests of controls included inquiry, observation, inspection of documents and records, and re-performance of controls. We believe our examination provides a reasonable basis for our opinion.'),
+      ...tplSubsection('sec_8_3', '8.3  Our Conclusion',
+        `Based on our examination, in our opinion, in all material respects, as at ${periodEnd}:\n\n(i)   The description fairly presents ${company}'s system as designed and implemented throughout the period.\n\n(ii)  The controls related to the stated control objectives were suitably designed throughout the period.`),
       p(complianceScore >= 85
         ? `(iii) The controls tested operated effectively throughout the period ${periodStart} to ${periodEnd}, with no material exceptions noted.`
         : `(iii) The controls tested operated with ${overdue} exception(s) noted. Details and management responses are provided in Section 9.`),
-      new Paragraph({ text: '8.4  Basis of Opinion', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`Our examination was conducted in accordance with the criteria established by ${company} management and set out in Section 6 of this report. We believe the criteria used are suitable and available to user entities and their auditors. Our independence and quality management policies have been applied throughout the engagement.`),
-      new Paragraph({ text: '8.5  Legend', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('Effective: No material deviations noted; controls operated effectively throughout the period'),
-      p('Review needed: Some weaknesses identified; improvements recommended; controls substantially effective'),
-      p('Exception: Critical weaknesses noted; controls not operating effectively; immediate remediation required'),
+      ...tplSubsection('sec_8_4', '8.4  Basis of Opinion',
+        `Our examination was conducted in accordance with the criteria established by ${company} management and set out in Section 6 of this report. We believe the criteria used are suitable and available to user entities and their auditors. Our independence and quality management policies have been applied throughout the engagement.`),
+      ...tplSubsection('sec_8_5', '8.5  Legend',
+        'Effective: No material deviations noted; controls operated effectively throughout the period\n\nReview needed: Some weaknesses identified; improvements recommended; controls substantially effective\n\nException: Critical weaknesses noted; controls not operating effectively; immediate remediation required'),
     );
 
     // ── SECTION 9: CONTROL OBJECTIVES TABLE ─────────────────────────────────
@@ -788,8 +782,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
       new Paragraph({ text: '10.  Change Management Controls', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      new Paragraph({ text: '10.1  Change Management Process', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} operates a formal change management process for in-scope systems and services. Changes should be documented, risk-assessed, approved, tested where relevant, and reviewed after implementation according to their urgency and potential impact.`),
+      ...tplSubsection('sec_10_1', '10.1  Change Management Process',
+        `${company} operates a formal change management process for in-scope systems and services. Changes should be documented, risk-assessed, approved, tested where relevant, and reviewed after implementation according to their urgency and potential impact.`),
     );
 
     const changeRows = [
@@ -806,18 +800,18 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         })),
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      new Paragraph({ text: '10.2  Testing and Rollback', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('All Normal changes must include a documented test plan, a rollback procedure, and evidence of successful testing in a non-production environment before CAB approval is granted. Emergency changes undergo a formal post-implementation review within 48 hours of deployment to verify effectiveness and identify any unintended consequences.'),
-      new Paragraph({ text: '10.3  Segregation of Duties in Change Process', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('No individual is permitted to both request and approve a change to production systems. The CAB includes representatives from Operations, Security, and at least one business stakeholder. Changes affecting security controls or cryptographic configurations require CISO sign-off in addition to standard CAB approval.'),
+      ...tplSubsection('sec_10_2', '10.2  Testing and Rollback',
+        'All Normal changes must include a documented test plan, a rollback procedure, and evidence of successful testing in a non-production environment before CAB approval is granted. Emergency changes undergo a formal post-implementation review within 48 hours of deployment to verify effectiveness and identify any unintended consequences.'),
+      ...tplSubsection('sec_10_3', '10.3  Segregation of Duties in Change Process',
+        'No individual is permitted to both request and approve a change to production systems. The CAB includes representatives from Operations, Security, and at least one business stakeholder. Changes affecting security controls or cryptographic configurations require CISO sign-off in addition to standard CAB approval.'),
     );
 
     // ── SECTION 11: BUSINESS CONTINUITY & INCIDENT MANAGEMENT ───────────────
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
       new Paragraph({ text: '11.  Business Continuity and Incident Management', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      new Paragraph({ text: '11.1  Business Continuity Planning', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} maintains a Business Continuity Plan (BCP) and Disaster Recovery Plan (DRP) that are reviewed and tested annually. The plans define Recovery Time Objectives (RTO) and Recovery Point Objectives (RPO) for all critical services, as summarized below.`),
+      ...tplSubsection('sec_11_1', '11.1  Business Continuity Planning',
+        `${company} maintains a Business Continuity Plan (BCP) and Disaster Recovery Plan (DRP) that are reviewed and tested annually. The plans define Recovery Time Objectives (RTO) and Recovery Point Objectives (RPO) for all critical services, as summarized below.`),
     );
 
     const bcpRows = [
@@ -835,21 +829,20 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         })),
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      new Paragraph({ text: '11.2  Incident Management Process', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('Security incidents are managed through a formal incident response process covering detection, triage, containment, eradication, recovery, and post-incident review phases. Escalation procedures should define ownership, severity, communication requirements, and target response times.'),
-      p(`${company} maintains an incident register that records incidents, their classification, root cause analysis, and remediation actions. Incidents affecting customer data are reported to affected user entities in accordance with GDPR and contractual requirements.`),
-      new Paragraph({ text: '11.3  Testing and Exercises', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('Business continuity and disaster recovery capabilities are tested at least annually through tabletop exercises and live failover tests. Results are documented and used to update the BCP/DRP. The most recent full DR test was completed successfully within the reporting period.'),
+      ...tplSubsection('sec_11_2', '11.2  Incident Management Process',
+        `Security incidents are managed through a formal incident response process covering detection, triage, containment, eradication, recovery, and post-incident review phases. Escalation procedures should define ownership, severity, communication requirements, and target response times.\n\n${company} maintains an incident register that records incidents, their classification, root cause analysis, and remediation actions. Incidents affecting customer data are reported to affected user entities in accordance with GDPR and contractual requirements.`),
+      ...tplSubsection('sec_11_3', '11.3  Testing and Exercises',
+        'Business continuity and disaster recovery capabilities are tested at least annually through tabletop exercises and live failover tests. Results are documented and used to update the BCP/DRP. The most recent full DR test was completed successfully within the reporting period.'),
     );
 
     // ── SECTION 12: ACCESS MANAGEMENT ───────────────────────────────────────
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
       new Paragraph({ text: '12.  Access Management and Segregation of Duties', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      new Paragraph({ text: '12.1  Access Control Principles', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} enforces the principles of least privilege and need-to-know for access to systems and data. Access rights are granted based on job role and should be documented in an access control matrix. Access requests require formal approval from the relevant system or process owner.`),
-      new Paragraph({ text: '12.2  Identity and Authentication', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('User accounts should require multi-factor authentication for access to in-scope production systems where supported. Privileged access should be restricted, approved, logged, and subject to periodic review.'),
+      ...tplSubsection('sec_12_1', '12.1  Access Control Principles',
+        `${company} enforces the principles of least privilege and need-to-know for access to systems and data. Access rights are granted based on job role and should be documented in an access control matrix. Access requests require formal approval from the relevant system or process owner.`),
+      ...tplSubsection('sec_12_2', '12.2  Identity and Authentication',
+        'User accounts should require multi-factor authentication for access to in-scope production systems where supported. Privileged access should be restricted, approved, logged, and subject to periodic review.'),
     );
 
     const accessRows = [
@@ -868,21 +861,20 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         })),
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      new Paragraph({ text: '12.3  Segregation of Duties', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} enforces segregation of duties (SoD) across key IT processes. Roles with conflicting responsibilities — such as development and production deployment, or request and approval of access — are identified in the SoD matrix and are not permitted to be held by the same individual. Automated controls in the ITSM platform enforce this separation for change management and access request workflows.`),
-      new Paragraph({ text: '12.4  Periodic Access Reviews', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('All user access rights are reviewed quarterly by system owners. Privileged access is reviewed monthly. Any access rights that are no longer required are revoked within five business days of identification. Access is automatically disabled upon employee termination or role change as triggered by the HR system integration.'),
+      ...tplSubsection('sec_12_3', '12.3  Segregation of Duties',
+        `${company} enforces segregation of duties (SoD) across key IT processes. Roles with conflicting responsibilities — such as development and production deployment, or request and approval of access — are identified in the SoD matrix and are not permitted to be held by the same individual. Automated controls in the ITSM platform enforce this separation for change management and access request workflows.`),
+      ...tplSubsection('sec_12_4', '12.4  Periodic Access Reviews',
+        'All user access rights are reviewed quarterly by system owners. Privileged access is reviewed monthly. Any access rights that are no longer required are revoked within five business days of identification. Access is automatically disabled upon employee termination or role change as triggered by the HR system integration.'),
     );
 
     // ── SECTION 13: DATA PRIVACY AND GDPR ───────────────────────────────────
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
       new Paragraph({ text: '13.  Data Privacy and GDPR Compliance', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      new Paragraph({ text: '13.1  Data Privacy Framework', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} operates a data privacy framework aligned with the General Data Protection Regulation (GDPR) (EU) 2016/679 and applicable national data protection legislation. A Data Protection Officer (DPO) has been appointed and is responsible for monitoring compliance, advising on data protection obligations, and acting as the contact point for supervisory authorities and data subjects.`),
-      p('The privacy framework covers the full lifecycle of personal data processing, from collection and lawful basis documentation through to retention, disposal, and data subject rights fulfilment. Privacy by Design and by Default principles are applied when developing or modifying systems that process personal data.'),
-      new Paragraph({ text: '13.2  Personal Data Processing Activities', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} maintains a Record of Processing Activities (RoPA) as required under GDPR Article 30. The following table summarises the principal categories of personal data processed in connection with in-scope services:`),
+      ...tplSubsection('sec_13_1', '13.1  Data Privacy Framework',
+        `${company} operates a data privacy framework aligned with the General Data Protection Regulation (GDPR) (EU) 2016/679 and applicable national data protection legislation. A Data Protection Officer (DPO) has been appointed and is responsible for monitoring compliance, advising on data protection obligations, and acting as the contact point for supervisory authorities and data subjects.\n\nThe privacy framework covers the full lifecycle of personal data processing, from collection and lawful basis documentation through to retention, disposal, and data subject rights fulfilment. Privacy by Design and by Default principles are applied when developing or modifying systems that process personal data.`),
+      ...tplSubsection('sec_13_2', '13.2  Personal Data Processing Activities',
+        `${company} maintains a Record of Processing Activities (RoPA) as required under GDPR Article 30. The following table summarises the principal categories of personal data processed in connection with in-scope services:`),
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: [
@@ -898,8 +890,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         ],
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      new Paragraph({ text: '13.3  Data Subject Rights', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} has implemented documented procedures to respond to data subject requests under GDPR Articles 15–22. These include the rights of access, rectification, erasure, restriction of processing, data portability, and objection. All requests are acknowledged within 72 hours and fulfilled within 30 days. Where requests cannot be fulfilled, a reasoned refusal is provided to the data subject.`),
+      ...tplSubsection('sec_13_3', '13.3  Data Subject Rights',
+        `${company} has implemented documented procedures to respond to data subject requests under GDPR Articles 15–22. These include the rights of access, rectification, erasure, restriction of processing, data portability, and objection. All requests are acknowledged within 72 hours and fulfilled within 30 days. Where requests cannot be fulfilled, a reasoned refusal is provided to the data subject.`),
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: [
@@ -915,10 +907,10 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         ],
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      new Paragraph({ text: '13.4  Data Breach Notification', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`In the event of a personal data breach, ${company} follows a documented breach response procedure. Confirmed breaches involving risk to data subjects are notified to the relevant supervisory authority within 72 hours of discovery (GDPR Art. 33). Where a high risk to individuals is identified, affected data subjects are notified without undue delay (GDPR Art. 34). All breaches, including near-misses, are recorded in the breach register maintained by the DPO.`),
-      new Paragraph({ text: '13.5  Data Protection Impact Assessments (DPIA)', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} conducts Data Protection Impact Assessments for new processing activities that are likely to result in high risk to individuals, as required under GDPR Article 35. DPIA triggers include: introduction of new processing systems, significant changes to existing processing, use of new technologies, large-scale processing of sensitive data, and systematic monitoring. DPIAs are documented, reviewed by the DPO, and approved by the CISO prior to implementation.`),
+      ...tplSubsection('sec_13_4', '13.4  Data Breach Notification',
+        `In the event of a personal data breach, ${company} follows a documented breach response procedure. Confirmed breaches involving risk to data subjects are notified to the relevant supervisory authority within 72 hours of discovery (GDPR Art. 33). Where a high risk to individuals is identified, affected data subjects are notified without undue delay (GDPR Art. 34). All breaches, including near-misses, are recorded in the breach register maintained by the DPO.`),
+      ...tplSubsection('sec_13_5', '13.5  Data Protection Impact Assessments (DPIA)',
+        `${company} conducts Data Protection Impact Assessments for new processing activities that are likely to result in high risk to individuals, as required under GDPR Article 35. DPIA triggers include: introduction of new processing systems, significant changes to existing processing, use of new technologies, large-scale processing of sensitive data, and systematic monitoring. DPIAs are documented, reviewed by the DPO, and approved by the CISO prior to implementation.`),
       new Paragraph({ text: '', spacing: { after: 300 } }),
     );
 
@@ -926,8 +918,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
       new Paragraph({ text: '14.  Vulnerability Management and Penetration Testing', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      new Paragraph({ text: '14.1  Vulnerability Identification and Classification', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} maintains a formal vulnerability management process covering all in-scope systems. Vulnerabilities are identified through automated scanning, manual assessments, threat intelligence feeds, vendor advisories, and penetration testing. Each identified vulnerability is classified using the Common Vulnerability Scoring System (CVSS) and mapped to a remediation priority based on the following criteria:`),
+      ...tplSubsection('sec_14_1', '14.1  Vulnerability Identification and Classification',
+        `${company} maintains a formal vulnerability management process covering all in-scope systems. Vulnerabilities are identified through automated scanning, manual assessments, threat intelligence feeds, vendor advisories, and penetration testing. Each identified vulnerability is classified using the Common Vulnerability Scoring System (CVSS) and mapped to a remediation priority based on the following criteria:`),
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: [
@@ -941,8 +933,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         ],
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      new Paragraph({ text: '14.2  Automated Scanning Program', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`Automated vulnerability scans are performed on all in-scope systems on a defined schedule. Scan results are reviewed by the IT Operations team, triaged by the CISO, and tracked in the vulnerability management system until remediation is confirmed. False positives are documented with supporting rationale.`),
+      ...tplSubsection('sec_14_2', '14.2  Automated Scanning Program',
+        `Automated vulnerability scans are performed on all in-scope systems on a defined schedule. Scan results are reviewed by the IT Operations team, triaged by the CISO, and tracked in the vulnerability management system until remediation is confirmed. False positives are documented with supporting rationale.`),
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: [
@@ -958,8 +950,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         ],
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      new Paragraph({ text: '14.3  Penetration Testing', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`${company} engages qualified independent third-party security firms to conduct penetration tests of in-scope systems on an annual basis at minimum. Additional targeted tests are commissioned following significant system changes or at the direction of the CISO. Penetration testing scope, methodology, and findings are documented, and remediation of identified findings is tracked to completion.`),
+      ...tplSubsection('sec_14_3', '14.3  Penetration Testing',
+        `${company} engages qualified independent third-party security firms to conduct penetration tests of in-scope systems on an annual basis at minimum. Additional targeted tests are commissioned following significant system changes or at the direction of the CISO. Penetration testing scope, methodology, and findings are documented, and remediation of identified findings is tracked to completion.`),
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: [
@@ -974,9 +966,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         ],
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      new Paragraph({ text: '14.4  Patch Management', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`Patches and security updates for all in-scope systems are tracked, evaluated, and applied in accordance with the vulnerability remediation SLAs defined in Section 14.1. Patch deployment follows the change management process described in Section 10. Emergency patches for critical vulnerabilities may follow the emergency change process with post-implementation review. Patch compliance rates are monitored monthly and reported to the CISO.`),
-      p(`Operating systems, middleware, databases, and third-party libraries are covered by the patch management program. End-of-life (EOL) software and systems are identified, tracked, and subject to a migration or decommission plan approved by the CISO. No EOL systems may remain in production without documented risk acceptance and compensating controls.`),
+      ...tplSubsection('sec_14_4', '14.4  Patch Management',
+        `Patches and security updates for all in-scope systems are tracked, evaluated, and applied in accordance with the vulnerability remediation SLAs defined in Section 14.1. Patch deployment follows the change management process described in Section 10. Emergency patches for critical vulnerabilities may follow the emergency change process with post-implementation review. Patch compliance rates are monitored monthly and reported to the CISO.\n\nOperating systems, middleware, databases, and third-party libraries are covered by the patch management program. End-of-life (EOL) software and systems are identified, tracked, and subject to a migration or decommission plan approved by the CISO. No EOL systems may remain in production without documented risk acceptance and compensating controls.`),
       new Paragraph({ text: '', spacing: { after: 300 } }),
     );
 
@@ -1085,7 +1076,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     // ── APPENDIX B: GLOSSARY ─────────────────────────────────────────────────
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
-      new Paragraph({ text: 'Appendix B – Glossary of Terms', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
+      new Paragraph({ text: tplTitle('sec_app_b', 'Appendix B – Glossary of Terms'), heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
+      ...(() => { const b = tplBody('sec_app_b_intro', 'The following glossary defines key terms used throughout this ISAE 3402 Type II report.'); return b !== null ? bodyParagraphs(b) : []; })(),
     );
 
     const glossary = [
@@ -1143,9 +1135,9 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     // ── APPENDIX C: AUDIT EVIDENCE AND TESTING APPROACH ──────────────────────
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
-      new Paragraph({ text: 'Appendix C – Audit Evidence and Testing Approach', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
-      p('This appendix describes the evidence categories and testing procedures used to assess the design and operating effectiveness of controls included in this report. Testing was conducted in accordance with ISAE 3402 requirements and professional auditing standards.'),
-      new Paragraph({ text: 'C.1  Evidence Categories', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      new Paragraph({ text: tplTitle('sec_app_c', 'Appendix C – Audit Evidence and Testing Approach'), heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
+      ...tplSubsection('sec_app_c_intro', '', 'This appendix describes the evidence categories and testing procedures used to assess the design and operating effectiveness of controls included in this report. Testing was conducted in accordance with ISAE 3402 requirements and professional auditing standards.'),
+      ...tplSubsection('sec_app_c_1', 'C.1  Evidence Categories', ''),
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: [
@@ -1161,7 +1153,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         ],
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      new Paragraph({ text: 'C.2  Testing Approach by Control Type', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      ...tplSubsection('sec_app_c_2', 'C.2  Testing Approach by Control Type', ''),
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: [
@@ -1176,8 +1168,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         ],
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      new Paragraph({ text: 'C.3  Sampling Methodology', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('Where sampling is applied, sample sizes are determined based on the frequency and population size of the control, as follows:'),
+      ...tplSubsection('sec_app_c_3', 'C.3  Sampling Methodology', 'Where sampling is applied, sample sizes are determined based on the frequency and population size of the control, as follows:'),
       new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: [
@@ -1192,7 +1183,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
           ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0 })) })),
         ],
       }),
-      p('Sample items are selected using random or systematic selection methods. Items are selected from across the full reporting period to provide evidence about the entire period and not just point-in-time effectiveness.'),
+      ...(() => { const b = tplBody('sec_app_c_3_trail', 'Sample items are selected using random or systematic selection methods. Items are selected from across the full reporting period to provide evidence about the entire period and not just point-in-time effectiveness.'); return b !== null ? bodyParagraphs(b) : []; })(),
       new Paragraph({ text: '', spacing: { after: 400 } }),
       new Paragraph({
         children: [new TextRun({ text: tplBody('footer', `This report was generated by ComplianceOS on behalf of ${company}. For official ISAE 3402 Type II certification, engage a qualified third-party auditor holding ISAE accreditation.`) ?? '', size: 18, color: '9ca3af', italics: true })],
@@ -1369,22 +1360,16 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     addPage();
     h1('1.  Management Statement');
     h2('1a.  Statement by SIMTEQ Management');
-    body(`${company} management confirms that this report accurately describes the company's general IT controls for the period ${periodStart} to ${periodEnd}. The description covers the control objectives established by management, the actual controls implemented, and the conditions under which these controls operate.`);
-    body('Management is responsible for designing, implementing, and maintaining effective controls. This report has been prepared to provide relevant information to user entities and their auditors.');
+    { const txt = tplBody('sec_3_1', `${company} management confirms that this report accurately describes the company's general IT controls for the period ${periodStart} to ${periodEnd}. The description covers the control objectives established by management, the actual controls implemented, and the conditions under which these controls operate.\n\nManagement is responsible for designing, implementing, and maintaining effective controls. This report has been prepared to provide relevant information to user entities and their auditors.`); if (txt !== null) { txt.split(/\n\s*\n/).forEach(block => block.split('\n').filter(Boolean).forEach(line => body(line))); } }
     y += 4;
     h2('1b.  Management Assertion');
-    body('Management asserts that:');
-    body('• The description fairly presents the system as designed and implemented throughout the specified period.', 4);
-    body('• The controls related to the stated control objectives were suitably designed throughout the specified period.', 4);
-    body('• The controls operated effectively throughout the period to provide reasonable assurance that control objectives were achieved.', 4);
+    { const txt = tplBody('sec_3_2', `Based on the criteria established in the ISAE 3402 standard, ${company} management asserts that:\n\n• The description fairly presents the system as designed and implemented throughout the specified period.\n\n• The controls related to the stated control objectives were suitably designed throughout the specified period.\n\n• The controls operated effectively throughout the period to provide reasonable assurance that control objectives were achieved.`); if (txt !== null) { txt.split(/\n\s*\n/).forEach(block => block.split('\n').filter(Boolean).forEach(line => body(line))); } }
 
     // ── P3: CONTROL ENVIRONMENT ──────────────────────────────────────
     y += 6;
     h1('2.  Description of the IT Control Environment');
     h2('2a.  Overview of Services');
-    body(substitute(company.toLowerCase().includes('simteq')
-      ? SIMTEQ_COMPANY_OVERVIEW
-      : `${company} operates services for user entities supported by documented general IT controls and information security controls.`));
+    { const txt = tplBody('sec_2_1', company.toLowerCase().includes('simteq') ? SIMTEQ_COMPANY_OVERVIEW : `${company} operates services for user entities supported by documented general IT controls and information security controls.`); if (txt !== null) { txt.split(/\n\s*\n/).forEach(block => block.split('\n').filter(Boolean).forEach(line => body(line))); } }
     y += 4;
     h2('2b.  Control Environment Summary');
     const envCols = ['Component', 'Details'];
@@ -1401,9 +1386,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     y += 8;
     checkPage(60);
     h1("3.  Independent Auditor's Assurance Report");
-    body(`To: ${company} and its User Entities`);
-    y += 2;
-    body(`We have examined the description of ${company}'s General IT Controls and have performed tests of controls necessary to form an opinion on the design and operating effectiveness of those controls.`);
+    { const txt = tplBody('sec_8_intro', `To: ${company} and its User Entities\n\nWe have examined the description of ${company}'s General IT Controls and have performed tests of controls necessary to form an opinion on the design and operating effectiveness of those controls.`); if (txt !== null) { txt.split(/\n\s*\n/).forEach(block => block.split('\n').filter(Boolean).forEach(line => body(line))); } }
     y += 4;
     h2('Legend');
     body('Effective: No material deviations noted during the period');
@@ -1451,6 +1434,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     h1('5.  Summary and Recommendations');
     body(`Overall compliance score: ${complianceScore}%  |  Controls: ${controls.length} total, ${completed} completed, ${overdue} overdue`);
     body(`Risks: ${risks.length} total, ${highRisks} high-priority (score ≥ 7)`);
+    { const txt = tplBody('sec_13_recs', `1. ${overdue > 0 ? `Prioritize remediation of the ${overdue} overdue control(s) identified above. Assign dedicated owners and set target completion dates within 30 days.` : 'Maintain the current strong control completion rate and continue quarterly control reviews.'}\n\n2. ${highRisks > 0 ? `Develop and implement formal mitigation plans for the ${highRisks} high-priority risk(s) identified. Senior management should review progress monthly.` : 'Continue proactive risk identification and maintain the risk register with semi-annual formal reviews.'}\n\n3. Ensure all user entities have reviewed and implemented the Complementary User Entity Controls (CUECs) documented in Section 4 of this report.\n\n4. Continue annual testing of the Business Continuity and Disaster Recovery plans, incorporating lessons learned from the current reporting period.\n\n5. Review and update the Access Control Matrix following any organizational changes to ensure least-privilege principles are maintained.`); if (txt !== null) { txt.split(/\n\s*\n/).forEach(block => block.split('\n').filter(Boolean).forEach(line => body(line))); } }
 
     if (overdue > 0) {
       y += 3;
