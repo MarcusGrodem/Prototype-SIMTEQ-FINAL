@@ -11,7 +11,7 @@ import {
 import {
   Search, Download, Plus, Package, CheckCircle2, Clock,
   ChevronRight, X, FileText, AlertTriangle, Zap, ShieldCheck,
-  TrendingUp, Check, FileDown, User, ArrowLeft, Tag
+  TrendingUp, Check, FileDown, User, ArrowLeft, Tag, ExternalLink
 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { Release, ReleaseChange, Product } from '../../../lib/types'
@@ -23,6 +23,7 @@ import jsPDF from 'jspdf'
 const STATUS_OPTIONS = ['Planned', 'In Progress', 'Released', 'Rolled Back'] as const
 const ENV_OPTIONS = ['Production', 'Staging', 'Development'] as const
 const CHANGE_TYPES = ['Feature', 'Bug Fix', 'Security', 'Breaking Change', 'Performance', 'Other'] as const
+const SAMPLE_DATA_URL = 'https://github.com/MarcusGrodem/Prototype-SIMTEQ-FINAL/blob/main/supabase/seed.sql'
 
 const statusColor = (s: string) => {
   switch (s) {
@@ -48,7 +49,7 @@ const changeTypeColor = (t: string) => {
     case 'Feature': return 'bg-blue-100 text-blue-700'
     case 'Bug Fix': return 'bg-orange-100 text-orange-700'
     case 'Security': return 'bg-red-100 text-red-700'
-    case 'Breaking Change': return 'bg-purple-100 text-purple-700'
+    case 'Breaking Change': return 'bg-amber-100 text-amber-700'
     case 'Performance': return 'bg-teal-100 text-teal-700'
     default: return 'bg-slate-100 text-slate-700'
   }
@@ -380,7 +381,7 @@ export function Releases() {
                       <div className="flex items-center gap-2">
                         <Tag className="w-3.5 h-3.5 text-slate-400" />
                         <span className="text-xs text-slate-500">Latest:</span>
-                        <span className="text-xs font-mono font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">{latest.version}</span>
+                        <span className="text-xs font-mono font-semibold tabular-nums text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">{latest.version}</span>
                         <Badge variant="outline" className={`text-[10px] ${statusColor(latest.status)}`}>{latest.status}</Badge>
                       </div>
                       {latest.release_date && (
@@ -400,6 +401,14 @@ export function Releases() {
                 <Button className="mt-4" onClick={() => setAddProductOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />Add Product
                 </Button>
+                <a
+                  href={SAMPLE_DATA_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-slate-600 underline underline-offset-2 hover:text-slate-900 transition-colors"
+                >
+                  Load sample data <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
             )}
           </div>
@@ -465,6 +474,14 @@ export function Releases() {
               <Button className="mt-4" size="sm" onClick={() => setAddReleaseOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />Add first release
               </Button>
+              <a
+                href={SAMPLE_DATA_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-slate-600 underline underline-offset-2 hover:text-slate-900 transition-colors"
+              >
+                Load sample data <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
           ) : (
             <div className="relative ml-4">
@@ -485,7 +502,7 @@ export function Releases() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-mono font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{rel.version}</span>
+                            <span className="text-sm font-mono font-bold tabular-nums bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{rel.version}</span>
                             <Badge variant="outline" className={`text-xs ${envColor(rel.environment)}`}>{rel.environment}</Badge>
                             <Badge variant="outline" className={`text-xs ${statusColor(rel.status)}`}>{rel.status}</Badge>
                             {rel.approved_by_name && (
@@ -537,14 +554,14 @@ export function Releases() {
           <ChevronRight className="w-3.5 h-3.5" />
           <button onClick={handleBack} className="hover:text-slate-900 transition-colors">{activeProduct}</button>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-slate-900 font-medium">{selectedRelease.version}</span>
+          <span className="text-slate-900 font-medium tabular-nums">{selectedRelease.version}</span>
         </div>
 
         {/* Title */}
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="text-lg font-mono font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{selectedRelease.version}</span>
+              <span className="text-lg font-mono font-bold tabular-nums bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{selectedRelease.version}</span>
               <Badge variant="outline" className={`${envColor(selectedRelease.environment)}`}>{selectedRelease.environment}</Badge>
               <Badge variant="outline" className={`${statusColor(selectedRelease.status)}`}>{selectedRelease.status}</Badge>
             </div>
@@ -658,7 +675,7 @@ export function Releases() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Add Changelog Entry</DialogTitle>
-              <DialogDescription>{selectedRelease.product_name} {selectedRelease.version}</DialogDescription>
+              <DialogDescription><span className="tabular-nums">{selectedRelease.product_name} {selectedRelease.version}</span></DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <div>

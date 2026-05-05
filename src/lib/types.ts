@@ -202,6 +202,35 @@ export interface NotificationLogEntry {
   created_at: string
 }
 
+export interface AuditPeriod {
+  id: string
+  name: string
+  start_date: string
+  end_date: string
+  freeze_date: string | null
+  report_due_date: string | null
+  status: 'planned' | 'active' | 'closed' | 'archived'
+  auditor: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ControlExecution {
+  id: string
+  control_id: string
+  audit_period_id: string
+  scheduled_due_date: string
+  performed_date: string | null
+  performed_by_name: string | null
+  status: 'scheduled' | 'in_progress' | 'completed' | 'overdue' | 'failed' | 'not_applicable'
+  reviewer_status: 'pending' | 'approved' | 'rejected'
+  reviewed_by_name: string | null
+  reviewed_date: string | null
+  comments: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface Policy {
   id: string
   title: string

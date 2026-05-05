@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Textarea } from './ui/textarea';
@@ -72,19 +72,45 @@ const DOMAIN_DESCRIPTIONS: Record<string, string> = {
   'Applikasjonssikkerhet': 'Application security controls ensuring security is incorporated throughout the software development lifecycle.',
 };
 
-function getStatusSymbol(controls: Control[]): string {
-  if (controls.length === 0) return '–';
+const SIMTEQ_WEBSITE = 'https://simteq.com/';
+const SIMTEQ_SERVICE_SCOPE =
+  'This report covers the general IT controls and information security controls operated by {{company}} in connection with its accounting automation platform and related advisory services. Publicly described services include 2CLICK by SIMTEQ, 2CLICK for Hospitality, ERP implementation, financial advisory and reporting, ERP/bank/PMS integrations, invoice recognition, bank clearing, expense management, and secure payment automation.';
+const SIMTEQ_COMPANY_OVERVIEW =
+  `{{company}} is a Danish accounting automation and financial technology company. Its public website describes SIMTEQ as providing automation that empowers accounting, including the 2CLICK platform for bookkeeping and financial management and 2CLICK for Hospitality for hotel and hospitality finance workflows. Website: ${SIMTEQ_WEBSITE}.`;
+
+function getDomainResult(controls: Control[]): string {
+  if (controls.length === 0) return 'Not scoped';
   const overdue = controls.filter(c => c.status === 'Overdue').length;
   const pending = controls.filter(c => c.status === 'Pending').length;
-  if (overdue > 0) return '✗';
-  if (pending > controls.length * 0.3) return '⚠';
-  return '✓';
+  if (overdue > 0) return 'Exception';
+  if (pending > controls.length * 0.3) return 'Review needed';
+  return 'Effective';
 }
 
-function getStatusText(symbol: string): string {
-  if (symbol === '✓') return 'No material deviations noted';
-  if (symbol === '⚠') return 'Minor weaknesses identified — improvements recommended';
-  if (symbol === '✗') return 'Critical weaknesses — immediate remediation required';
+function getControlResult(status: string): string {
+  if (status === 'Completed') return 'Effective';
+  if (status === 'Overdue') return 'Exception';
+  return 'Review needed';
+}
+
+function getResultColor(result: string): string {
+  if (result === 'Effective') return '16a34a';
+  if (result === 'Exception') return 'dc2626';
+  if (result === 'Review needed') return 'd97706';
+  return '6b7280';
+}
+
+function getResultRgb(result: string): [number, number, number] {
+  if (result === 'Effective') return [22, 163, 74];
+  if (result === 'Exception') return [220, 38, 38];
+  if (result === 'Review needed') return [217, 119, 6];
+  return [107, 114, 128];
+}
+
+function getStatusText(result: string): string {
+  if (result === 'Effective') return 'No material deviations noted';
+  if (result === 'Review needed') return 'Minor weaknesses identified - improvements recommended';
+  if (result === 'Exception') return 'Critical weaknesses - immediate remediation required';
   return 'No controls defined';
 }
 
@@ -167,15 +193,25 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
   // Returns null if section exists but is hidden -> caller should skip it.
   const tplBody = (key: string, fallback: string): string | null => {
     const s = sectionMap[key];
-    if (!s) return substitute(fallback);
+    if (!s) return substitute(normalizeTemplateBody(key, fallback));
     if (!s.visible) return null;
-    return substitute(s.body || fallback);
+    return substitute(normalizeTemplateBody(key, s.body || fallback));
   };
 
   const tplTitle = (key: string, fallback: string): string => {
     const s = sectionMap[key];
     if (!s || !s.visible) return substitute(fallback);
     return substitute(s.title || fallback);
+  };
+
+  const normalizeTemplateBody = (key: string, body: string): string => {
+    const company = getReportMeta().company.toLowerCase();
+    if (!company.includes('simteq')) return body;
+
+    const staleServiceText = /(managed services|cloud services|cloud solutions|it infrastructure|service desk|security operations|data center|headquartered in norway|norwegian it services)/i;
+    if (key === 'sec_1_2' && staleServiceText.test(body)) return SIMTEQ_SERVICE_SCOPE;
+    if (key === 'sec_2_1' && staleServiceText.test(body)) return SIMTEQ_COMPANY_OVERVIEW;
+    return body;
   };
 
   const handleDownloadWord = async () => {
@@ -305,9 +341,12 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       ['10.', 'Change Management Controls'],
       ['11.', 'Business Continuity and Incident Management'],
       ['12.', 'Access Management and Segregation of Duties'],
-      ['13.', 'Summary and Recommendations'],
+      ['13.', 'Data Privacy and GDPR Compliance'],
+      ['14.', 'Vulnerability Management and Penetration Testing'],
+      ['15.', 'Summary and Recommendations'],
       ['Appendix A.', 'Complete Control Listing'],
       ['Appendix B.', 'Glossary of Terms'],
+      ['Appendix C.', 'Audit Evidence and Testing Approach'],
     ];
     tocEntries.forEach(([num, title]) => {
       children.push(new Paragraph({
@@ -326,7 +365,9 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       ...tplSubsection('sec_1_1', '1.1  Purpose of this Report',
         `This report has been prepared by ${company} in accordance with the International Standard on Assurance Engagements (ISAE) 3402.\n\nThe report covers the design and operating effectiveness of controls throughout the reporting period.`),
       ...tplSubsection('sec_1_2', '1.2  Scope of Services Covered',
-        `This report covers the general IT controls and information security controls operated by ${company} in connection with the services provided to user entities.`),
+        company.toLowerCase().includes('simteq')
+          ? SIMTEQ_SERVICE_SCOPE
+          : `This report covers the general IT controls and information security controls operated by ${company} in connection with the services provided to user entities.`),
       ...tplSubsection('sec_1_3', '1.3  Period Covered',
         `This report covers the period from ${periodStart} to ${periodEnd}. Controls have been tested throughout this entire period.`),
       ...tplSubsection('sec_1_4', '1.4  Intended Users',
@@ -341,19 +382,28 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     children.push(
       new Paragraph({ text: '2.  System Description', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
       ...tplSubsection('sec_2_1', `2.1  Overview of ${company}`,
-        `${company} is a Norwegian IT services company.`),
+        company.toLowerCase().includes('simteq')
+          ? SIMTEQ_COMPANY_OVERVIEW
+          : `${company} operates services for user entities supported by documented general IT controls and information security controls.`),
       new Paragraph({ text: '2.2  Infrastructure and Technology Components', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p(`The ${company} service delivery infrastructure comprises the following key components:`),
+      p(`The ${company} control environment comprises the following key components:`),
     );
 
-    const infraRows = [
+    const infraRows = company.toLowerCase().includes('simteq') ? [
       ['Component', 'Description', 'Technology'],
-      ['Compute', 'Virtualized server infrastructure for customer workloads', 'VMware vSphere, Azure'],
-      ['Network', 'Managed network services with segmentation and firewall', 'Cisco, Fortinet, SD-WAN'],
-      ['Storage', 'Primary and backup storage with replication', 'NetApp, Azure Blob, S3'],
-      ['Identity', 'Centralized identity and access management', 'Azure AD, MFA, PAM'],
-      ['Monitoring', 'Real-time infrastructure and security monitoring', 'SIEM, SNMP, Nagios'],
-      ['Service Desk', 'ITSM platform for change and incident management', 'ServiceNow'],
+      ['2CLICK Platform', 'Accounting automation platform for bookkeeping and financial management workflows', 'Application platform and integrations'],
+      ['Hospitality Workflows', 'Financial workflow automation for hotel and hospitality customers', '2CLICK for Hospitality'],
+      ['Integrations', 'Connections supporting ERP, bank, PMS, invoice recognition, and payment workflows', 'ERP, banking, PMS, and payment integrations'],
+      ['Identity and Access', 'User access, authentication, and authorization controls for in-scope systems', 'Access management controls'],
+      ['Monitoring and Operations', 'Operational monitoring, support, and control follow-up for the in-scope platform', 'Operational procedures and logs'],
+    ] : [
+      ['Component', 'Description', 'Technology'],
+      ['Platform', 'Systems and applications used to deliver services to user entities', 'Application and infrastructure platform'],
+      ['Network', 'Network services with segmentation and perimeter controls', 'Network security controls'],
+      ['Storage', 'Data storage, retention, backup, and recovery controls', 'Storage and backup services'],
+      ['Identity', 'Identity and access management for in-scope systems', 'Access management controls'],
+      ['Monitoring', 'Operational and security monitoring with defined escalation procedures', 'Monitoring tools and logs'],
+      ['Change Management', 'Documented change request, approval, testing, and release procedures', 'Change management workflow'],
     ];
     children.push(
       new Table({
@@ -367,9 +417,26 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       }),
       new Paragraph({ text: '', spacing: { after: 300 } }),
       ...tplSubsection('sec_2_3', '2.3  Data Flow and Processing',
-        `Customer data is received by ${company} through encrypted channels and processed within isolated environments.`),
+        `Customer data is received by ${company} through encrypted channels (TLS 1.2 or higher) and processed within isolated tenant environments. The following data lifecycle applies to in-scope services:\n\n• Ingestion: Customer data is submitted via authenticated API endpoints or secure file transfer. All transmissions are encrypted in transit. Inbound data is authenticated and authorised before acceptance.\n• Validation and Processing: Received data is validated for format integrity and completeness prior to processing. Automated workflow engines apply business logic and transformations within compute resources isolated per tenant.\n• Storage: Processed data and documents are stored in encrypted data stores. Encryption at rest uses AES-256 or equivalent. Logical separation is enforced at the data and access layer; no cross-tenant data access is permitted.\n• Output and Delivery: Results (reports, notifications, exports) are delivered to authorised recipients via authenticated, encrypted channels. Delivery confirmations are logged.\n• Retention and Disposal: Customer data is retained in accordance with contractual terms and applicable legal requirements (including GDPR). At end-of-retention, data is securely deleted or anonymised using documented disposal procedures, and disposal is recorded.`),
       ...tplSubsection('sec_2_4', '2.4  Personnel and Organizational Structure',
-        `${company} maintains a dedicated Information Security function led by the CISO.`),
+        `${company} maintains a dedicated Information Security function. The CISO reports directly to senior management and chairs the Information Security Steering Committee. Key security roles include Information Security Manager, IT Operations Lead, Compliance Officer, Data Protection Officer (DPO), and a dedicated Security Operations function.\n\nAll personnel with access to in-scope systems undergo background checks prior to employment and sign confidentiality agreements. Role-specific security awareness training is completed during onboarding and repeated annually. Upon role change or departure, access rights are revoked within one business day as triggered by the HR system integration.`),
+      new Paragraph({ text: '2.5  Principal Service Commitments and System Requirements', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p(`${company} has established the following principal service commitments applicable to the in-scope services. These commitments form the basis for the control objectives described in this report and are monitored on a continuous basis through the compliance management system.`),
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ children: ['Commitment Area', 'Commitment Statement', 'Applicable Control Domains'].map(h => hdrCell(h)) }),
+          ...[
+            ['Availability', `${company} is committed to maintaining agreed service availability levels for in-scope systems in accordance with contractual SLAs, business continuity plans, and incident response procedures.`, 'Kontinuitet, Drift, Sikkerhetshendelser'],
+            ['Confidentiality', 'Customer data is protected from unauthorized disclosure through access controls, encryption, and documented data handling procedures.', 'Tilgangskontroll, Datasikkerhet, Personal'],
+            ['Integrity', 'Data processed by in-scope systems is protected from unauthorised modification through input validation, change management, audit logging, and monitoring controls.', 'Drift, Teknologi, Organisatoriske foranstaltninger'],
+            ['Security', 'In-scope systems are protected from unauthorised access and threats through layered security controls aligned with ISO/IEC 27001:2022 across all thirteen control domains.', 'All ISO 27001 domains'],
+            ['Privacy', 'Personal data is processed lawfully, fairly, and transparently in accordance with GDPR and applicable data protection legislation. Data subjects\' rights are supported through documented procedures.', 'Etterlevelse, Datasikkerhet'],
+            ['Processing Integrity', 'System processing is complete, valid, accurate, timely, and authorised, with controls in place to detect and correct processing errors.', 'Applikasjonssikkerhet, Drift, Teknologi'],
+          ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0 })) })),
+        ],
+      }),
+      new Paragraph({ text: '', spacing: { after: 300 } }),
     );
 
     // ── SECTION 3: MANAGEMENT STATEMENT ────────────────────────────────────
@@ -399,12 +466,12 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
 
     const cuecRows = [
       ['Control Area', 'Required User Entity Control'],
-      ['User Access', 'User entities are responsible for provisioning and revoking access rights for their own employees to the services provided by SIMTEQ AS in a timely manner.'],
-      ['Data Classification', 'User entities are responsible for classifying their own data appropriately and communicating data handling requirements to SIMTEQ AS prior to processing.'],
-      ['Incident Reporting', 'User entities are responsible for promptly reporting suspected security incidents, unauthorized access, or unusual system behavior to SIMTEQ AS security operations.'],
-      ['Change Requests', 'User entities must formally authorize and document all change requests submitted to SIMTEQ AS through the defined change management process.'],
+      ['User Access', `User entities are responsible for provisioning and revoking access rights for their own employees to the services provided by ${company} in a timely manner.`],
+      ['Data Classification', `User entities are responsible for classifying their own data appropriately and communicating data handling requirements to ${company} prior to processing.`],
+      ['Incident Reporting', `User entities are responsible for promptly reporting suspected security incidents, unauthorized access, or unusual system behavior to ${company} through the agreed support or security contact channel.`],
+      ['Change Requests', `User entities must formally authorize and document all change requests submitted to ${company} through the defined change management process.`],
       ['Backup Verification', 'User entities are responsible for periodically verifying the recoverability of their own backups by requesting restore tests in accordance with agreed service levels.'],
-      ['Audit Cooperation', 'User entities must cooperate with SIMTEQ AS during security reviews or audits that may affect the security of the shared environment.'],
+      ['Audit Cooperation', `User entities must cooperate with ${company} during security reviews or audits that may affect the security of the shared environment.`],
     ];
     children.push(
       new Table({
@@ -427,12 +494,16 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         `${company} uses certain sub-service organizations in the delivery of services to user entities.`),
     );
 
-    const subRows = [
+    const subRows = company.toLowerCase().includes('simteq') ? [
       ['Sub-service Organization', 'Services Provided', 'Applicable Criteria'],
-      ['Microsoft Azure (Norway East)', 'Cloud infrastructure, virtual machines, blob storage, Azure AD identity services', 'SOC 2 Type II, ISO 27001'],
-      ['Amazon Web Services (EU-WEST)', 'Secondary cloud environment, S3 storage, disaster recovery hosting', 'SOC 2 Type II, ISO 27001'],
-      ['Broadcom / VMware', 'On-premises virtualization platform (vSphere) maintenance and licensing', 'Vendor security attestation'],
-      ['Iron Mountain Norge', 'Off-site physical media storage and secure document destruction', 'ISO 27001, GDPR compliant'],
+      ['ERP, bank, PMS, and payment providers', 'Integration endpoints used for accounting automation and secure payment workflows', 'Vendor assurance and contractual security terms to be reviewed'],
+      ['Hosting and application platform providers', 'Platform hosting, storage, availability, and operational support for in-scope services', 'Supplier assurance reports and security commitments to be reviewed'],
+      ['Invoice, expense, and reporting service providers', 'Supporting services for invoice recognition, expense management, and financial reporting workflows', 'Vendor risk assessment and data processing terms to be reviewed'],
+    ] : [
+      ['Sub-service Organization', 'Services Provided', 'Applicable Criteria'],
+      ['Primary hosting provider', 'Application hosting, storage, and availability services', 'Supplier assurance reports to be reviewed'],
+      ['Identity provider', 'Authentication, authorization, and user lifecycle support', 'Supplier assurance reports to be reviewed'],
+      ['Backup or recovery provider', 'Backup storage and recovery support', 'Supplier assurance reports to be reviewed'],
     ];
     children.push(
       new Table({
@@ -442,7 +513,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         })),
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
-      p('SIMTEQ AS performs annual due diligence reviews of all sub-service organizations, including review of their most recent SOC 2 or equivalent assurance reports. Contracts with sub-service organizations include appropriate security requirements, data processing agreements, and right-to-audit clauses.'),
+      p(`${company} performs periodic due diligence reviews of sub-service organizations. Contracts with sub-service organizations should include appropriate security requirements, data processing agreements, and audit or assurance provisions where relevant.`),
     );
 
     // ── SECTION 6: CONTROL ENVIRONMENT ─────────────────────────────────────
@@ -478,6 +549,47 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       new Paragraph({ text: '6.3  Governance and Oversight', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
       p(`${company} maintains an Information Security Steering Committee that meets quarterly to review the status of the control environment, approve material changes to security policies, and review the risk register. The committee is chaired by the CISO and includes representatives from IT Operations, Legal, Compliance, and senior management.`),
       p('Internal compliance reviews are conducted semi-annually and findings are tracked in the compliance management system. All findings are assigned an owner, a remediation target date, and a severity rating. Unresolved critical findings are escalated to the Board of Directors.'),
+      new Paragraph({ text: '6.4  Security Policy Framework', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p(`${company} maintains a comprehensive information security policy framework. All policies are approved by senior management, communicated to relevant personnel, and reviewed at least annually or following significant changes. The policy framework comprises the following key documents:`),
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ children: ['Policy Document', 'Scope', 'Review Frequency', 'Owner'].map(h => hdrCell(h)) }),
+          ...[
+            ['Information Security Policy', 'All systems, data, and personnel', 'Annual', 'CISO'],
+            ['Acceptable Use Policy', 'All employees and contractors', 'Annual', 'HR / CISO'],
+            ['Access Control Policy', 'All in-scope production systems', 'Annual', 'IT Operations'],
+            ['Data Classification Policy', 'All data assets', 'Annual', 'CISO / DPO'],
+            ['Incident Response Plan', 'All security events and breaches', 'Annual + post-incident review', 'CISO'],
+            ['Business Continuity Policy', 'Critical services and infrastructure', 'Annual + after DR test', 'Operations Lead'],
+            ['Change Management Policy', 'All production system changes', 'Annual', 'IT Operations'],
+            ['Supplier and Third-Party Security Policy', 'All vendor and partner relationships', 'Annual', 'CISO'],
+            ['Data Retention and Disposal Policy', 'All data assets', 'Annual', 'DPO / Legal'],
+            ['Cryptography and Key Management Policy', 'All cryptographic systems and keys', 'Annual', 'IT Operations / CISO'],
+            ['Vulnerability Management Policy', 'All in-scope systems', 'Annual', 'IT Operations / CISO'],
+            ['Physical Security Policy', 'Facilities and physical access', 'Annual', 'Operations Lead'],
+          ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0 })) })),
+        ],
+      }),
+      new Paragraph({ text: '', spacing: { after: 200 } }),
+      new Paragraph({ text: '6.5  Security Awareness and Training Program', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p(`${company} operates a structured security awareness and training program to ensure all personnel understand their information security responsibilities and are equipped to recognise and respond to current threats. Training completion is tracked centrally and reported to the CISO quarterly.`),
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ children: ['Training Activity', 'Target Audience', 'Frequency', 'Format', 'Completion Tracking'].map(h => hdrCell(h)) }),
+          ...[
+            ['Information Security Awareness', 'All employees', 'Annual (mandatory)', 'E-learning + assessment', 'LMS — 100% completion required'],
+            ['Phishing Simulation Campaign', 'All employees', 'Quarterly', 'Simulated phishing e-mail', 'Click rate and reporting rate tracked'],
+            ['GDPR and Data Privacy', 'All staff handling personal data', 'Annual (mandatory)', 'E-learning', 'LMS — 100% completion required'],
+            ['Secure Development (OWASP)', 'Development team', 'Annual', 'Workshop', 'Attendance record'],
+            ['Incident Response Tabletop', 'IT and Security team', 'Semi-annual', 'Facilitated exercise', 'Exercise report'],
+            ['Social Engineering Awareness', 'All employees', 'Annual', 'Interactive module', 'LMS score'],
+            ['Security Onboarding Briefing', 'New hires', 'On-boarding', 'In-person / video', 'HR completion record'],
+          ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0 })) })),
+        ],
+      }),
+      p(`Non-completion of mandatory training within the defined window is escalated to the relevant line manager. Persistent non-completion is treated as a disciplinary matter in accordance with the company's Human Resources policy.`),
     );
 
     // ── SECTION 7: RISK REGISTER ────────────────────────────────────────────
@@ -550,6 +662,26 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       children.push(p('No risks are currently registered in the system.'));
     }
 
+    children.push(
+      new Paragraph({ text: '7.3  Risk Treatment Plan Summary', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p(`For each identified risk, ${company} selects and implements one of the following treatment options in accordance with its risk appetite and the requirements of ISO 31000. Treatment decisions are approved by the CISO and reviewed by the Information Security Steering Committee.`),
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ children: ['Treatment Option', 'Definition', 'Applicable When', 'Examples in Scope'].map(h => hdrCell(h)) }),
+          ...[
+            ['Mitigate (Reduce)', 'Implement controls to reduce the likelihood or impact of the risk to an acceptable level.', 'Risk score exceeds appetite and cost-effective controls exist.', 'Access controls, encryption, monitoring, vulnerability patching'],
+            ['Transfer (Share)', 'Transfer financial or operational consequence to a third party (e.g. insurance, contract).', 'Residual risk is acceptable but loss exposure is significant.', 'Cyber insurance, contractual liability clauses, SLAs'],
+            ['Avoid (Terminate)', 'Cease the activity that creates the risk.', 'Risk cannot be reduced to an acceptable level and the activity is non-essential.', 'Discontinuing an unsafe integration or unsupported system'],
+            ['Accept (Retain)', 'Consciously accept the risk without additional treatment.', 'Risk is within appetite or cost of treatment exceeds potential loss.', 'Low-scored residual risks formally accepted and documented by CISO'],
+          ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0 })) })),
+        ],
+      }),
+      new Paragraph({ text: '', spacing: { after: 200 } }),
+      p(`Residual risk (the risk remaining after treatment) is documented for each risk and reviewed at least semi-annually. All risks with a residual score above the defined risk appetite threshold (score ≥ 7) require formal written acceptance by the CISO and a time-bound mitigation plan. No high-scoring residual risks may remain untreated for more than 90 days without Board-level escalation.`),
+      new Paragraph({ text: '', spacing: { after: 300 } }),
+    );
+
     // ── SECTION 8: AUDITOR'S REPORT ─────────────────────────────────────────
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     {
@@ -575,9 +707,9 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       new Paragraph({ text: '8.4  Basis of Opinion', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
       p(`Our examination was conducted in accordance with the criteria established by ${company} management and set out in Section 6 of this report. We believe the criteria used are suitable and available to user entities and their auditors. Our independence and quality management policies have been applied throughout the engagement.`),
       new Paragraph({ text: '8.5  Legend', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('✓  No material deviations noted — controls operated effectively throughout the period'),
-      p('⚠  Some weaknesses identified — improvements recommended; controls substantially effective'),
-      p('✗  Critical weaknesses noted — controls not operating effectively; immediate remediation required'),
+      p('Effective: No material deviations noted; controls operated effectively throughout the period'),
+      p('Review needed: Some weaknesses identified; improvements recommended; controls substantially effective'),
+      p('Exception: Critical weaknesses noted; controls not operating effectively; immediate remediation required'),
     );
 
     // ── SECTION 9: CONTROL OBJECTIVES TABLE ─────────────────────────────────
@@ -591,8 +723,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       const domainControls = controls.filter(c => c.category === domain);
       if (domainControls.length === 0) continue;
 
-      const symbol = getStatusSymbol(domainControls);
-      const statusText = getStatusText(symbol);
+      const result = getDomainResult(domainControls);
+      const statusText = getStatusText(result);
       const completedInDomain = domainControls.filter(c => c.status === 'Completed').length;
       const overdueInDomain = domainControls.filter(c => c.status === 'Overdue').length;
 
@@ -600,7 +732,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
         new Paragraph({
           children: [
             new TextRun({ text: `${domain}   `, bold: true, size: 26 }),
-            new TextRun({ text: symbol, bold: true, size: 26, color: symbol === '✓' ? '16a34a' : symbol === '⚠' ? 'd97706' : 'dc2626' }),
+            new TextRun({ text: result, bold: true, size: 24, color: getResultColor(result) }),
           ],
           heading: HeadingLevel.HEADING_2,
           spacing: { after: 150 },
@@ -629,9 +761,9 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
                 dataCell(ctrl.frequency || '–'),
                 dataCell(ctrl.owner_name || '–'),
                 dataCell(ctrl.status, { color: ctrl.status === 'Completed' ? '16a34a' : ctrl.status === 'Overdue' ? 'dc2626' : 'd97706' }),
-                dataCell(ctrl.status === 'Completed' ? '✓' : ctrl.status === 'Overdue' ? '✗' : '⚠', {
+                dataCell(getControlResult(ctrl.status), {
                   bold: true,
-                  color: ctrl.status === 'Completed' ? '16a34a' : ctrl.status === 'Overdue' ? 'dc2626' : 'd97706',
+                  color: getResultColor(getControlResult(ctrl.status)),
                 }),
               ],
             })),
@@ -659,7 +791,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     children.push(
       new Paragraph({ text: '10.  Change Management Controls', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
       new Paragraph({ text: '10.1  Change Management Process', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('SIMTEQ AS operates a formal change management process aligned with ITIL best practices. All changes to production infrastructure, systems, and services must be submitted through the ITSM platform (ServiceNow) and are classified as Standard, Normal, or Emergency changes.'),
+      p(`${company} operates a formal change management process for in-scope systems and services. Changes should be documented, risk-assessed, approved, tested where relevant, and reviewed after implementation according to their urgency and potential impact.`),
     );
 
     const changeRows = [
@@ -706,8 +838,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       }),
       new Paragraph({ text: '', spacing: { after: 200 } }),
       new Paragraph({ text: '11.2  Incident Management Process', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('Security incidents are managed through a formal Incident Response Plan (IRP) covering detection, triage, containment, eradication, recovery, and post-incident review phases. The Security Operations Center (SOC) operates 24/7 monitoring with defined escalation procedures. Critical incidents are escalated to the CISO within 30 minutes of detection.'),
-      p('SIMTEQ AS maintains a Security Incident Register that records all incidents, their classification (P1–P4), root cause analysis, and remediation actions. Incidents affecting customer data are reported to affected user entities within 72 hours in accordance with GDPR and contractual requirements.'),
+      p('Security incidents are managed through a formal incident response process covering detection, triage, containment, eradication, recovery, and post-incident review phases. Escalation procedures should define ownership, severity, communication requirements, and target response times.'),
+      p(`${company} maintains an incident register that records incidents, their classification, root cause analysis, and remediation actions. Incidents affecting customer data are reported to affected user entities in accordance with GDPR and contractual requirements.`),
       new Paragraph({ text: '11.3  Testing and Exercises', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
       p('Business continuity and disaster recovery capabilities are tested at least annually through tabletop exercises and live failover tests. Results are documented and used to update the BCP/DRP. The most recent full DR test was completed successfully within the reporting period.'),
     );
@@ -717,9 +849,9 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     children.push(
       new Paragraph({ text: '12.  Access Management and Segregation of Duties', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
       new Paragraph({ text: '12.1  Access Control Principles', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('SIMTEQ AS enforces the principles of least privilege and need-to-know for all access to systems and data. Access rights are granted based on job role and are documented in the Access Control Matrix. All access requests require formal approval from the system owner and the employee\'s line manager.'),
+      p(`${company} enforces the principles of least privilege and need-to-know for access to systems and data. Access rights are granted based on job role and should be documented in an access control matrix. Access requests require formal approval from the relevant system or process owner.`),
       new Paragraph({ text: '12.2  Identity and Authentication', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
-      p('All user accounts require multi-factor authentication (MFA) for access to production systems, cloud platforms, and the ITSM system. Privileged Access Management (PAM) is enforced for all administrative accounts through a dedicated PAM solution. Privileged sessions are logged and subject to periodic review.'),
+      p('User accounts should require multi-factor authentication for access to in-scope production systems where supported. Privileged access should be restricted, approved, logged, and subject to periodic review.'),
     );
 
     const accessRows = [
@@ -744,10 +876,116 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       p('All user access rights are reviewed quarterly by system owners. Privileged access is reviewed monthly. Any access rights that are no longer required are revoked within five business days of identification. Access is automatically disabled upon employee termination or role change as triggered by the HR system integration.'),
     );
 
-    // ── SECTION 13: SUMMARY ─────────────────────────────────────────────────
+    // ── SECTION 13: DATA PRIVACY AND GDPR ───────────────────────────────────
     children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
     children.push(
-      new Paragraph({ text: '13.  Summary and Recommendations', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
+      new Paragraph({ text: '13.  Data Privacy and GDPR Compliance', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
+      new Paragraph({ text: '13.1  Data Privacy Framework', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p(`${company} operates a data privacy framework aligned with the General Data Protection Regulation (GDPR) (EU) 2016/679 and applicable national data protection legislation. A Data Protection Officer (DPO) has been appointed and is responsible for monitoring compliance, advising on data protection obligations, and acting as the contact point for supervisory authorities and data subjects.`),
+      p('The privacy framework covers the full lifecycle of personal data processing, from collection and lawful basis documentation through to retention, disposal, and data subject rights fulfilment. Privacy by Design and by Default principles are applied when developing or modifying systems that process personal data.'),
+      new Paragraph({ text: '13.2  Personal Data Processing Activities', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p(`${company} maintains a Record of Processing Activities (RoPA) as required under GDPR Article 30. The following table summarises the principal categories of personal data processed in connection with in-scope services:`),
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ children: ['Processing Activity', 'Data Categories', 'Lawful Basis', 'Retention Period', 'Third-Party Transfers'].map(h => hdrCell(h)) }),
+          ...[
+            ['Customer account management', 'Name, email, role, organisation', 'Contract performance', 'Duration of contract + 3 years', 'Identity provider (processor)'],
+            ['Financial transaction processing', 'Transaction data, bank references, invoice data', 'Contract performance / legal obligation', 'Duration of contract + 7 years (accounting law)', 'Payment and ERP integrations (processors)'],
+            ['System access logging', 'User ID, IP address, action, timestamp', 'Legitimate interest (security)', '12 months rolling', 'SIEM / log management (processor)'],
+            ['Support and incident management', 'Contact details, system data, correspondence', 'Contract performance', '3 years post-closure', 'ITSM platform (processor)'],
+            ['Employee HR records', 'Name, contact, contract, payroll', 'Contract / legal obligation', 'Duration of employment + applicable legal period', 'Payroll processor'],
+            ['Security awareness training', 'Name, e-mail, training completion records', 'Legitimate interest (security compliance)', 'Duration of employment + 2 years', 'LMS platform (processor)'],
+          ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0 })) })),
+        ],
+      }),
+      new Paragraph({ text: '', spacing: { after: 200 } }),
+      new Paragraph({ text: '13.3  Data Subject Rights', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p(`${company} has implemented documented procedures to respond to data subject requests under GDPR Articles 15–22. These include the rights of access, rectification, erasure, restriction of processing, data portability, and objection. All requests are acknowledged within 72 hours and fulfilled within 30 days. Where requests cannot be fulfilled, a reasoned refusal is provided to the data subject.`),
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ children: ['Right', 'GDPR Article', 'Procedure in Place', 'Response SLA'].map(h => hdrCell(h)) }),
+          ...[
+            ['Right of Access (SAR)', 'Art. 15', 'DPO-managed intake, identity verification, data extraction', '30 calendar days'],
+            ['Right to Rectification', 'Art. 16', 'Self-service in portal; DPO-assisted for complex cases', '30 calendar days'],
+            ['Right to Erasure ("Right to be Forgotten")', 'Art. 17', 'Documented erasure workflow covering all processors', '30 calendar days'],
+            ['Right to Restriction', 'Art. 18', 'Flag applied to account; processing suspended pending review', '72 hours acknowledgement'],
+            ['Right to Data Portability', 'Art. 20', 'Export in machine-readable format (JSON/CSV) upon request', '30 calendar days'],
+            ['Right to Object', 'Art. 21', 'Processing suspended immediately pending legitimate interest assessment', '72 hours acknowledgement'],
+          ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0 })) })),
+        ],
+      }),
+      new Paragraph({ text: '', spacing: { after: 200 } }),
+      new Paragraph({ text: '13.4  Data Breach Notification', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p(`In the event of a personal data breach, ${company} follows a documented breach response procedure. Confirmed breaches involving risk to data subjects are notified to the relevant supervisory authority within 72 hours of discovery (GDPR Art. 33). Where a high risk to individuals is identified, affected data subjects are notified without undue delay (GDPR Art. 34). All breaches, including near-misses, are recorded in the breach register maintained by the DPO.`),
+      new Paragraph({ text: '13.5  Data Protection Impact Assessments (DPIA)', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p(`${company} conducts Data Protection Impact Assessments for new processing activities that are likely to result in high risk to individuals, as required under GDPR Article 35. DPIA triggers include: introduction of new processing systems, significant changes to existing processing, use of new technologies, large-scale processing of sensitive data, and systematic monitoring. DPIAs are documented, reviewed by the DPO, and approved by the CISO prior to implementation.`),
+      new Paragraph({ text: '', spacing: { after: 300 } }),
+    );
+
+    // ── SECTION 14: VULNERABILITY MANAGEMENT ─────────────────────────────────
+    children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
+    children.push(
+      new Paragraph({ text: '14.  Vulnerability Management and Penetration Testing', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
+      new Paragraph({ text: '14.1  Vulnerability Identification and Classification', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p(`${company} maintains a formal vulnerability management process covering all in-scope systems. Vulnerabilities are identified through automated scanning, manual assessments, threat intelligence feeds, vendor advisories, and penetration testing. Each identified vulnerability is classified using the Common Vulnerability Scoring System (CVSS) and mapped to a remediation priority based on the following criteria:`),
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ children: ['CVSS Score', 'Severity', 'Remediation SLA', 'Escalation'].map(h => hdrCell(h)) }),
+          ...[
+            ['9.0 – 10.0', 'Critical', 'Patch or mitigate within 24 hours', 'Immediate CISO and CTO notification'],
+            ['7.0 – 8.9', 'High', 'Patch or mitigate within 7 days', 'Notified to CISO within 24 hours'],
+            ['4.0 – 6.9', 'Medium', 'Patch within 30 days', 'Tracked in vulnerability register'],
+            ['0.1 – 3.9', 'Low', 'Patch within 90 days or accept with documented rationale', 'Tracked in vulnerability register'],
+          ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0, color: j === 0 ? (row[0] === '9.0 – 10.0' ? 'dc2626' : row[0] === '7.0 – 8.9' ? 'd97706' : row[0] === '4.0 – 6.9' ? '2563eb' : undefined) : undefined })) })),
+        ],
+      }),
+      new Paragraph({ text: '', spacing: { after: 200 } }),
+      new Paragraph({ text: '14.2  Automated Scanning Program', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p(`Automated vulnerability scans are performed on all in-scope systems on a defined schedule. Scan results are reviewed by the IT Operations team, triaged by the CISO, and tracked in the vulnerability management system until remediation is confirmed. False positives are documented with supporting rationale.`),
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ children: ['Scan Type', 'Scope', 'Frequency', 'Tooling Category'].map(h => hdrCell(h)) }),
+          ...[
+            ['Network Vulnerability Scan', 'All production network hosts', 'Weekly', 'Network scanner (authenticated)'],
+            ['Web Application Scan', 'All public-facing and internal web apps', 'Weekly', 'DAST / web application scanner'],
+            ['Container and Image Scan', 'All container images pre-deployment', 'Every build (CI/CD pipeline)', 'Container security scanner'],
+            ['Static Application Security Testing', 'All application source code', 'Every code commit (CI/CD)', 'SAST tooling'],
+            ['Dependency and SCA Scan', 'All third-party libraries and packages', 'Weekly', 'Software Composition Analysis'],
+            ['Cloud Configuration Review', 'All cloud infrastructure and IaC', 'Weekly', 'CSPM / cloud security posture'],
+          ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0 })) })),
+        ],
+      }),
+      new Paragraph({ text: '', spacing: { after: 200 } }),
+      new Paragraph({ text: '14.3  Penetration Testing', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p(`${company} engages qualified independent third-party security firms to conduct penetration tests of in-scope systems on an annual basis at minimum. Additional targeted tests are commissioned following significant system changes or at the direction of the CISO. Penetration testing scope, methodology, and findings are documented, and remediation of identified findings is tracked to completion.`),
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ children: ['Test Type', 'Scope', 'Frequency', 'Methodology'].map(h => hdrCell(h)) }),
+          ...[
+            ['External Network Penetration Test', 'Internet-facing infrastructure and services', 'Annual', 'Black-box / grey-box; PTES / OWASP'],
+            ['Internal Network Penetration Test', 'Internal network segments and systems', 'Annual', 'Grey-box; assumed-breach scenario'],
+            ['Web Application Penetration Test', 'In-scope web applications and APIs', 'Annual (+ after major releases)', 'OWASP Testing Guide'],
+            ['Social Engineering Assessment', 'All employees', 'Annual', 'Phishing simulation + vishing scenario'],
+            ['Red Team Exercise', 'Full attack surface', 'Bi-annual', 'Adversary simulation; MITRE ATT&CK'],
+          ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0 })) })),
+        ],
+      }),
+      new Paragraph({ text: '', spacing: { after: 200 } }),
+      new Paragraph({ text: '14.4  Patch Management', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p(`Patches and security updates for all in-scope systems are tracked, evaluated, and applied in accordance with the vulnerability remediation SLAs defined in Section 14.1. Patch deployment follows the change management process described in Section 10. Emergency patches for critical vulnerabilities may follow the emergency change process with post-implementation review. Patch compliance rates are monitored monthly and reported to the CISO.`),
+      p(`Operating systems, middleware, databases, and third-party libraries are covered by the patch management program. End-of-life (EOL) software and systems are identified, tracked, and subject to a migration or decommission plan approved by the CISO. No EOL systems may remain in production without documented risk acceptance and compensating controls.`),
+      new Paragraph({ text: '', spacing: { after: 300 } }),
+    );
+
+    // ── SECTION 15: SUMMARY ─────────────────────────────────────────────────
+    children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
+    children.push(
+      new Paragraph({ text: '15.  Summary and Recommendations', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
       new Paragraph({
         children: [
           new TextRun({ text: 'Overall Compliance Score: ', bold: true, size: 24 }),
@@ -856,6 +1094,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       ['Term', 'Definition'],
       ['ISAE 3402', 'International Standard on Assurance Engagements 3402, "Assurance Reports on Controls at a Service Organization." Issued by the International Auditing and Assurance Standards Board (IAASB).'],
       ['Type II Report', 'An ISAE 3402 report that covers both the design and operating effectiveness of controls over a defined period (typically 6–12 months).'],
+      ['Type I Report', 'An ISAE 3402 report covering only the suitability of design of controls at a point in time. Does not include testing of operating effectiveness.'],
       ['User Entity', 'An organization that uses the services of a service organization and whose financial reporting or operations may be affected by the service organization\'s controls.'],
       ['Control Objective', 'A statement of the desired result or purpose to be achieved by implementing control procedures in a particular activity.'],
       ['CUEC', 'Complementary User Entity Controls — controls that user entities must implement to complete the control environment and achieve the stated control objectives.'],
@@ -867,8 +1106,28 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
       ['CAB', 'Change Advisory Board — a group responsible for evaluating and authorizing changes to IT systems and infrastructure.'],
       ['SoD', 'Segregation of Duties — a control principle that prevents any single individual from controlling all phases of a transaction or process.'],
       ['CISO', 'Chief Information Security Officer — the senior executive responsible for an organization\'s information and data security strategy.'],
-      ['SIEM', 'Security Information and Event Management — a system that collects and analyzes security data from across an organization\'s IT environment.'],
-      ['ISO 27001', 'An international standard that specifies requirements for establishing, implementing, maintaining, and continually improving an information security management system (ISMS).'],
+      ['DPO', 'Data Protection Officer — an individual designated under GDPR Article 37 to oversee data protection strategy and compliance.'],
+      ['SIEM', 'Security Information and Event Management — a system that collects, correlates, and analyses security data from across an organisation\'s IT environment in real time.'],
+      ['ISO 27001', 'International standard specifying requirements for establishing, implementing, maintaining, and continually improving an Information Security Management System (ISMS).'],
+      ['ISO 27002', 'International standard providing guidance on information security controls, supplementing ISO 27001 with specific control implementation guidance.'],
+      ['GDPR', 'General Data Protection Regulation (EU) 2016/679 — the European Union regulation governing the processing of personal data and the free movement of such data.'],
+      ['DPIA', 'Data Protection Impact Assessment — a process to identify and minimise data protection risks for high-risk processing activities, required under GDPR Article 35.'],
+      ['RoPA', 'Record of Processing Activities — documentation of all personal data processing activities, maintained by data controllers and certain processors under GDPR Article 30.'],
+      ['CVSS', 'Common Vulnerability Scoring System — an open framework for communicating the severity characteristics of software vulnerabilities, scored on a scale of 0–10.'],
+      ['DAST', 'Dynamic Application Security Testing — a testing approach that analyses a running application for vulnerabilities from the outside, simulating an external attacker.'],
+      ['SAST', 'Static Application Security Testing — analysis of source code, bytecode, or binary to identify security vulnerabilities before the application is executed.'],
+      ['SCA', 'Software Composition Analysis — tooling that identifies open-source and third-party dependencies in a codebase and checks them for known vulnerabilities.'],
+      ['CSPM', 'Cloud Security Posture Management — tools and processes that continuously monitor cloud infrastructure for misconfigurations and compliance violations.'],
+      ['ISMS', 'Information Security Management System — a framework of policies, procedures, and controls that manage information security risks systematically.'],
+      ['BCP', 'Business Continuity Plan — a documented plan describing how an organisation will continue operating during and after a disruptive event.'],
+      ['DRP', 'Disaster Recovery Plan — a documented set of procedures to recover and restore IT systems and data following a disaster or major outage.'],
+      ['OWASP', 'Open Web Application Security Project — a non-profit foundation providing free, openly available articles, methodologies, and tools for web application security.'],
+      ['TLS', 'Transport Layer Security — a cryptographic protocol that provides end-to-end encryption for data transmitted over a network.'],
+      ['AES-256', 'Advanced Encryption Standard with a 256-bit key — a symmetric encryption algorithm widely regarded as a standard for encrypting data at rest.'],
+      ['Zero Trust', 'A security model based on the principle "never trust, always verify" — no user or system is trusted by default, regardless of network location.'],
+      ['SLA', 'Service Level Agreement — a contract between a service provider and a user entity defining expected levels of service, availability, and performance.'],
+      ['PTES', 'Penetration Testing Execution Standard — a comprehensive methodology and standard for conducting penetration tests.'],
+      ['MITRE ATT&CK', 'A globally accessible knowledge base of adversary tactics, techniques, and procedures based on real-world observations, used for threat modelling and red team planning.'],
     ];
     children.push(
       new Table({
@@ -880,6 +1139,62 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
           ],
         })),
       }),
+      new Paragraph({ text: '', spacing: { after: 400 } }),
+    );
+
+    // ── APPENDIX C: AUDIT EVIDENCE AND TESTING APPROACH ──────────────────────
+    children.push(new Paragraph({ pageBreakBefore: true, text: '' }));
+    children.push(
+      new Paragraph({ text: 'Appendix C – Audit Evidence and Testing Approach', heading: HeadingLevel.HEADING_1, spacing: { after: 300 } }),
+      p('This appendix describes the evidence categories and testing procedures used to assess the design and operating effectiveness of controls included in this report. Testing was conducted in accordance with ISAE 3402 requirements and professional auditing standards.'),
+      new Paragraph({ text: 'C.1  Evidence Categories', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ children: ['Evidence Category', 'Description', 'Examples'].map(h => hdrCell(h)) }),
+          ...[
+            ['Inquiry', 'Oral or written responses obtained from management and personnel responsible for operating controls.', 'Interviews with CISO, IT Operations, HR, DPO'],
+            ['Observation', 'Direct observation of a control being performed.', 'Watching a change approval process, access review meeting, or training session'],
+            ['Inspection of Documents', 'Examination of paper-based or electronic records, reports, or policies.', 'Policy documents, risk register, access logs, patch records, training completion reports'],
+            ['Inspection of Systems', 'Direct examination of system configurations, settings, or outputs.', 'Firewall rules, IAM permissions, system configuration screenshots'],
+            ['Re-performance', 'Independent execution of a control procedure to verify it produces the same result.', 'Re-running a user access review, re-calculating a risk score, re-testing a backup restore'],
+            ['Analytical Procedures', 'Evaluation of plausibility of information through analysis of relationships among data.', 'Trend analysis of overdue controls, comparison of scan results across periods'],
+          ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0 })) })),
+        ],
+      }),
+      new Paragraph({ text: '', spacing: { after: 200 } }),
+      new Paragraph({ text: 'C.2  Testing Approach by Control Type', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ children: ['Control Type', 'Definition', 'Primary Test Procedures', 'Sample Basis'].map(h => hdrCell(h)) }),
+          ...[
+            ['Preventive', 'Controls designed to prevent an error or irregularity from occurring.', 'Inspection of configuration; re-performance; inquiry', 'Configural controls: full population; transactional: sample'],
+            ['Detective', 'Controls designed to identify errors or irregularities after they occur.', 'Inspection of logs, reports, and exception handling records; inquiry', 'Statistical sample of exception reports over the period'],
+            ['Corrective', 'Controls designed to correct identified errors or irregularities.', 'Inspection of remediation records; inquiry of responsible parties', 'All identified exceptions reviewed for timely remediation'],
+            ['Manual', 'Controls performed by individuals without automated system support.', 'Inquiry + inspection of supporting evidence; re-performance where possible', 'Risk-based sample; minimum 25 items or full population for low-volume'],
+            ['Automated (IT General Control)', 'Controls embedded in systems and performed consistently by the system.', 'Inspection of system settings; re-performance; review of change log', 'Configural test of design; one sample instance sufficient if no changes'],
+          ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0 })) })),
+        ],
+      }),
+      new Paragraph({ text: '', spacing: { after: 200 } }),
+      new Paragraph({ text: 'C.3  Sampling Methodology', heading: HeadingLevel.HEADING_2, spacing: { after: 200 } }),
+      p('Where sampling is applied, sample sizes are determined based on the frequency and population size of the control, as follows:'),
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ children: ['Control Frequency', 'Approximate Annual Population', 'Minimum Sample Size'].map(h => hdrCell(h)) }),
+          ...[
+            ['Daily', '~250 instances per year', '25 items'],
+            ['Weekly', '~52 instances per year', '15 items'],
+            ['Monthly', '~12 instances per year', '6 items (all, if fewer than 6)'],
+            ['Quarterly', '~4 instances per year', '2 items'],
+            ['Annual', '1 instance per year', '1 item (full population)'],
+            ['Ad hoc / Event-driven', 'Varies', 'All instances or risk-based sample; minimum 5 if > 5 events'],
+          ].map(row => new TableRow({ children: row.map((cell, j) => dataCell(cell, { bold: j === 0 })) })),
+        ],
+      }),
+      p('Sample items are selected using random or systematic selection methods. Items are selected from across the full reporting period to provide evidence about the entire period and not just point-in-time effectiveness.'),
       new Paragraph({ text: '', spacing: { after: 400 } }),
       new Paragraph({
         children: [new TextRun({ text: tplBody('footer', `This report was generated by ComplianceOS on behalf of ${company}. For official ISAE 3402 Type II certification, engage a qualified third-party auditor holding ISAE accreditation.`) ?? '', size: 18, color: '9ca3af', italics: true })],
@@ -963,25 +1278,30 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     };
 
     const tableRow = (cols: string[], colWidths: number[], isHeader = false) => {
-      checkPage(8);
-      const rowH = 7;
+      doc.setFont('helvetica', isHeader ? 'bold' : 'normal');
+      doc.setFontSize(8);
+      const lineH = 3.8;
+      const padX = 1.5;
+      const padY = 2.4;
+      const wrapped = cols.map((col, i) => doc.splitTextToSize(col || '-', colWidths[i] - padX * 2));
+      const rowH = Math.max(8, Math.max(...wrapped.map(cell => cell.length)) * lineH + padY * 2);
+      checkPage(rowH + 2);
+      const rowTop = y;
       let x = margin;
       if (isHeader) {
         doc.setFillColor(30, 64, 175);
-        doc.rect(margin, y - 5, contentW, rowH, 'F');
+        doc.rect(margin, rowTop, contentW, rowH, 'F');
       }
-      doc.setFont('helvetica', isHeader ? 'bold' : 'normal');
-      doc.setFontSize(8);
       doc.setTextColor(isHeader ? 255 : 55, isHeader ? 255 : 65, isHeader ? 255 : 81);
-      cols.forEach((col, i) => {
-        const cell = doc.splitTextToSize(col, colWidths[i] - 2);
-        doc.text(cell[0] ?? '', x + 1, y);
+      wrapped.forEach((cell, i) => {
+        doc.text(cell, x + padX, rowTop + padY + 3, { lineHeightFactor: 1.15 });
         x += colWidths[i];
       });
-      y += rowH - 1;
+      y += rowH;
       doc.setDrawColor(229, 231, 235);
       doc.setLineWidth(0.2);
-      doc.line(margin, y - 1, margin + contentW, y - 1);
+      doc.line(margin, y, margin + contentW, y);
+      y += 0.5;
     };
 
     // ── COVER ────────────────────────────────────────────────────────
@@ -1064,7 +1384,9 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     y += 6;
     h1('2.  Description of the IT Control Environment');
     h2('2a.  Overview of Services');
-    body(`${company} is a Norwegian IT services company providing managed services, cloud solutions, and IT infrastructure support. The company processes and stores customer data on behalf of its clients, making robust internal controls essential for maintaining trust and compliance.`);
+    body(substitute(company.toLowerCase().includes('simteq')
+      ? SIMTEQ_COMPANY_OVERVIEW
+      : `${company} operates services for user entities supported by documented general IT controls and information security controls.`));
     y += 4;
     h2('2b.  Control Environment Summary');
     const envCols = ['Component', 'Details'];
@@ -1086,45 +1408,43 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     body(`We have examined the description of ${company}'s General IT Controls and have performed tests of controls necessary to form an opinion on the design and operating effectiveness of those controls.`);
     y += 4;
     h2('Legend');
-    body('✓  No material deviations noted during the period');
-    body('⚠  Some weaknesses identified — improvements recommended');
-    body('✗  Critical weaknesses noted — immediate remediation required');
+    body('Effective: No material deviations noted during the period');
+    body('Review needed: Some weaknesses identified - improvements recommended');
+    body('Exception: Critical weaknesses noted - immediate remediation required');
 
     // ── P5+: CONTROL OBJECTIVES TABLE ────────────────────────────────
     addPage();
     h1('4.  Control Objectives, Security Measures, Tests and Findings');
 
     const ctrlCols = ['ID', 'Control Objective', 'Freq.', 'Status', 'Result'];
-    const ctrlColW = [14, contentW - 14 - 20 - 22 - 16, 20, 22, 16];
+    const ctrlColW = [14, contentW - 14 - 20 - 26 - 28, 20, 26, 28];
 
     for (const domain of ISO_DOMAINS) {
       const domainControls = controls.filter(c => c.category === domain);
       if (domainControls.length === 0) continue;
 
-      const symbol = getStatusSymbol(domainControls);
+      const result = getDomainResult(domainControls);
       const completedInDomain = domainControls.filter(c => c.status === 'Completed').length;
 
       checkPage(25);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
-      const symbolColor: [number, number, number] = symbol === '✓' ? [22, 163, 74] : symbol === '⚠' ? [217, 119, 6] : [220, 38, 38];
       doc.setTextColor(31, 41, 55);
       doc.text(domain, margin, y);
-      doc.setTextColor(...symbolColor);
-      doc.text(`  ${symbol}`, margin + doc.getTextWidth(domain), y);
+      doc.setTextColor(...getResultRgb(result));
+      doc.text(`  ${result}`, margin + doc.getTextWidth(domain), y);
       y += 6;
 
       tableRow(ctrlCols, ctrlColW, true);
       domainControls.forEach(ctrl => {
-        const result = ctrl.status === 'Completed' ? '✓' : ctrl.status === 'Overdue' ? '✗' : '⚠';
-        tableRow([ctrl.id, ctrl.title, ctrl.frequency || '–', ctrl.status, result], ctrlColW);
+        tableRow([ctrl.id, ctrl.title, ctrl.frequency || '–', ctrl.status, getControlResult(ctrl.status)], ctrlColW);
       });
 
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(8);
       doc.setTextColor(75, 85, 99);
       checkPage(6);
-      doc.text(`Finding: ${completedInDomain}/${domainControls.length} controls completed. ${getStatusText(symbol)}.`, margin, y + 2);
+      doc.text(`Finding: ${completedInDomain}/${domainControls.length} controls completed. ${getStatusText(result)}.`, margin, y + 2);
       y += 8;
     }
 
@@ -1193,7 +1513,9 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
           </div>
           <div className="min-w-0">
             <DialogTitle className="text-sm font-semibold text-slate-900 leading-none">ISAE 3402 Report Generator</DialogTitle>
-            <p className="text-xs text-slate-400 mt-1">{template?.company_name ?? 'SIMTEQ AS'} · Type II · {template ? `${template.period_start} – ${template.period_end}` : 'Reporting period'}</p>
+            <DialogDescription className="text-xs text-slate-400 mt-1">
+              {template?.company_name ?? 'SIMTEQ AS'} · Type II · {template ? `${template.period_start} – ${template.period_end}` : 'Reporting period'}
+            </DialogDescription>
           </div>
         </div>
 
@@ -1209,7 +1531,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
                 {/* Info strip */}
                 <div className="grid grid-cols-4 gap-2">
                   {[
-                    { icon: <Shield className="w-3.5 h-3.5" />, label: 'Sections', value: '13+', sub: 'incl. appendices' },
+                    { icon: <Shield className="w-3.5 h-3.5" />, label: 'Sections', value: '15+', sub: 'incl. appendices' },
                     { icon: <FileText className="w-3.5 h-3.5" />, label: 'Domains', value: String(ISO_DOMAINS.length), sub: 'ISO 27001' },
                     { icon: <TrendingUp className="w-3.5 h-3.5" />, label: 'Data source', value: 'Live', sub: 'Supabase DB' },
                     { icon: <Calendar className="w-3.5 h-3.5" />, label: 'Period', value: '2025', sub: 'Jan – Dec' },
@@ -1228,20 +1550,23 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
                   <div className="grid grid-cols-2 gap-y-1.5 gap-x-4">
                     {[
                       '1. Scope, Objective & Applicability',
-                      '2. System Description',
-                      '3. Management Statement',
+                      '2. System Description + Service Commitments',
+                      '3. Management Statement & Assertion',
                       '4. Complementary User Entity Controls',
                       '5. Sub-service Organizations',
-                      '6. IT Control Environment',
-                      '7. Risk Register',
+                      '6. IT Control Environment (incl. Policy & Training)',
+                      '7. Risk Register + Treatment Plan',
                       "8. Independent Auditor's Report",
                       '9. Control Objectives & Test Results',
                       '10. Change Management Controls',
-                      '11. Business Continuity & Incident Mgmt',
-                      '12. Access Management & SoD',
-                      '13. Summary & Recommendations',
+                      '11. Business Continuity & Incident Management',
+                      '12. Access Management & Segregation of Duties',
+                      '13. Data Privacy & GDPR Compliance',
+                      '14. Vulnerability Management & Pen Testing',
+                      '15. Summary & Recommendations',
                       'Appendix A: Complete Control Listing',
-                      'Appendix B: Glossary of Terms',
+                      'Appendix B: Glossary of Terms (35+ terms)',
+                      'Appendix C: Audit Evidence & Testing Approach',
                       'Cover page + Table of Contents',
                     ].map((section, idx) => (
                       <div key={idx} className="flex items-start gap-1.5 text-xs text-slate-600">
@@ -1364,14 +1689,21 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
                           {ISO_DOMAINS.map(domain => {
                             const dc = controls.filter(c => c.category === domain);
                             if (dc.length === 0) return null;
-                            const symbol = getStatusSymbol(dc);
+                            const result = getDomainResult(dc);
                             const comp = dc.filter(c => c.status === 'Completed').length;
+                            const resultClass = result === 'Effective'
+                              ? 'text-green-700 bg-green-50 border-green-200'
+                              : result === 'Exception'
+                                ? 'text-red-700 bg-red-50 border-red-200'
+                                : 'text-amber-700 bg-amber-50 border-amber-200';
                             return (
                               <tr key={domain} className="hover:bg-slate-50/50">
                                 <td className="px-3 py-1.5 text-slate-700">{domain}</td>
                                 <td className="px-3 py-1.5 text-right text-slate-400">{comp}/{dc.length}</td>
                                 <td className="px-3 py-1.5 text-center">
-                                  <span className={`font-bold text-sm ${symbol === '✓' ? 'text-green-600' : symbol === '⚠' ? 'text-amber-500' : 'text-red-600'}`}>{symbol}</span>
+                                  <span className={`inline-flex rounded border px-1.5 py-0.5 text-[10px] font-medium leading-none ${resultClass}`}>
+                                    {result}
+                                  </span>
                                 </td>
                               </tr>
                             );
@@ -1415,7 +1747,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
                   <div className="mt-auto">
                     <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Report includes</div>
                     <div className="space-y-1">
-                      {['Cover page + Table of Contents', '13 compliance sections', 'Full control test results', 'Risk register snapshot', 'Appendices A & B'].map(item => (
+                      {['Cover page + Table of Contents', '15 compliance sections', 'Data Privacy & GDPR section', 'Vulnerability Management section', 'Full control test results', 'Risk register + treatment plan', 'Appendices A, B & C (35+ glossary terms)'].map(item => (
                         <div key={item} className="flex items-center gap-1.5 text-xs text-slate-500">
                           <CheckCircle2 className="w-3 h-3 text-slate-300 shrink-0" />
                           {item}

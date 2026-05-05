@@ -13,6 +13,22 @@ project:
 
 This repository contains a working prototype of a role-based compliance management dashboard for Simteq AS. The main product problem is documentation and auditability: users need a clear way to prove which controls were performed, by whom, when, with what evidence, and under which approval flow.
 
+## Simteq Business Context
+
+Use the public Simteq website as the source of truth for company/service descriptions in generated reports: https://simteq.com/
+
+Current public positioning:
+
+- Legal/public name on the website: SIMTEQ A/S.
+- Address listed on the website: Sct. Bendtsgade 8, 1., 4100 Ringsted, Denmark.
+- CVR listed on the website: 40941223.
+- Core positioning: accounting automation and smarter finance decisions.
+- Main product: 2CLICK by SIMTEQ, an automation platform for bookkeeping and financial management.
+- Hospitality product: 2CLICK for Hospitality, tailored to hotel and hospitality financial workflows.
+- Services listed on the website include accounting automation, ERP implementation, financial advisory, reporting, ERP/bank/PMS integrations, invoice recognition, bank clearing, expense management, and secure payment automation.
+
+Generated ISAE 3402 report text should not describe Simteq as a Norwegian managed IT services, cloud infrastructure, service desk, data center, or security operations provider unless that scope is explicitly confirmed by Simteq.
+
 ## Problem Context
 
 ### Current Pain Points

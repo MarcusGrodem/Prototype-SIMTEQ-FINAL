@@ -47,7 +47,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
       name: 'Text Report',
       description: 'Formatted text document',
       icon: FileText,
-      color: 'bg-purple-100 text-purple-700 border-purple-300'
+      color: 'bg-slate-100 text-slate-700 border-slate-200'
     }
   ];
 
@@ -81,8 +81,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
       name: 'Compliance Summary',
       description: 'Key metrics and compliance score overview',
       icon: TrendingUp,
-      color: 'bg-purple-50 border-purple-200',
-      iconColor: 'text-purple-600'
+      color: 'bg-emerald-50 border-emerald-200',
+      iconColor: 'text-emerald-600'
     }
   ];
 

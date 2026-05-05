@@ -162,7 +162,7 @@ export function AddRiskDialog({ open, onOpenChange, onSuccess }: AddRiskDialogPr
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                     Likelihood: {likelihood}
                   </Badge>
-                  <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
                     Impact: {impact}
                   </Badge>
                 </div>

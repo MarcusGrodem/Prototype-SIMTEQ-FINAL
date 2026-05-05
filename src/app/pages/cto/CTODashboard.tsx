@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import { Card } from '../../components/ui/card'
 import { Badge } from '../../components/ui/badge'
 import { Button } from '../../components/ui/button'
-import { GitCommit, Package, AlertTriangle, Clock, Plus, CheckCircle2, XCircle } from 'lucide-react'
+import { GitCommit, Package, AlertTriangle, Clock, Plus, CheckCircle2, XCircle, ExternalLink } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { ChangeLog, Release } from '../../../lib/types'
 import { useNavigate } from 'react-router'
+
+const SAMPLE_DATA_URL = 'https://github.com/MarcusGrodem/Prototype-SIMTEQ-FINAL/blob/main/supabase/seed.sql'
 
 export function CTODashboard() {
   const [changeLogs, setChangeLogs] = useState<ChangeLog[]>([])
@@ -153,7 +155,7 @@ export function CTODashboard() {
                 <div key={rel.id} className="flex items-start justify-between px-3 py-2.5 rounded-md hover:bg-slate-50 transition-colors">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{rel.version}</span>
+                      <span className="text-xs font-mono tabular-nums bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{rel.version}</span>
                       <p className="text-sm font-medium text-slate-900 truncate">{rel.title}</p>
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
@@ -176,6 +178,14 @@ export function CTODashboard() {
                   <button onClick={() => navigate('/cto/releases')} className="mt-3 text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors cursor-pointer">
                     Create first release →
                   </button>
+                  <a
+                    href={SAMPLE_DATA_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-slate-500 underline underline-offset-2 hover:text-slate-900 transition-colors"
+                  >
+                    Load sample data <ExternalLink className="w-3 h-3" />
+                  </a>
                 </div>
               )}
             </div>

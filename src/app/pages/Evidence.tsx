@@ -33,6 +33,7 @@ import { supabase } from '../../lib/supabase';
 import { Document, DocumentVersion, DocumentLink, Control, Risk } from '../../lib/types';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
+import { showUndoDeleteToast, showUploadFailureToast, UNDO_TOAST_DURATION_MS } from '../utils/toastActions';
 
 interface DocumentWithLinks extends Document {
   document_links: DocumentLink[];
@@ -108,7 +109,11 @@ export function Evidence() {
     const path = `documents/${docId}/${pendingFile.name}`;
 
     const { error: uploadError } = await supabase.storage.from('evidence').upload(path, pendingFile);
-    if (uploadError) { toast.error('Upload failed: ' + uploadError.message); setUploading(false); return; }
+    if (uploadError) {
+      setUploading(false);
+      showUploadFailureToast('Upload failed: ' + uploadError.message, handleUpload);
+      return;
+    }
 
     const { error: insertError } = await supabase.from('documents').insert({
       id: docId,
@@ -147,11 +152,51 @@ export function Evidence() {
   };
 
   const handleDelete = async (doc: DocumentWithLinks) => {
-    if (!confirm(`Delete "${doc.name}"? This cannot be undone.`)) return;
-    if (doc.file_path) await supabase.storage.from('evidence').remove([doc.file_path]);
-    await supabase.from('documents').delete().eq('id', doc.id);
-    toast.success('Document deleted');
-    loadData();
+    if (!confirm(`Delete "${doc.name}"? You can undo for 5 seconds.`)) return;
+
+    const [versionsRes, linksRes] = await Promise.all([
+      supabase.from('document_versions').select('*').eq('document_id', doc.id),
+      supabase.from('document_links').select('*').eq('document_id', doc.id)
+    ]);
+    const versionRows = versionsRes.data || [];
+    const linkRows = linksRes.data || doc.document_links || [];
+    const { document_links: _documentLinks, ...documentRecord } = doc;
+
+    const { error } = await supabase.from('documents').delete().eq('id', doc.id);
+    if (error) { toast.error('Failed to delete document'); return; }
+
+    setDocuments(prev => prev.filter(item => item.id !== doc.id));
+
+    const storagePaths = Array.from(new Set(
+      [doc.file_path, ...versionRows.map(version => version.file_path)].filter(Boolean) as string[]
+    ));
+    let undoRequested = false;
+    const cleanupTimer = window.setTimeout(() => {
+      if (!undoRequested && storagePaths.length > 0) {
+        void supabase.storage.from('evidence').remove(storagePaths);
+      }
+    }, UNDO_TOAST_DURATION_MS);
+
+    showUndoDeleteToast('Document deleted', async () => {
+      undoRequested = true;
+      window.clearTimeout(cleanupTimer);
+
+      const { error: restoreError } = await supabase.from('documents').upsert(documentRecord);
+      if (restoreError) { toast.error('Could not restore document'); return; }
+
+      if (versionRows.length > 0) {
+        const { error: versionError } = await supabase.from('document_versions').upsert(versionRows);
+        if (versionError) { toast.error('Document restored without version history'); }
+      }
+
+      if (linkRows.length > 0) {
+        const { error: linkError } = await supabase.from('document_links').upsert(linkRows);
+        if (linkError) { toast.error('Document restored without links'); }
+      }
+
+      toast.success('Document restored');
+      loadData();
+    });
   };
 
   const handleRename = async (doc: DocumentWithLinks) => {
@@ -178,7 +223,11 @@ export function Evidence() {
     const path = `documents/${historyDoc.id}/v${newVersion}-${reuploadFile.name}`;
 
     const { error: uploadError } = await supabase.storage.from('evidence').upload(path, reuploadFile);
-    if (uploadError) { toast.error('Upload failed'); setUploading(false); return; }
+    if (uploadError) {
+      setUploading(false);
+      showUploadFailureToast('Upload failed: ' + uploadError.message, handleReupload);
+      return;
+    }
 
     await supabase.from('document_versions').insert({
       document_id: historyDoc.id,

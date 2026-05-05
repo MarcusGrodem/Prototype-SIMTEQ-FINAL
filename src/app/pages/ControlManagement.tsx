@@ -24,6 +24,7 @@ import { downloadCSV } from '../utils/exportUtils';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCategories } from '../hooks/useCategories';
+import { showUploadFailureToast } from '../utils/toastActions';
 
 export function ControlManagement() {
   const [controls, setControls] = useState<Control[]>([]);
@@ -87,57 +88,61 @@ export function ControlManagement() {
       const file = (ev.target as HTMLInputElement).files?.[0];
       if (!file) return;
 
-      const toastId = toast.loading(`Uploading ${file.name}...`);
-      const docId = crypto.randomUUID();
-      const path = `controls/${control.id}/${docId}-${file.name}`;
+      const uploadSelectedFile = async () => {
+        const toastId = toast.loading(`Uploading ${file.name}...`);
+        const docId = crypto.randomUUID();
+        const path = `controls/${control.id}/${docId}-${file.name}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('evidence')
-        .upload(path, file);
+        const { error: uploadError } = await supabase.storage
+          .from('evidence')
+          .upload(path, file);
 
-      if (uploadError) {
-        toast.dismiss(toastId);
-        toast.error('Upload failed: ' + uploadError.message);
-        return;
-      }
+        if (uploadError) {
+          toast.dismiss(toastId);
+          showUploadFailureToast('Upload failed: ' + uploadError.message, uploadSelectedFile);
+          return;
+        }
 
-      const { data: docData, error: docError } = await supabase
-        .from('documents')
-        .insert({
-          id: docId,
-          name: file.name,
-          file_type: file.type,
-          uploaded_by_name: profile?.full_name ?? 'Unknown',
+        const { data: docData, error: docError } = await supabase
+          .from('documents')
+          .insert({
+            id: docId,
+            name: file.name,
+            file_type: file.type,
+            uploaded_by_name: profile?.full_name ?? 'Unknown',
+            file_path: path,
+            file_size: file.size,
+            current_version: 1
+          })
+          .select()
+          .single();
+
+        if (docError || !docData) {
+          toast.dismiss(toastId);
+          toast.error('Failed to save document record');
+          return;
+        }
+
+        await supabase.from('document_versions').insert({
+          document_id: docId,
+          version: 1,
           file_path: path,
           file_size: file.size,
-          current_version: 1
-        })
-        .select()
-        .single();
+          changelog: 'Initial upload',
+          uploaded_by_name: profile?.full_name ?? 'Unknown'
+        });
 
-      if (docError || !docData) {
+        await supabase.from('document_links').insert({
+          document_id: docId,
+          link_type: 'control',
+          link_id: control.id
+        });
+
         toast.dismiss(toastId);
-        toast.error('Failed to save document record');
-        return;
-      }
+        toast.success('Evidence uploaded successfully!');
+      };
 
-      await supabase.from('document_versions').insert({
-        document_id: docId,
-        version: 1,
-        file_path: path,
-        file_size: file.size,
-        changelog: 'Initial upload',
-        uploaded_by_name: profile?.full_name ?? 'Unknown'
-      });
-
-      await supabase.from('document_links').insert({
-        document_id: docId,
-        link_type: 'control',
-        link_id: control.id
-      });
-
-      toast.dismiss(toastId);
-      toast.success('Evidence uploaded successfully!');
+      await uploadSelectedFile();
     };
     input.click();
   };
@@ -188,26 +193,38 @@ export function ControlManagement() {
       <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
         {/* Stats strip */}
         <div className="flex border border-slate-200 rounded-lg bg-white overflow-hidden divide-x divide-slate-200">
-          <div className="flex-1 px-6 py-5">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Total Controls</p>
-            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-2">{controls.length}</p>
-            <p className="text-xs text-slate-400 mt-3">across all categories</p>
-          </div>
-          <div className="flex-1 px-6 py-5">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Completed</p>
-            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-2">{completed}</p>
-            <p className="text-xs text-emerald-600 mt-3 font-medium">{controls.length > 0 ? Math.round(completed / controls.length * 100) : 0}% completion rate</p>
-          </div>
-          <div className="flex-1 px-6 py-5">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Pending</p>
-            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-2">{pending}</p>
-            <p className="text-xs text-slate-400 mt-3">awaiting execution</p>
-          </div>
-          <div className={`flex-1 px-6 py-5 ${overdue > 0 ? 'bg-red-50/60' : ''}`}>
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Overdue</p>
-            <p className={`text-3xl font-bold tabular-nums mt-2 ${overdue > 0 ? 'text-red-600' : 'text-slate-900'}`}>{overdue}</p>
-            <p className={`text-xs mt-3 font-medium ${overdue > 0 ? 'text-red-500' : 'text-slate-400'}`}>{overdue > 0 ? 'Requires immediate action' : 'All controls on track'}</p>
-          </div>
+          <button
+            onClick={() => setFilterStatus([])}
+            className={`flex-1 px-6 py-5 text-left transition-colors cursor-pointer ${filterStatus.length === 0 ? 'bg-slate-900' : 'hover:bg-slate-50'}`}
+          >
+            <p className={`text-[11px] font-semibold uppercase tracking-widest ${filterStatus.length === 0 ? 'text-slate-300' : 'text-slate-500'}`}>Total Controls</p>
+            <p className={`text-3xl font-bold tabular-nums mt-2 ${filterStatus.length === 0 ? 'text-white' : 'text-slate-900'}`}>{controls.length}</p>
+            <p className={`text-xs mt-3 ${filterStatus.length === 0 ? 'text-slate-400' : 'text-slate-400'}`}>across all categories</p>
+          </button>
+          <button
+            onClick={() => setFilterStatus(prev => prev.length === 1 && prev[0] === 'Completed' ? [] : ['Completed'])}
+            className={`flex-1 px-6 py-5 text-left transition-colors cursor-pointer ${filterStatus[0] === 'Completed' ? 'bg-emerald-700' : 'hover:bg-slate-50'}`}
+          >
+            <p className={`text-[11px] font-semibold uppercase tracking-widest ${filterStatus[0] === 'Completed' ? 'text-emerald-100' : 'text-slate-500'}`}>Completed</p>
+            <p className={`text-3xl font-bold tabular-nums mt-2 ${filterStatus[0] === 'Completed' ? 'text-white' : 'text-slate-900'}`}>{completed}</p>
+            <p className={`text-xs mt-3 font-medium ${filterStatus[0] === 'Completed' ? 'text-emerald-200' : 'text-emerald-600'}`}>{controls.length > 0 ? Math.round(completed / controls.length * 100) : 0}% completion rate</p>
+          </button>
+          <button
+            onClick={() => setFilterStatus(prev => prev.length === 1 && prev[0] === 'Pending' ? [] : ['Pending'])}
+            className={`flex-1 px-6 py-5 text-left transition-colors cursor-pointer ${filterStatus[0] === 'Pending' ? 'bg-slate-900' : 'hover:bg-slate-50'}`}
+          >
+            <p className={`text-[11px] font-semibold uppercase tracking-widest ${filterStatus[0] === 'Pending' ? 'text-slate-300' : 'text-slate-500'}`}>Pending</p>
+            <p className={`text-3xl font-bold tabular-nums mt-2 ${filterStatus[0] === 'Pending' ? 'text-white' : 'text-slate-900'}`}>{pending}</p>
+            <p className={`text-xs mt-3 ${filterStatus[0] === 'Pending' ? 'text-slate-400' : 'text-slate-400'}`}>awaiting execution</p>
+          </button>
+          <button
+            onClick={() => setFilterStatus(prev => prev.length === 1 && prev[0] === 'Overdue' ? [] : ['Overdue'])}
+            className={`flex-1 px-6 py-5 text-left transition-colors cursor-pointer ${filterStatus[0] === 'Overdue' ? 'bg-red-600' : overdue > 0 ? 'bg-red-50/60 hover:bg-red-50' : 'hover:bg-slate-50'}`}
+          >
+            <p className={`text-[11px] font-semibold uppercase tracking-widest ${filterStatus[0] === 'Overdue' ? 'text-red-100' : 'text-slate-500'}`}>Overdue</p>
+            <p className={`text-3xl font-bold tabular-nums mt-2 ${filterStatus[0] === 'Overdue' ? 'text-white' : overdue > 0 ? 'text-red-600' : 'text-slate-900'}`}>{overdue}</p>
+            <p className={`text-xs mt-3 font-medium ${filterStatus[0] === 'Overdue' ? 'text-red-200' : overdue > 0 ? 'text-red-500' : 'text-slate-400'}`}>{overdue > 0 ? 'Requires immediate action' : 'All controls on track'}</p>
+          </button>
         </div>
 
         {/* Search and Filters */}

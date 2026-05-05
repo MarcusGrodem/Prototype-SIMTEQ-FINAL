@@ -19,7 +19,7 @@ const DEFAULT_ROLES: RoleOption[] = [
 
 const ROLE_COLOR: Record<string, string> = {
   ceo: 'bg-blue-50 text-blue-700 border-blue-200',
-  cto: 'bg-purple-50 text-purple-700 border-purple-200',
+  cto: 'bg-slate-100 text-slate-700 border-slate-200',
   qa:  'bg-emerald-50 text-emerald-700 border-emerald-200',
   auditor: 'bg-amber-50 text-amber-700 border-amber-200',
 }

@@ -21,6 +21,8 @@ import { toast } from 'sonner'
 import { Control } from '../../lib/types'
 import { supabase } from '../../lib/supabase'
 import { useCategories } from '../hooks/useCategories'
+import { Trash2 } from 'lucide-react'
+import { showUndoDeleteToast } from '../utils/toastActions'
 
 interface EditControlDialogProps {
   open: boolean
@@ -83,6 +85,65 @@ export function EditControlDialog({ open, onOpenChange, control, onSuccess }: Ed
     setSaving(false)
     onOpenChange(false)
     onSuccess?.()
+  }
+
+  const handleDelete = async () => {
+    if (!confirm(`Delete control "${control.title}"? You can undo for 5 seconds.`)) return
+
+    const [controlRes, riskLinkRes, docLinkRes, reminderRes] = await Promise.all([
+      supabase.from('controls').select('*').eq('id', control.id).single(),
+      supabase.from('risk_controls').select('*').eq('control_id', control.id),
+      supabase.from('document_links').select('*').eq('link_type', 'control').eq('link_id', control.id),
+      supabase.from('reminders').select('*').eq('control_id', control.id),
+    ])
+
+    if (!controlRes.data) { toast.error('Could not load control before deletion'); return }
+
+    const controlRecord = controlRes.data
+    const riskLinkRows = riskLinkRes.data || []
+    const docLinkRows = docLinkRes.data || []
+    const reminderRows = reminderRes.data || []
+
+    const { error: unlinkError } = await supabase
+      .from('document_links')
+      .delete()
+      .eq('link_type', 'control')
+      .eq('link_id', control.id)
+
+    if (unlinkError) { toast.error('Failed to remove control document links'); return }
+
+    const { error } = await supabase.from('controls').delete().eq('id', control.id)
+    if (error) {
+      if (docLinkRows.length > 0) await supabase.from('document_links').upsert(docLinkRows)
+      toast.error('Failed to delete control')
+      return
+    }
+
+    onOpenChange(false)
+    onSuccess?.()
+
+    showUndoDeleteToast('Control deleted', async () => {
+      const { error: restoreError } = await supabase.from('controls').upsert(controlRecord)
+      if (restoreError) { toast.error('Could not restore control'); return }
+
+      if (riskLinkRows.length > 0) {
+        const { error: riskLinkError } = await supabase.from('risk_controls').upsert(riskLinkRows)
+        if (riskLinkError) { toast.error('Control restored without linked risks') }
+      }
+
+      if (docLinkRows.length > 0) {
+        const { error: docLinkError } = await supabase.from('document_links').upsert(docLinkRows)
+        if (docLinkError) { toast.error('Control restored without linked documents') }
+      }
+
+      if (reminderRows.length > 0) {
+        const { error: reminderError } = await supabase.from('reminders').upsert(reminderRows)
+        if (reminderError) { toast.error('Control restored without reminders') }
+      }
+
+      toast.success('Control restored')
+      onSuccess?.()
+    })
   }
 
   return (
@@ -170,6 +231,10 @@ export function EditControlDialog({ open, onOpenChange, control, onSuccess }: Ed
           </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t">
+            <Button variant="outline" onClick={handleDelete} className="mr-auto text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </Button>
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</Button>
           </div>

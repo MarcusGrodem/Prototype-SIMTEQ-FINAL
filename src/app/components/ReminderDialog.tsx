@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -118,9 +118,9 @@ export function ReminderDialog({ open, onOpenChange, control }: ReminderDialogPr
             </div>
             <div>
               <DialogTitle>{control ? `Reminders for ${control.id}` : 'Control Reminders'}</DialogTitle>
-              <p className="text-sm text-gray-500 mt-1">
+              <DialogDescription className="text-sm text-gray-500 mt-1">
                 {control ? `Email notifications before "${control.title}" is due.` : 'Email notifications before any control deadline.'}
-              </p>
+              </DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -152,8 +152,8 @@ export function ReminderDialog({ open, onOpenChange, control }: ReminderDialogPr
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3 flex-1">
-                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Mail className="w-4 h-4 text-purple-600" />
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Mail className="w-4 h-4 text-blue-600" />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">

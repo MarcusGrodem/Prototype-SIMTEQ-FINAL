@@ -24,6 +24,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { generateNextId, formatFileSize } from '../utils/riskUtils';
 import { useCategories } from '../hooks/useCategories';
+import { showUploadFailureToast } from '../utils/toastActions';
 
 interface AddControlDialogProps {
   open: boolean;
@@ -86,8 +87,7 @@ export function AddControlDialog({ open, onOpenChange, onSuccess }: AddControlDi
       return;
     }
 
-    // Upload evidence files
-    for (const uf of uploadedFiles) {
+    const uploadEvidenceFile = async (uf: UploadedFile): Promise<boolean> => {
       const docId = crypto.randomUUID();
       const path = `controls/${newId}/${docId}-${uf.name}`;
 
@@ -96,8 +96,8 @@ export function AddControlDialog({ open, onOpenChange, onSuccess }: AddControlDi
         .upload(path, uf.file);
 
       if (uploadError) {
-        toast.warning(`File ${uf.name} failed to upload: ${uploadError.message}`);
-        continue;
+        showUploadFailureToast(`File ${uf.name} failed to upload: ${uploadError.message}`, () => uploadEvidenceFile(uf));
+        return false;
       }
 
       await supabase.from('documents').insert({
@@ -124,11 +124,19 @@ export function AddControlDialog({ open, onOpenChange, onSuccess }: AddControlDi
         link_type: 'control',
         link_id: newId
       });
+      return true;
+    };
+
+    let uploadedCount = 0;
+
+    // Upload evidence files
+    for (const uf of uploadedFiles) {
+      if (await uploadEvidenceFile(uf)) uploadedCount += 1;
     }
 
     if (uploadedFiles.length > 0) {
       toast.success('Control added successfully!', {
-        description: `${formData.title} added with ${uploadedFiles.length} evidence file(s).`
+        description: `${formData.title} added with ${uploadedCount} of ${uploadedFiles.length} evidence file(s).`
       });
     } else {
       toast.success('Control added successfully!', {

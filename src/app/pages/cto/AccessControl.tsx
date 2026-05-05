@@ -21,7 +21,7 @@ const DEFAULT_ROLES: RoleOption[] = [
 const roleColor = (role: string) => {
   switch (role) {
     case 'ceo': return 'bg-blue-100 text-blue-700'
-    case 'cto': return 'bg-purple-100 text-purple-700'
+    case 'cto': return 'bg-slate-100 text-slate-700'
     case 'qa': return 'bg-green-100 text-green-700'
     default: return 'bg-slate-100 text-slate-700'
   }
@@ -110,7 +110,7 @@ export function AccessControl() {
         </Card>
         <Card className="p-4">
           <p className="text-sm text-slate-500">CTO</p>
-          <p className="text-2xl font-semibold text-purple-600 mt-1">{profiles.filter(p => p.role === 'cto').length}</p>
+          <p className="text-2xl font-semibold text-slate-700 mt-1">{profiles.filter(p => p.role === 'cto').length}</p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-slate-500">QA</p>
@@ -172,7 +172,7 @@ export function AccessControl() {
                     <select
                       value={p.role}
                       onChange={e => handleChangeRole(p.id, e.target.value)}
-                      className="px-2 py-1 border border-gray-200 rounded text-xs text-slate-700 hover:border-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="px-2 py-1 border border-slate-200 rounded text-xs text-slate-700 hover:border-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     >
                       {roles.map(role => (
                         <option key={role.key} value={role.key}>{role.label}</option>
@@ -205,7 +205,7 @@ export function AccessControl() {
             </div>
             <div>
               <Label>Role</Label>
-              <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} className="mt-1.5 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {roles.map(role => (
                   <option key={role.key} value={role.key}>{role.label}</option>
                 ))}

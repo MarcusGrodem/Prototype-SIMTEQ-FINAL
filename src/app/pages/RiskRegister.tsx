@@ -32,6 +32,7 @@ export function RiskRegister() {
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterCategory, setFilterCategory] = useState<string[]>([]);
   const [filterLikelihood, setFilterLikelihood] = useState<string[]>([]);
+  const [filterScoreBand, setFilterScoreBand] = useState<'high' | 'medium' | 'low' | null>(null);
   const { categories: dbCategories } = useCategories();
 
   useEffect(() => { loadData(); }, []);
@@ -66,7 +67,11 @@ export function RiskRegister() {
     const matchStatus = filterStatus.length === 0 || filterStatus.includes(risk.status);
     const matchCategory = filterCategory.length === 0 || filterCategory.includes(risk.category);
     const matchLikelihood = filterLikelihood.length === 0 || filterLikelihood.includes(risk.likelihood);
-    return matchSearch && matchStatus && matchCategory && matchLikelihood;
+    const matchBand = filterScoreBand === null ||
+      (filterScoreBand === 'high' && risk.risk_score >= 7) ||
+      (filterScoreBand === 'medium' && risk.risk_score >= 4 && risk.risk_score < 7) ||
+      (filterScoreBand === 'low' && risk.risk_score < 4);
+    return matchSearch && matchStatus && matchCategory && matchLikelihood && matchBand;
   });
 
   const handleExport = () => {
@@ -113,26 +118,38 @@ export function RiskRegister() {
       <div className="flex-1 p-8 space-y-8 max-w-7xl mx-auto w-full">
         {/* Stats strip */}
         <div className="flex border border-slate-200 rounded-lg bg-white overflow-hidden divide-x divide-slate-200">
-          <div className="flex-1 px-6 py-5">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Total Risks</p>
-            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-2">{risks.length}</p>
-            <p className="text-xs text-slate-400 mt-3">in register</p>
-          </div>
-          <div className="flex-1 px-6 py-5 bg-red-50/40">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">High Risk</p>
-            <p className="text-3xl font-bold text-red-600 tabular-nums mt-2">{risks.filter(r => r.risk_score >= 7).length}</p>
-            <p className="text-xs text-red-500 mt-3 font-medium">score ≥ 7</p>
-          </div>
-          <div className="flex-1 px-6 py-5">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Medium Risk</p>
-            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-2">{risks.filter(r => r.risk_score >= 4 && r.risk_score < 7).length}</p>
-            <p className="text-xs text-slate-400 mt-3">score 4–6</p>
-          </div>
-          <div className="flex-1 px-6 py-5">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Low Risk</p>
-            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-2">{risks.filter(r => r.risk_score < 4).length}</p>
-            <p className="text-xs text-emerald-600 mt-3 font-medium">score &lt; 4</p>
-          </div>
+          <button
+            onClick={() => setFilterScoreBand(null)}
+            className={`flex-1 px-6 py-5 text-left transition-colors cursor-pointer ${filterScoreBand === null ? 'bg-slate-900' : 'hover:bg-slate-50'}`}
+          >
+            <p className={`text-[11px] font-semibold uppercase tracking-widest ${filterScoreBand === null ? 'text-slate-300' : 'text-slate-500'}`}>Total Risks</p>
+            <p className={`text-3xl font-bold tabular-nums mt-2 ${filterScoreBand === null ? 'text-white' : 'text-slate-900'}`}>{risks.length}</p>
+            <p className={`text-xs mt-3 ${filterScoreBand === null ? 'text-slate-400' : 'text-slate-400'}`}>in register</p>
+          </button>
+          <button
+            onClick={() => setFilterScoreBand(prev => prev === 'high' ? null : 'high')}
+            className={`flex-1 px-6 py-5 text-left transition-colors cursor-pointer ${filterScoreBand === 'high' ? 'bg-red-600' : 'bg-red-50/40 hover:bg-red-50'}`}
+          >
+            <p className={`text-[11px] font-semibold uppercase tracking-widest ${filterScoreBand === 'high' ? 'text-red-100' : 'text-slate-500'}`}>High Risk</p>
+            <p className={`text-3xl font-bold tabular-nums mt-2 ${filterScoreBand === 'high' ? 'text-white' : 'text-red-600'}`}>{risks.filter(r => r.risk_score >= 7).length}</p>
+            <p className={`text-xs mt-3 font-medium ${filterScoreBand === 'high' ? 'text-red-200' : 'text-red-500'}`}>score ≥ 7</p>
+          </button>
+          <button
+            onClick={() => setFilterScoreBand(prev => prev === 'medium' ? null : 'medium')}
+            className={`flex-1 px-6 py-5 text-left transition-colors cursor-pointer ${filterScoreBand === 'medium' ? 'bg-slate-900' : 'hover:bg-slate-50'}`}
+          >
+            <p className={`text-[11px] font-semibold uppercase tracking-widest ${filterScoreBand === 'medium' ? 'text-slate-300' : 'text-slate-500'}`}>Medium Risk</p>
+            <p className={`text-3xl font-bold tabular-nums mt-2 ${filterScoreBand === 'medium' ? 'text-white' : 'text-slate-900'}`}>{risks.filter(r => r.risk_score >= 4 && r.risk_score < 7).length}</p>
+            <p className={`text-xs mt-3 ${filterScoreBand === 'medium' ? 'text-slate-400' : 'text-slate-400'}`}>score 4–6</p>
+          </button>
+          <button
+            onClick={() => setFilterScoreBand(prev => prev === 'low' ? null : 'low')}
+            className={`flex-1 px-6 py-5 text-left transition-colors cursor-pointer ${filterScoreBand === 'low' ? 'bg-emerald-700' : 'hover:bg-slate-50'}`}
+          >
+            <p className={`text-[11px] font-semibold uppercase tracking-widest ${filterScoreBand === 'low' ? 'text-emerald-100' : 'text-slate-500'}`}>Low Risk</p>
+            <p className={`text-3xl font-bold tabular-nums mt-2 ${filterScoreBand === 'low' ? 'text-white' : 'text-slate-900'}`}>{risks.filter(r => r.risk_score < 4).length}</p>
+            <p className={`text-xs mt-3 font-medium ${filterScoreBand === 'low' ? 'text-emerald-200' : 'text-emerald-600'}`}>score &lt; 4</p>
+          </button>
         </div>
 
         {/* Search and Filters */}
@@ -279,7 +296,7 @@ export function RiskRegister() {
                   <p className="text-sm font-medium text-slate-600">No risks match your search</p>
                   <p className="text-xs text-slate-400 mt-1">Try adjusting your filters or search term.</p>
                   <button
-                    onClick={() => { setSearchTerm(''); setFilterStatus([]); setFilterCategory([]); setFilterLikelihood([]); setFilterOpen(false); }}
+                    onClick={() => { setSearchTerm(''); setFilterStatus([]); setFilterCategory([]); setFilterLikelihood([]); setFilterScoreBand(null); setFilterOpen(false); }}
                     className="mt-3 text-xs font-medium text-slate-700 underline underline-offset-2 hover:text-slate-900 transition-colors cursor-pointer"
                   >
                     Clear all filters

@@ -239,6 +239,19 @@ export function MainDashboard() {
                   </div>
                 ))}
                 <p className="text-xs text-slate-400 text-center pt-2">Impact →</p>
+                <div className="flex items-center justify-center gap-3 pt-3 border-t border-slate-100">
+                  {[
+                    { label: 'Low', cls: 'bg-emerald-200' },
+                    { label: 'Medium', cls: 'bg-amber-200' },
+                    { label: 'High', cls: 'bg-orange-300' },
+                    { label: 'Critical', cls: 'bg-red-400' },
+                  ].map(({ label, cls }) => (
+                    <div key={label} className="flex items-center gap-1.5">
+                      <span className={`size-2.5 rounded-sm ${cls}`} />
+                      <span className="text-[11px] font-medium text-slate-500">{label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </Card>

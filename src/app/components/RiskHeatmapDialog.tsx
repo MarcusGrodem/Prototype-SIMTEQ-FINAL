@@ -124,18 +124,24 @@ export function RiskHeatmapDialog({ open, onOpenChange }: RiskHeatmapDialogProps
             </div>
 
             {/* Legend */}
-            <div className="border-t border-slate-100 pt-3 space-y-1.5">
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Severity</p>
+            <div className="border-t border-slate-100 pt-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Severity</p>
+                <p className="text-[10px] font-medium text-slate-400">Risk score</p>
+              </div>
               {[
-                { color: 'bg-green-300', label: 'Very Low' },
-                { color: 'bg-green-200', label: 'Low' },
-                { color: 'bg-yellow-300', label: 'Medium' },
-                { color: 'bg-orange-400', label: 'High' },
-                { color: 'bg-red-400', label: 'Critical' },
-              ].map(({ color, label }) => (
-                <div key={label} className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-sm ${color} shrink-0`} />
-                  <span className="text-xs text-slate-600">{label}</span>
+                { color: 'bg-green-300', label: 'Very Low', range: '1' },
+                { color: 'bg-green-200', label: 'Low', range: '2-3' },
+                { color: 'bg-yellow-300', label: 'Medium', range: '4-6' },
+                { color: 'bg-orange-400', label: 'High', range: '7-8' },
+                { color: 'bg-red-400', label: 'Critical', range: '9' },
+              ].map(({ color, label, range }) => (
+                <div key={label} className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-sm ${color} shrink-0`} />
+                    <span className="text-xs text-slate-600">{label}</span>
+                  </div>
+                  <span className="text-xs font-medium tabular-nums text-slate-500">{range}</span>
                 </div>
               ))}
             </div>

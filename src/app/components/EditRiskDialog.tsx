@@ -15,11 +15,12 @@ import { toast } from 'sonner';
 import { Risk, Control } from '../../lib/types';
 import { supabase } from '../../lib/supabase';
 import { RiskLevel, calculateRiskScore, getRiskScoreColor } from '../utils/riskUtils';
-import { Search, X, Plus } from 'lucide-react';
+import { Search, X, Plus, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { ControlDetailsDialog } from './ControlDetailsDialog';
 import { useCategories } from '../hooks/useCategories';
+import { showUndoDeleteToast } from '../utils/toastActions';
 
 interface EditRiskDialogProps {
   open: boolean;
@@ -158,6 +159,58 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
     setSaving(false);
     onOpenChange(false);
     onSuccess?.();
+  };
+
+  const handleDelete = async () => {
+    if (!risk) return;
+    if (!confirm(`Delete risk "${risk.title}"? You can undo for 5 seconds.`)) return;
+
+    const [riskRes, linkRes, docLinkRes] = await Promise.all([
+      supabase.from('risks').select('*').eq('id', risk.id).single(),
+      supabase.from('risk_controls').select('*').eq('risk_id', risk.id),
+      supabase.from('document_links').select('*').eq('link_type', 'risk').eq('link_id', risk.id)
+    ]);
+
+    if (!riskRes.data) { toast.error('Could not load risk before deletion'); return; }
+    const riskRecord = riskRes.data;
+    const linkedRows = linkRes.data || [];
+    const docLinkRows = docLinkRes.data || [];
+
+    const { error: unlinkError } = await supabase
+      .from('document_links')
+      .delete()
+      .eq('link_type', 'risk')
+      .eq('link_id', risk.id);
+
+    if (unlinkError) { toast.error('Failed to remove risk document links'); return; }
+
+    const { error } = await supabase.from('risks').delete().eq('id', risk.id);
+    if (error) {
+      if (docLinkRows.length > 0) await supabase.from('document_links').upsert(docLinkRows);
+      toast.error('Failed to delete risk');
+      return;
+    }
+
+    onOpenChange(false);
+    onSuccess?.();
+
+    showUndoDeleteToast('Risk deleted', async () => {
+      const { error: restoreError } = await supabase.from('risks').upsert(riskRecord);
+      if (restoreError) { toast.error('Could not restore risk'); return; }
+
+      if (linkedRows.length > 0) {
+        const { error: linkError } = await supabase.from('risk_controls').upsert(linkedRows);
+        if (linkError) { toast.error('Risk restored without linked controls'); }
+      }
+
+      if (docLinkRows.length > 0) {
+        const { error: docLinkError } = await supabase.from('document_links').upsert(docLinkRows);
+        if (docLinkError) { toast.error('Risk restored without linked documents'); }
+      }
+
+      toast.success('Risk restored');
+      onSuccess?.();
+    });
   };
 
   if (!risk) return null;
@@ -372,6 +425,10 @@ export function EditRiskDialog({ open, onOpenChange, risk, onSuccess }: EditRisk
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t">
+            <Button type="button" variant="outline" onClick={handleDelete} className="mr-auto text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </Button>
             <Button type="button" variant="outline" onClick={handleCancel}>Cancel</Button>
             <Button type="button" onClick={handleSave} disabled={saving}>
               {saving ? 'Saving...' : 'Save Changes'}

@@ -17,10 +17,11 @@ import {
   AlertCircle,
   ExternalLink
 } from 'lucide-react';
-import { Control } from '../../lib/types';
+import { Control, ControlExecution } from '../../lib/types';
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAuditPeriod } from '../../contexts/AuditPeriodContext';
 import { toast } from 'sonner';
 import { getRiskScoreColor } from '../utils/riskUtils';
 
@@ -60,11 +61,15 @@ export function ControlDetailsDialog({ control, open, onOpenChange, onSuccess, o
   const [reviewStatus, setReviewStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
   const [linkedRisks, setLinkedRisks] = useState<LinkedRisk[]>([]);
   const [linkedDocs, setLinkedDocs] = useState<LinkedDoc[]>([]);
+  const [executions, setExecutions] = useState<ControlExecution[]>([]);
+  const [completingId, setCompletingId] = useState<string | null>(null);
   const { profile } = useAuth();
+  const { activePeriod } = useAuditPeriod();
 
   useEffect(() => {
     if (control && open) {
       loadLinkedData();
+      loadExecutions();
       // Reset four-eye state
       setExecutedBy(null);
       setExecutedDate(null);
@@ -72,7 +77,18 @@ export function ControlDetailsDialog({ control, open, onOpenChange, onSuccess, o
       setReviewedDate(null);
       setReviewStatus(null);
     }
-  }, [control, open]);
+  }, [control, open, activePeriod]);
+
+  const loadExecutions = async () => {
+    if (!control || !activePeriod) { setExecutions([]); return; }
+    const { data } = await supabase
+      .from('control_executions')
+      .select('*')
+      .eq('control_id', control.id)
+      .eq('audit_period_id', activePeriod.id)
+      .order('scheduled_due_date', { ascending: true });
+    setExecutions((data as ControlExecution[]) ?? []);
+  };
 
   const loadLinkedData = async () => {
     if (!control) return;
@@ -128,6 +144,25 @@ export function ControlDetailsDialog({ control, open, onOpenChange, onSuccess, o
     setReviewStatus('rejected');
   };
 
+  const handleMarkExecutionComplete = async (execution: ControlExecution) => {
+    setCompletingId(execution.id);
+    const today = new Date().toISOString().split('T')[0];
+    const { error } = await supabase
+      .from('control_executions')
+      .update({
+        status: 'completed',
+        performed_date: today,
+        performed_by_name: currentUser,
+        reviewer_status: 'pending',
+      })
+      .eq('id', execution.id);
+    setCompletingId(null);
+    if (error) { toast.error('Failed to mark execution complete'); return; }
+    toast.success('Execution marked as completed');
+    loadExecutions();
+    onSuccess?.();
+  };
+
   const handleDownloadDoc = async (doc: LinkedDoc) => {
     if (!doc.file_path) { toast.error('No file path available'); return; }
     const { data, error } = await supabase.storage.from('evidence').createSignedUrl(doc.file_path, 3600);
@@ -141,7 +176,7 @@ export function ControlDetailsDialog({ control, open, onOpenChange, onSuccess, o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[min(calc(100vw-2rem),64rem)] max-w-none sm:max-w-none max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -171,8 +206,8 @@ export function ControlDetailsDialog({ control, open, onOpenChange, onSuccess, o
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-5 h-5 text-purple-600" />
+                <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-5 h-5 text-slate-600" />
                 </div>
                 <div>
                   <p className="text-xs text-slate-500">Frequency</p>
@@ -253,6 +288,78 @@ export function ControlDetailsDialog({ control, open, onOpenChange, onSuccess, o
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Execution History for active audit period */}
+          {activePeriod && (
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-sm font-semibold text-slate-900">Execution History</h3>
+                </div>
+                <span className="text-xs text-slate-500 bg-slate-100 rounded px-2 py-0.5">{activePeriod.name}</span>
+              </div>
+
+              {executions.length === 0 ? (
+                <div className="text-center py-6 bg-slate-50 rounded-lg">
+                  <Clock className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                  <p className="text-sm text-slate-500">No executions generated yet</p>
+                  <p className="text-xs text-slate-400 mt-1">Use the Audit Periods page to generate execution stubs.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {executions.map(ex => {
+                    const isOverdue = ex.status === 'scheduled' && new Date(ex.scheduled_due_date) < new Date();
+                    const displayStatus = isOverdue ? 'overdue' : ex.status;
+                    const statusColors: Record<string, string> = {
+                      completed:      'bg-green-100 text-green-700',
+                      overdue:        'bg-red-100 text-red-700',
+                      scheduled:      'bg-slate-100 text-slate-600',
+                      in_progress:    'bg-blue-100 text-blue-700',
+                      failed:         'bg-red-100 text-red-700',
+                      not_applicable: 'bg-gray-100 text-gray-500',
+                    };
+                    return (
+                      <div key={ex.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <p className="text-xs font-medium text-slate-700">Due: {ex.scheduled_due_date}</p>
+                            {ex.performed_date && (
+                              <p className="text-xs text-slate-500">
+                                Completed {ex.performed_date}{ex.performed_by_name ? ` · ${ex.performed_by_name}` : ''}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[displayStatus] ?? statusColors.scheduled}`}>
+                            {displayStatus.replace('_', ' ')}
+                          </span>
+                          {ex.reviewer_status === 'approved' && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200">reviewed ✓</span>
+                          )}
+                          {ex.reviewer_status === 'rejected' && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">rejected</span>
+                          )}
+                          {(ex.status === 'scheduled' || isOverdue) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              disabled={completingId === ex.id}
+                              onClick={() => handleMarkExecutionComplete(ex)}
+                            >
+                              {completingId === ex.id ? '…' : 'Mark Done'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
