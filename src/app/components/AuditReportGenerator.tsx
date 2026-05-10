@@ -19,6 +19,12 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Risk, Control, ReportTemplate, ReportTemplateSection } from '../../lib/types';
+import { useAuditPeriod } from '../../contexts/AuditPeriodContext';
+import {
+  exportControlPopulationCsv,
+  exportEvidenceIndexCsv,
+  exportDeviationSummaryCsv,
+} from '../../lib/type2AuditorExports';
 import {
   Document,
   Packer,
@@ -115,10 +121,13 @@ function getStatusText(result: string): string {
 }
 
 export function AuditReportGenerator({ open, onOpenChange }: AuditReportGeneratorProps) {
+  const { activePeriod } = useAuditPeriod();
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportGenerated, setReportGenerated] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [customInstructions, setCustomInstructions] = useState('');
+  const [csvExporting, setCsvExporting] = useState<string | null>(null);
+  const [csvExportError, setCsvExportError] = useState<string | null>(null);
   const [template, setTemplate] = useState<ReportTemplate | null>(null);
   const [sectionMap, setSectionMap] = useState<Record<string, ReportTemplateSection>>({});
   const [reportData, setReportData] = useState<{
@@ -173,8 +182,8 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
 
   const getReportMeta = () => {
     const now = new Date();
-    const periodStart = template?.period_start ?? 'January 1, 2025';
-    const periodEnd = template?.period_end ?? 'December 31, 2025';
+    const periodStart = activePeriod?.start_date ?? template?.period_start ?? 'January 1, 2025';
+    const periodEnd = activePeriod?.end_date ?? template?.period_end ?? 'December 31, 2025';
     const company = template?.company_name ?? 'SIMTEQ AS';
     const generated = now.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
     return { periodStart, periodEnd, generated, company };
@@ -1468,6 +1477,23 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
     doc.save(`${company.replace(/\s+/g, '_')}_ISAE3402_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
+  const handleAuditorCsvExport = async (
+    key: string,
+    exporter: typeof exportControlPopulationCsv
+  ) => {
+    if (!activePeriod) return;
+    setCsvExporting(key);
+    setCsvExportError(null);
+    try {
+      await exporter(activePeriod);
+    } catch (error) {
+      console.error(error);
+      setCsvExportError('Could not generate the auditor CSV. Check the period data and try again.');
+    } finally {
+      setCsvExporting(null);
+    }
+  };
+
   const handleReset = () => {
     setReportGenerated(false);
     setGenerationProgress(0);
@@ -1483,6 +1509,9 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
   const complianceScore = controls.length > 0
     ? Math.round((completed / controls.length) * 100)
     : 0;
+  const activePeriodRange = activePeriod
+    ? `${activePeriod.start_date} – ${activePeriod.end_date}`
+    : 'No active period';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1496,7 +1525,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
           <div className="min-w-0">
             <DialogTitle className="text-sm font-semibold text-slate-900 leading-none">ISAE 3402 Report Generator</DialogTitle>
             <DialogDescription className="text-xs text-slate-400 mt-1">
-              {template?.company_name ?? 'SIMTEQ AS'} · Type II · {template ? `${template.period_start} – ${template.period_end}` : 'Reporting period'}
+              {template?.company_name ?? 'SIMTEQ AS'} · Type II · {activePeriod ? activePeriodRange : template ? `${template.period_start} – ${template.period_end}` : 'Reporting period'}
             </DialogDescription>
           </div>
         </div>
@@ -1516,7 +1545,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
                     { icon: <Shield className="w-3.5 h-3.5" />, label: 'Sections', value: '15+', sub: 'incl. appendices' },
                     { icon: <FileText className="w-3.5 h-3.5" />, label: 'Domains', value: String(ISO_DOMAINS.length), sub: 'ISO 27001' },
                     { icon: <TrendingUp className="w-3.5 h-3.5" />, label: 'Data source', value: 'Live', sub: 'Supabase DB' },
-                    { icon: <Calendar className="w-3.5 h-3.5" />, label: 'Period', value: '2025', sub: 'Jan – Dec' },
+                    { icon: <Calendar className="w-3.5 h-3.5" />, label: 'Period', value: activePeriod?.name ?? 'None', sub: activePeriodRange },
                   ].map(item => (
                     <div key={item.label} className="border border-slate-200 rounded p-3">
                       <div className="flex items-center gap-1.5 text-slate-400 mb-2">{item.icon}<span className="text-[10px] font-medium uppercase tracking-wide">{item.label}</span></div>
@@ -1566,7 +1595,7 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
                   <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-3">Configuration</p>
                   <div className="space-y-2.5">
                     {[
-                      { label: 'Reporting period', value: 'Jan – Dec 2025' },
+                      { label: 'Reporting period', value: activePeriod ? activePeriodRange : 'No active period' },
                       { label: 'Standard', value: 'ISAE 3402 Type II' },
                       { label: 'Format', value: 'DOCX + PDF' },
                       { label: 'Language', value: 'English' },
@@ -1725,6 +1754,73 @@ export function AuditReportGenerator({ open, onOpenChange }: AuditReportGenerato
                       <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">Print-ready A4, suitable for distribution to auditors</p>
                     </div>
                   </button>
+
+                  <div className="pt-3 border-t border-slate-200">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Auditor CSV Pack</p>
+                      {activePeriod && (
+                        <span className="text-[10px] text-slate-400 truncate">{activePeriod.name}</span>
+                      )}
+                    </div>
+
+                    {!activePeriod && (
+                      <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded p-2.5 leading-relaxed mb-2">
+                        Activate an audit period to export period-scoped auditor CSVs.
+                      </div>
+                    )}
+
+                    {csvExportError && (
+                      <div className="text-[11px] text-red-700 bg-red-50 border border-red-200 rounded p-2.5 leading-relaxed mb-2">
+                        {csvExportError}
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      {[
+                        {
+                          key: 'control-population',
+                          title: 'Export Control Population CSV',
+                          description: 'All scheduled control executions in the active period',
+                          exporter: exportControlPopulationCsv,
+                        },
+                        {
+                          key: 'evidence-index',
+                          title: 'Export Evidence Index CSV',
+                          description: 'Evidence linked to active-period executions',
+                          exporter: exportEvidenceIndexCsv,
+                        },
+                        {
+                          key: 'deviation-summary',
+                          title: 'Export Deviation Summary CSV',
+                          description: 'Period deviations with remediation status',
+                          exporter: exportDeviationSummaryCsv,
+                        },
+                      ].map(item => {
+                        const disabled = !activePeriod || csvExporting !== null;
+                        const isCurrent = csvExporting === item.key;
+                        return (
+                          <button
+                            key={item.key}
+                            onClick={() => handleAuditorCsvExport(item.key, item.exporter)}
+                            disabled={disabled}
+                            className="flex items-start gap-2.5 p-2.5 border border-slate-200 rounded hover:border-slate-400 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-left w-full"
+                          >
+                            <div className="w-7 h-7 bg-emerald-600 rounded flex items-center justify-center shrink-0 mt-0.5">
+                              {isCurrent ? (
+                                <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+                              ) : (
+                                <Download className="w-3.5 h-3.5 text-white" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-slate-900">{item.title}</p>
+                              <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{item.description}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
                   <div className="mt-auto">
                     <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Report includes</div>

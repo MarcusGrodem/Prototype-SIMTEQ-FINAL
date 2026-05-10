@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ALL_PAGES, VIEW_DEFAULTS } from '../components/allPages'
+import { ALL_PAGES, PAGE_BY_KEY, VIEW_DEFAULTS } from '../components/allPages'
 
 // Keys that belong to this role — only these may ever be visible
 const ownKeys = (view: 'ceo' | 'cto' | 'qa') =>
@@ -60,20 +60,36 @@ export function useSidebarConfig(
     }))
   }
 
+  // Reordering is clamped to within a page's group — items can't be moved
+  // out of their assigned group via the sidebar editor.
   const moveUp = (key: string) => {
     const idx = config.findIndex(i => i.key === key)
     if (idx <= 0) return
-    const next = [...config]
-    ;[next[idx - 1], next[idx]] = [next[idx], next[idx - 1]]
-    save(next)
+    const group = PAGE_BY_KEY[key]?.group
+    if (!group) return
+    for (let j = idx - 1; j >= 0; j--) {
+      if (PAGE_BY_KEY[config[j].key]?.group === group) {
+        const next = [...config]
+        ;[next[j], next[idx]] = [next[idx], next[j]]
+        save(next)
+        return
+      }
+    }
   }
 
   const moveDown = (key: string) => {
     const idx = config.findIndex(i => i.key === key)
-    if (idx >= config.length - 1) return
-    const next = [...config]
-    ;[next[idx], next[idx + 1]] = [next[idx + 1], next[idx]]
-    save(next)
+    if (idx === -1 || idx >= config.length - 1) return
+    const group = PAGE_BY_KEY[key]?.group
+    if (!group) return
+    for (let j = idx + 1; j < config.length; j++) {
+      if (PAGE_BY_KEY[config[j].key]?.group === group) {
+        const next = [...config]
+        ;[next[idx], next[j]] = [next[j], next[idx]]
+        save(next)
+        return
+      }
+    }
   }
 
   const reset = () =>

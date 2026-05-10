@@ -15,6 +15,10 @@ import { NotificationLogPage } from './pages/NotificationLogPage';
 import { AuditPeriodPage } from './pages/AuditPeriodPage';
 import { EvidenceReviewQueue } from './pages/EvidenceReviewQueue';
 import { DeviationRegister } from './pages/DeviationRegister';
+import { Type2ReadinessPage } from './pages/Type2ReadinessPage';
+import { ControlObjectivesPage } from './pages/ControlObjectivesPage';
+import { AuditorRequestTracker } from './pages/AuditorRequestTracker';
+import { PeriodEndPage } from './pages/PeriodEndPage';
 // QA pages
 import { QADashboard } from './pages/qa/QADashboard';
 import { Evidence } from './pages/Evidence';
@@ -41,6 +45,7 @@ export const router = createBrowserRouter([
       { index: true, element: <MainDashboard /> },
       { path: 'risks', element: <RiskRegister /> },
       { path: 'controls', element: <ControlManagement /> },
+      { path: 'rcm', element: <ControlObjectivesPage /> },
       { path: 'calendar', element: <ComplianceCalendar /> },
       { path: 'categories', element: <RiskCategoriesPage /> },
       { path: 'users', element: <UserManagementPage /> },
@@ -48,7 +53,10 @@ export const router = createBrowserRouter([
       { path: 'notifications', element: <NotificationLogPage /> },
       { path: 'audit-period', element: <AuditPeriodPage /> },
       { path: 'evidence-review', element: <EvidenceReviewQueue /> },
-      { path: 'deviations', element: <DeviationRegister /> }
+      { path: 'deviations', element: <DeviationRegister /> },
+      { path: 'auditor-requests', element: <AuditorRequestTracker /> },
+      { path: 'readiness', element: <Type2ReadinessPage /> },
+      { path: 'period-end', element: <PeriodEndPage /> }
     ]
   },
   {

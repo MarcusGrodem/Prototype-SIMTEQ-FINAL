@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router';
+import { Outlet, Link, useNavigate } from 'react-router';
 import { LogOut, Pencil, X, CalendarDays } from 'lucide-react';
 import { Toaster } from './ui/sonner';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,11 +7,11 @@ import { useAuditPeriod } from '../../contexts/AuditPeriodContext';
 import { Button } from './ui/button';
 import { SidebarEditor } from './SidebarEditor';
 import { SidebarRoleSwitcher } from './SidebarRoleSwitcher';
+import { SidebarNav } from './SidebarNav';
 import { useSidebarConfig } from '../hooks/useSidebarConfig';
 import { PAGE_BY_KEY } from './allPages';
 
 export function DashboardLayout() {
-  const location = useLocation()
   const { profile, signOut, user } = useAuth()
   const navigate = useNavigate()
   const [editing, setEditing] = useState(false)
@@ -48,26 +48,7 @@ export function DashboardLayout() {
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto">
           {!editing ? (
-            <nav className="p-3 space-y-0.5">
-              {visibleNav.map(page => {
-                const isActive = location.pathname === page.href
-                const Icon = page.icon
-                return (
-                  <Link
-                    key={page.key}
-                    to={page.href}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                      isActive
-                        ? 'bg-slate-100 text-slate-900'
-                        : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    {page.name}
-                  </Link>
-                )
-              })}
-            </nav>
+            <SidebarNav view="CEO" userId={user?.id} pages={visibleNav} />
           ) : (
             <SidebarEditor
               config={config}

@@ -129,33 +129,247 @@ Reference plan: `TYPE2_EXTENSION_PLAN.md`
 ---
 
 ## MVP 4 — Type 2 KPI Dashboard
-**Status: NOT STARTED**
+**Status: COMPLETE**
+**Date: 2026-05-09**
 
-Planned deliverables:
-- Weighted readiness score (execution 25% + evidence 25% + approval 15% + exceptions 15% + remediation 10% + audit requests 5% + scope 5%)
-- 8 executive KPI cards with RAG thresholds
-- Monthly trend line for execution rate
-- Replaces/extends current compliance % on MainDashboard
+### Page (`src/app/pages/Type2ReadinessPage.tsx`)
+- Route: `/readiness` (CEO sidebar — "Type 2 Readiness", `Gauge` icon)
+- Scoped to `useAuditPeriod().activePeriod`; empty state when none active
+- Header shows period name, dates, auditor, and period progress %
+
+### Readiness Score hero card
+- Weighted score 0–100 with RAG colour (green ≥90, amber 80–89, red <80)
+- Formula:
+  - Execution 25% + Evidence Completeness 25% + Evidence Approval 15% + Exceptions 15% + Remediation 10% + Audit Requests 5% + Scope Freshness 5%
+  - Audit Requests + Scope Freshness default to 100 (placeholders until those features land)
+  - Exception sub-score: 100 if none open, 70 if open but no critical, 30 if 1 critical, 0 if ≥2 critical
+- Inline weighted breakdown — each component shown with its score and weight bar
+
+### 8 executive KPI cards (`KpiCard`)
+Drilldown link on every card:
+- **Control Execution Rate** → `/audit-period` (G≥95, A 85–94, R<85)
+- **On-Time Rate** → `/audit-period` (G≥95, A 85–94, R<85)
+- **Evidence Completeness** → `/evidence-review` (G≥98, A 90–97, R<90)
+- **Evidence Approval** → `/evidence-review` (G≥95, A 85–94, R<85)
+- **Open Exceptions** → `/deviations` (G=0, A=any open, R=any critical)
+- **Critical Exceptions** → `/deviations` (G=0, A=1, R≥2)
+- **Remediation SLA** → `/deviations` (G≥90, A 75–89, R<75)
+- **Period Coverage** → `/audit-period` (G=100, A≥80, R<80)
+
+### Monthly trend chart
+- Recharts `LineChart` of execution rate per period month
+- Months enumerated from `activePeriod.start_date` → `end_date`
+- Per-month rate = completed / scheduled in that month
+- 95% target reference line (dashed green)
+- Tooltip shows "rate% (completed/total)"
+
+### Action Required banner
+- Surfaces critical open deviations and overdue executions with deep links
+- Renders only when `criticalDeviations > 0 || overdueExecutions > 0`
+
+### MainDashboard hero link (`src/app/pages/MainDashboard.tsx`)
+- Compliance Score hero card now links to `/readiness` when an active period exists (falls back to `/controls` when none)
+- Adds a small "Type 2 Readiness →" affordance in the corner when active period is set
+
+### Disclaimer
+- Footer note: internal readiness indicator, does not replace external auditor's Type 2 testing
 
 ---
 
 ## MVP 5 — Auditor Export Pack
-**Status: NOT STARTED**
+**Status: COMPLETE**
+**Date: 2026-05-09**
 
 Planned deliverables:
-- Control Population CSV export
-- Evidence Index CSV export
-- Deviation Summary CSV export
-- Extend AuditReportGenerator with these three exports
+- Control Population CSV export — complete
+- Evidence Index CSV export — complete
+- Deviation Summary CSV export — complete
+- Extend AuditReportGenerator with these three exports — complete
+
+### Export helper foundation (`src/lib/type2AuditorExports.ts`)
+- Added reusable Type 2 auditor export helpers independent from React components
+- Fetches data scoped to `audit_period_id`
+- Generates CSV content with safe CSV cell escaping and spreadsheet formula guard
+- Provides browser download helper for generated CSV content
+- Control Population rows include execution records joined with control metadata and evidence counts
+- Evidence Index rows include execution-scoped evidence documents and review metadata
+- Deviation Summary rows include deviations plus latest remediation action fields
+- Added export pack builder returning all three CSVs with generated filenames
+
+### AuditReportGenerator integration (`src/app/components/AuditReportGenerator.tsx`)
+- Auditor CSV Pack section exports all three period-scoped CSVs from the active audit period
+- Export buttons are disabled until an audit period is active
+- Shows export progress and a failure message if CSV generation fails
+- CSV filenames include the active period name and period date range
+
+---
+
+## Navigation Architecture Pass
+**Status: COMPLETE**
+**Date: 2026-05-09**
+
+Information-architecture rework of the role sidebars after MVP 1–5 had grown the CEO sidebar to 12 flat items. Existing routes are preserved — this is a presentation/grouping change only.
+
+### Group registry (`src/app/components/allPages.tsx`)
+- Added `GROUPS` registry and `group` field on every `PageDef`
+- New helper `buildSidebarTree(view, orderedPages)` returns `[{ group, pages }]` for a role
+- Tightened labels: "Risk Register" → "Risks", "Risk Categories" → "Categories", "Notification Log" → "Notifications", "Access Control" → "Access", "Dashboard" (CEO) → "Overview"
+
+### CEO sidebar (4 groups, was 12 flat)
+- **Dashboard** — Overview, Type 2 Readiness
+- **Controls & Risks** — Controls, Risks, RCM, Categories, Calendar
+- **Evidence & Audit** — Audit Periods, Evidence Review, Deviations, Auditor Requests, Report Template
+- **Governance** — Users, Notifications
+
+### CTO sidebar (1 flat link + 1 group)
+- **Dashboard** (single link) — Overview
+- **Engineering** — Change Log, Releases, Access
+
+### QA sidebar (1 flat link + 1 group)
+- **Dashboard** (single link) — Overview
+- **Compliance** — Controls, Evidence, Calendar, Policies
+
+### Renderer (`src/app/components/SidebarNav.tsx`)
+- Single-page groups render as a flat link (no header)
+- Multi-page groups render with a small uppercase header + chevron (collapsible)
+- Group containing the active route is always visually expanded
+- User collapse preference persisted via `useSidebarGroups`
+
+### Collapse-state hook (`src/app/hooks/useSidebarGroups.ts`)
+- Per-user, per-role expanded state
+- localStorage key: `sidebar_groups_v1_{view}_{userId}`
+- Lazy: only stores explicit toggles — anything else defaults to expanded
+
+### Customization stays page-level (`src/app/components/SidebarEditor.tsx`)
+- Editor renders pages under their group label headings
+- Reorder is clamped to within a group — moveUp/moveDown look up the nearest same-group neighbour and swap with it (`useSidebarConfig.moveUp/moveDown` are now group-aware)
+- Hide/show toggles unchanged
+- Existing `sidebar_v2_{view}_{userId}` localStorage entries continue to work (no migration needed; new pages are appended on load as before)
+
+### Layouts (`DashboardLayout.tsx`, `CTOLayout.tsx`, `QALayout.tsx`)
+- Replaced inline `<nav>` rendering with `<SidebarNav view={...} userId={user?.id} pages={visibleNav} />`
+- Active period widget on CEO layout unchanged
+- Role switcher unchanged
+
+### Verification
+- `npm run build` passes
+- All existing routes resolve unchanged (no route renames)
+
+### Tradeoffs / follow-ups
+- Group membership is intentionally fixed in code, not user-configurable — keeps the IA stable as MVP 5+ pages land. Adding a new page is a one-line `group: 'grp_…'` assignment.
+- "Action Required" surfacing remains on the Type 2 Readiness page and the CEO dashboard alerts banner — no new dedicated page was added.
+- A future pass could add a global "Type 2 mode" toggle to hide audit-period-scoped pages when no period is active; deferred until needed.
+
+---
+
+## Post-MVP — Control Objectives Library + RCM
+**Status: COMPLETE**
+**Date: 2026-05-10**
+
+### Migration
+- `supabase/migrations/2026_05_type2_control_objectives_rcm.sql`
+  - Created `control_objectives` table with title, description, risk area, evidence requirement, and in-scope flag
+  - Added nullable `control_objective_id` to `controls`
+  - Added indexes for objective scope, risk area, and control-objective mapping
+  - Added authenticated RLS policy and updated_at trigger matching current project style
+
+### Types (`src/lib/types.ts`)
+- Added `ControlObjective` interface
+- Added `control_objective_id: string | null` to `Control`
+
+### Page (`src/app/pages/ControlObjectivesPage.tsx`)
+- Route: `/rcm` (CEO sidebar, Controls & Risks group, label "RCM")
+- Objective library supports create, edit, and in-scope/archive toggle
+- RCM table shows objective, risk, control, frequency, owner, evidence requirement, execution status, exceptions, and reviewer status
+- Control rows can be linked or unlinked from objectives inline
+- Gap cards flag controls without objectives, high risks without active linked controls, and in-scope objectives without mapped controls
+
+---
+
+## Post-MVP — Auditor Request Tracker
+**Status: COMPLETE**
+**Date: 2026-05-10**
+
+### Migration
+- `supabase/migrations/2026_05_type2_auditor_requests.sql`
+  - Created `auditor_requests` table scoped to `audit_period_id`
+  - Fields: auditor, request text, related control, owner name, due date, status, response, submitted date
+  - Status constraint: `open | answered | accepted | closed`
+  - Added RLS policy for authenticated users
+  - Added period, status, due date, and related-control indexes
+  - Added `updated_at` trigger
+
+### Types (`src/lib/types.ts`)
+- Added `AuditorRequest` interface
+
+### Auditor Requests page (`src/app/pages/AuditorRequestTracker.tsx`)
+- Route: `/auditor-requests`
+- Added to CEO sidebar under **Evidence & Audit**
+- Scoped to the active audit period
+- Empty state when no active period exists
+- Status tabs: Open / Answered / Accepted / Closed
+- Create request dialog with auditor, owner, related control, due date, submitted date, and initial response
+- Respond/update dialog with quick actions to Answer, Accept, or Close
+- Due, due-today, and overdue state shown on open requests
+
+### Type 2 Readiness (`src/app/pages/Type2ReadinessPage.tsx`)
+- Replaced the Audit Requests placeholder score with live `auditor_requests` data
+- Score:
+  - 100 if no open overdue requests
+  - 80 if open requests exist but none are overdue
+  - 50 if exactly one open request is overdue
+  - 0 if more than one open request is overdue
+- Existing weighted readiness formula remains unchanged
+
+---
+
+## Post-MVP — Management Assertion / Period-End
+**Status: COMPLETE**
+**Date: 2026-05-10**
+
+### Migration
+- `supabase/migrations/2026_05_type2_period_end.sql`
+  - Added `frozen_at timestamptz` and `frozen_by_name text` columns to `audit_periods`
+    - `status='closed'` continues to mean "period has ended"
+    - `frozen_at` is the explicit management cut-off action (independent of close)
+  - Created `management_assertions` table (audit_period_id, signer_name, signed_date, acknowledgement, notes, created_at/updated_at)
+  - RLS policy and updated_at trigger matching the existing project pattern
+
+### Types (`src/lib/types.ts`)
+- Added `ManagementAssertion` interface
+- Added `frozen_at` and `frozen_by_name` to `AuditPeriod`
+
+### Shared readiness helpers (`src/lib/readinessMetrics.ts`)
+- Extracted KPI calculation logic from `Type2ReadinessPage` into a shared module
+  - `loadReadinessMetrics(periodId, start, end)` — period-scoped Supabase fetches
+  - `computeReadinessKpis(metrics)` — pure weighted-score computation
+  - `ragForPct`, `enumerateMonths`, `formatMonth`, `EMPTY_METRICS`, `ReadinessMetrics`, `ReadinessKpis`, `Rag`
+- `Type2ReadinessPage` now consumes these helpers; numeric output is unchanged
+
+### Period End page (`src/app/pages/PeriodEndPage.tsx`)
+- Route: `/period-end` (CEO sidebar — **Evidence & Audit** group, label "Period End", `FileSignature` icon)
+- Period summary header with readiness score chip
+- 8 KPI snapshot table (compact tabular layout — denser than the Type 2 dashboard cards)
+- Open exceptions list (top 10) and unresolved high risks list (Active risks with `risk_score >= 6`)
+- Critical deviations callout when any are still open
+- Auditor pack section: reuses MVP 5 CSV exports (Control Population / Evidence Index / Deviation Summary) and opens the existing `AuditReportGenerator` dialog
+- Management assertion form: signer name, signed date, acknowledgement checkbox referencing live counts, optional notes — upserts a `management_assertions` row per period
+- Empty state when no active audit period
+
+### Period freeze
+- "Freeze Period" button on the Period End page sets `audit_periods.frozen_at` (and `frozen_by_name` from the assertion signer)
+- Frozen state is shown via a banner on the Period End page; evidence upload paths are unchanged so late submissions surface to the auditor as post-freeze additions
+- Unfreeze button restores the period to non-frozen state
+
+### Tradeoffs / follow-ups
+- Hard-blocking evidence uploads when frozen was deliberately deferred — the existing upload flow (`ControlDetailsDialog`) is untouched. A follow-up could surface a "post-freeze" badge on documents uploaded after `frozen_at`.
+- The acknowledgement checkbox does not enforce "all critical deviations closed"; it only references current counts in the prompt. Auditors can see open critical deviations in the pack.
 
 ---
 
 ## Post-MVP backlog
 **Status: NOT STARTED**
 
-- Control objectives library + RCM view
-- Auditor Request Tracker page
-- Management Assertion page with period freeze
 - KPI snapshot history (monthly cron → `kpi_snapshots` table)
 - Audit log (Postgres triggers on key tables)
 - Subservice org register

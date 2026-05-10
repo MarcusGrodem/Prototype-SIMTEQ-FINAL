@@ -43,6 +43,18 @@ export interface Control {
   last_execution: string | null
   next_due: string | null
   description: string | null
+  control_objective_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ControlObjective {
+  id: string
+  title: string
+  description: string | null
+  risk_area: string | null
+  evidence_requirement: string | null
+  in_scope: boolean
   created_at: string
   updated_at: string
 }
@@ -216,6 +228,19 @@ export interface AuditPeriod {
   report_due_date: string | null
   status: 'planned' | 'active' | 'closed' | 'archived'
   auditor: string | null
+  frozen_at: string | null
+  frozen_by_name: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ManagementAssertion {
+  id: string
+  audit_period_id: string
+  signer_name: string
+  signed_date: string
+  acknowledgement: boolean
+  notes: string | null
   created_at: string
   updated_at: string
 }
@@ -264,6 +289,21 @@ export interface RemediationAction {
   retest_required: boolean
   retest_result: 'passed' | 'failed' | 'not_tested' | null
   status: 'open' | 'closed' | 'overdue'
+  created_at: string
+  updated_at: string
+}
+
+export interface AuditorRequest {
+  id: string
+  audit_period_id: string
+  auditor: string | null
+  request_text: string
+  related_control: string | null
+  owner_name: string | null
+  due_date: string | null
+  status: 'open' | 'answered' | 'accepted' | 'closed'
+  response: string | null
+  submitted_date: string
   created_at: string
   updated_at: string
 }

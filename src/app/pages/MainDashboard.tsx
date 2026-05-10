@@ -182,8 +182,18 @@ export function MainDashboard() {
 
         {/* KPI strip — compliance score is the hero */}
         <div className="flex border border-slate-200 rounded-lg bg-white overflow-hidden divide-x divide-slate-200">
-          <Link to="/controls" className="w-2/5 shrink-0 px-8 py-7 hover:bg-slate-50 transition-colors">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Compliance Score</p>
+          <Link
+            to={activePeriod ? '/readiness' : '/controls'}
+            className="w-2/5 shrink-0 px-8 py-7 hover:bg-slate-50 transition-colors group"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Compliance Score</p>
+              {activePeriod && (
+                <span className="text-[10px] font-medium text-slate-400 group-hover:text-slate-700 flex items-center gap-1 transition-colors">
+                  Type 2 Readiness <ArrowRight className="w-3 h-3" />
+                </span>
+              )}
+            </div>
             <p className="text-5xl font-bold text-slate-900 tabular-nums mt-3 leading-none">
               {complianceScore}<span className="text-2xl font-semibold text-slate-500">%</span>
             </p>
