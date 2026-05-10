@@ -2,7 +2,7 @@ import {
   LayoutDashboard, AlertTriangle, Shield, Calendar,
   GitCommit, Package, Users, FileText, BookOpen,
   Tag, Bell, FileEdit, CalendarDays, ClipboardCheck, ShieldAlert, Gauge,
-  Cog, Wrench, Table2, FileQuestion, FileSignature
+  Cog, Wrench, Table2, FileQuestion, FileSignature, Upload
 } from 'lucide-react'
 
 export type ViewKey = 'CEO' | 'CTO' | 'QA'
@@ -71,6 +71,7 @@ export const ALL_PAGES: PageDef[] = [
 
   // CEO · Governance
   { key: 'ceo_users',           name: 'Users',             href: '/users',            view: 'CEO', icon: Users,           group: 'grp_ceo_governance' },
+  { key: 'ceo_data_import',     name: 'Data Import',       href: '/data-import',      view: 'CEO', icon: Upload,          group: 'grp_ceo_governance' },
   { key: 'ceo_notifications',   name: 'Notifications',     href: '/notifications',    view: 'CEO', icon: Bell,            group: 'grp_ceo_governance' },
 
   // CTO · Dashboard

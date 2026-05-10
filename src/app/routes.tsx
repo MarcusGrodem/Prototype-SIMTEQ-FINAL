@@ -19,6 +19,7 @@ import { Type2ReadinessPage } from './pages/Type2ReadinessPage';
 import { ControlObjectivesPage } from './pages/ControlObjectivesPage';
 import { AuditorRequestTracker } from './pages/AuditorRequestTracker';
 import { PeriodEndPage } from './pages/PeriodEndPage';
+import { DataImportPage } from './pages/DataImportPage';
 // QA pages
 import { QADashboard } from './pages/qa/QADashboard';
 import { Evidence } from './pages/Evidence';
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
       { path: 'calendar', element: <ComplianceCalendar /> },
       { path: 'categories', element: <RiskCategoriesPage /> },
       { path: 'users', element: <UserManagementPage /> },
+      { path: 'data-import', element: <DataImportPage /> },
       { path: 'report-template', element: <ReportTemplateEditor /> },
       { path: 'notifications', element: <NotificationLogPage /> },
       { path: 'audit-period', element: <AuditPeriodPage /> },

@@ -54,11 +54,15 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 
 Find these values in Supabase under Settings -> API.
 
-### 4. Run the database schema
+### 4. Run the database schema and migrations
 
 In the Supabase SQL Editor, paste and run `supabase/schema.sql`.
 
 This creates the public tables, RLS policies, triggers, and storage policies used by the app.
+
+Then run the SQL files in `supabase/migrations/` in filename order. The final
+`2026_05_type2_zz_full_demo_data.sql` migration installs a demo-fill helper
+that `supabase/seed.sql` calls after the base rows are inserted.
 
 ### 5. Create the storage bucket
 
@@ -80,7 +84,7 @@ In Supabase -> Authentication -> Users, add these users with password `demo1234`
 
 In the Supabase SQL Editor, paste and run `supabase/seed.sql`.
 
-The seed file updates profile rows for the demo users and inserts roles, risks, controls, categories, documents, compliance events, alerts, change logs, products, releases, policies, report templates, and other demo data.
+The seed file updates profile rows for the demo users and inserts roles, risks, controls, categories, documents, compliance events, alerts, change logs, products, releases, policies, report templates, and the full demo records needed to keep every main app screen populated.
 
 ### 8. Start the development server
 
@@ -136,7 +140,7 @@ supabase/
 
 The schema defines:
 
-`profiles`, `roles`, `risks`, `controls`, `risk_categories`, `risk_controls`, `documents`, `document_versions`, `document_links`, `compliance_events`, `alerts`, `notification_log`, `reminders`, `change_logs`, `products`, `releases`, `release_changes`, `policies`, `report_templates`, `report_template_sections`.
+`profiles`, `roles`, `risks`, `controls`, `control_objectives`, `risk_categories`, `risk_controls`, `documents`, `document_versions`, `document_links`, `compliance_events`, `alerts`, `notification_log`, `reminders`, `change_logs`, `products`, `releases`, `release_changes`, `policies`, `report_templates`, `report_template_sections`, `audit_periods`, `control_executions`, `deviations`, `remediation_actions`, `auditor_requests`, and `management_assertions`.
 
 All tables have Row Level Security enabled. Most policies allow authenticated users full access. `reminders` is scoped to the owning user. Storage policies require authentication for the private `evidence` bucket.
 

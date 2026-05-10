@@ -520,3 +520,10 @@ on conflict (template_id, section_key) do update
   set title = excluded.title,
       body  = excluded.body,
       position = excluded.position;
+
+-- ============================================================
+-- FULL DEMO DATA EXTENSION
+-- The final migration creates this helper. Calling it here ensures
+-- all app surfaces are populated after the base seed rows exist.
+-- ============================================================
+select public.seed_full_demo_data();
