@@ -6,6 +6,7 @@ import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
+import { defaultPathForRole } from '../utils/roleAccess'
 
 const demoUsers = [
   { email: 'ceo@simteq.no', role: 'CEO', name: 'CEO', color: 'bg-sky-50 border-sky-200 text-sky-700' },
@@ -46,12 +47,9 @@ export function LoginPage() {
           .eq('id', session.user.id)
           .single()
 
-        const role = prof?.role
-        if (role === 'cto') navigate('/cto')
-        else if (role === 'qa') navigate('/qa')
-        else navigate('/')
+        navigate(defaultPathForRole(prof?.role))
       } else {
-        navigate('/')
+        navigate('/login')
       }
     } catch {
       setError('Something went wrong. Please try again.')

@@ -190,6 +190,45 @@ create table if not exists public.notification_log (
 );
 
 -- ============================================================
+-- 11b. IMPORT GOVERNANCE
+-- ============================================================
+create table if not exists public.import_runs (
+  id                uuid primary key default uuid_generate_v4(),
+  target            text not null,
+  file_name         text,
+  source_type       text not null default 'csv_tsv',
+  row_count         integer not null default 0 check (row_count >= 0),
+  success_count     integer not null default 0 check (success_count >= 0),
+  failure_count     integer not null default 0 check (failure_count >= 0),
+  status            text not null default 'running'
+    check (status in ('running', 'completed', 'completed_with_errors', 'failed')),
+  imported_by_name  text,
+  started_at        timestamptz not null default now(),
+  completed_at      timestamptz,
+  created_at        timestamptz not null default now()
+);
+
+create table if not exists public.import_run_rows (
+  id              uuid primary key default uuid_generate_v4(),
+  import_run_id   uuid not null references public.import_runs(id) on delete cascade,
+  row_number      integer not null,
+  status          text not null check (status in ('success', 'failed')),
+  source_data     jsonb not null default '{}'::jsonb,
+  payload         jsonb not null default '{}'::jsonb,
+  error_message   text,
+  created_at      timestamptz not null default now()
+);
+
+create index if not exists import_runs_target_idx
+  on public.import_runs (target);
+create index if not exists import_runs_created_at_idx
+  on public.import_runs (created_at desc);
+create index if not exists import_run_rows_run_idx
+  on public.import_run_rows (import_run_id);
+create index if not exists import_run_rows_run_status_idx
+  on public.import_run_rows (import_run_id, status);
+
+-- ============================================================
 -- 12. REMINDERS
 -- ============================================================
 create table if not exists public.reminders (
@@ -318,6 +357,8 @@ alter table public.document_links    enable row level security;
 alter table public.compliance_events enable row level security;
 alter table public.alerts            enable row level security;
 alter table public.notification_log  enable row level security;
+alter table public.import_runs       enable row level security;
+alter table public.import_run_rows   enable row level security;
 alter table public.reminders         enable row level security;
 alter table public.change_logs       enable row level security;
 alter table public.products          enable row level security;
@@ -349,6 +390,8 @@ create policy "doc_links_all"         on public.document_links    for all using 
 create policy "compliance_events_all" on public.compliance_events for all using (auth.role() = 'authenticated');
 create policy "alerts_all"            on public.alerts            for all using (auth.role() = 'authenticated');
 create policy "notification_log_all"  on public.notification_log  for all using (auth.role() = 'authenticated');
+create policy "import_runs_all"       on public.import_runs       for all using (auth.role() = 'authenticated');
+create policy "import_run_rows_all"   on public.import_run_rows   for all using (auth.role() = 'authenticated');
 
 -- Reminders: users see only their own
 create policy "reminders_select" on public.reminders for select using (auth.uid() = user_id);

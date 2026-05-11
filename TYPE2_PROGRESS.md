@@ -367,12 +367,100 @@ Information-architecture rework of the role sidebars after MVP 1–5 had grown t
 
 ---
 
+## Post-MVP — KPI Snapshot History
+**Status: COMPLETE**
+**Date: 2026-05-11**
+
+### Migration
+- `supabase/migrations/2026_05_type2_kpi_snapshots.sql`
+  - Created `kpi_snapshots` table:
+    - `audit_period_id`
+    - `snapshot_date`
+    - `kpi_name`
+    - `value`
+    - `target`
+    - `rag_status`
+    - `created_at`
+  - Added `rag_status` check constraint (`green | amber | red | neutral`)
+  - Added unique constraint on `(audit_period_id, snapshot_date, kpi_name)` for upsert-safe captures
+  - Added indexes for:
+    - period/date history lookup
+    - period/KPI/date trend lookup
+    - created timestamp lookup
+  - Added authenticated RLS policy matching the current project style
+
+### Types (`src/lib/types.ts`)
+- Added `KpiSnapshotRagStatus`
+- Added `KpiSnapshot`
+
+### Snapshot helpers (`src/lib/kpiSnapshots.ts`)
+- Added reusable helpers next to the readiness metrics layer:
+  - `buildKpiSnapshotRows(auditPeriodId, snapshotDate, metrics)`
+    - Uses `computeReadinessKpis()` to derive stored KPI rows
+    - Captures Type 2 Readiness Score plus the Period End KPI set
+  - `saveKpiSnapshotSet(auditPeriodId, snapshotDate, metrics)`
+    - Upserts rows for a period/date using the unique period/date/KPI key
+  - `loadKpiSnapshotHistory(auditPeriodId)`
+    - Loads and groups rows by `snapshot_date` for Period End display
+
+### Period End page (`src/app/pages/PeriodEndPage.tsx`)
+- Added manual **Capture Snapshot** action for the active audit period
+- Added snapshot date input defaulting to today's date
+- Added recent captured snapshot history panel:
+  - readiness score from stored snapshot
+  - number of red/at-risk KPIs
+  - number of amber/watch KPIs
+  - row count
+  - capture timestamp
+- Kept the live KPI table and readiness calculations unchanged
+- No new sidebar page was added
+
+### Remaining gaps
+- Scheduled monthly capture is not implemented yet; current capture is manual from Period End.
+- Snapshot rows store numeric values, targets, and RAG state only. They do not store each KPI's explanatory subtext or source population counts.
+
+### Verification
+- `npm run build` passes
+- Existing Vite warnings remain:
+  - `src/lib/supabase.ts` is both dynamically and statically imported
+  - Main bundle is larger than the default 500 kB chunk warning threshold
+
+---
+
+## Post-MVP — Audit Log Foundation
+**Status: COMPLETE**
+**Date: 2026-05-11**
+
+### Migration
+- `supabase/migrations/2026_05_audit_log.sql`
+  - `audit_log` table with `actor_id`, `actor_email`, `actor_name`, `action`, `table_name`, `record_id`, `before_data` jsonb, `after_data` jsonb, `source`, `context` jsonb, `created_at`.
+  - Append-only RLS: authenticated select + insert, no update/delete policy.
+  - `record_audit_log()` `security definer` trigger function uses `to_jsonb(NEW/OLD)` and records `auth.uid()` plus the JWT email claim where available. Skips no-op updates where `before = after`.
+  - After-insert/update/delete triggers attached to `controls`, `risks`, `control_executions`, `documents`, `deviations`, `remediation_actions`, `auditor_requests`, `management_assertions`, `audit_periods`, and `import_runs`. The DO-block guards each `CREATE TRIGGER` behind an `information_schema.tables` check so the migration is re-runnable on partial schemas.
+
+### Types (`src/lib/types.ts`)
+- Added `AuditLogEntry`.
+
+### UI (`src/app/components/AuditTrailPanel.tsx`)
+- Reusable compact panel listing the latest audit log entries.
+- Table filter (controls / risks / executions / documents / deviations / remediation / auditor requests / assertions / periods / import runs / all).
+- Action badges per insert/update/delete, actor (email > name > truncated UUID > "System"), and a derived "Changed: …" summary that diffs `before_data` vs `after_data`, ignoring `created_at` / `updated_at`.
+- Embedded in `PeriodEndPage` so CEO oversight can see live audit activity inside the existing closeout page — no new sidebar entry.
+
+### Tradeoffs / follow-ups
+- The trigger captures `auth.uid()` + JWT email, but does not join to `profiles` for display name. The UI prefers email and falls back to UUID prefix.
+- RLS is broad-authenticated select; future hardening should scope reads by role.
+- No retention or archive policy yet.
+- Audit log is not yet used by Period End KPI snapshots or auditor exports.
+
+---
+
 ## Post-MVP backlog
 **Status: NOT STARTED**
 
-- KPI snapshot history (monthly cron → `kpi_snapshots` table)
-- Audit log (Postgres triggers on key tables)
+- Scheduled monthly KPI snapshot capture
 - Subservice org register
 - CUEC register
 - Access review workflow in CTO > Access Control
 - Automated integrations (Jira, Entra ID)
+- Audit log hardening: role-scoped RLS, actor name resolution, retention policy

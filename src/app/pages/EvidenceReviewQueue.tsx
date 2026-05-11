@@ -25,6 +25,7 @@ import { Document, DocumentLink } from '../../lib/types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAuditPeriod } from '../../contexts/AuditPeriodContext';
 import { toast } from 'sonner';
+import { demoControls, demoDocumentLinks, demoDocuments } from '../data/demoFallbacks';
 
 interface DocumentWithLinks extends Document {
   document_links: (DocumentLink & { control_title?: string })[];
@@ -67,10 +68,19 @@ export function EvidenceReviewQueue() {
       supabase.from('documents').select('*, document_links(*)').order('created_at', { ascending: false }),
       supabase.from('controls').select('id, title'),
     ]);
-    if (ctrlRes.data) setControls(ctrlRes.data);
-    if (docRes.data) {
-      const ctrlMap = Object.fromEntries((ctrlRes.data ?? []).map(c => [c.id, c.title]));
-      const enriched = (docRes.data as DocumentWithLinks[]).map(doc => ({
+    const controlRows = ctrlRes.data && ctrlRes.data.length > 0
+      ? ctrlRes.data
+      : demoControls.map(({ id, title }) => ({ id, title }));
+    const documentRows = docRes.data && docRes.data.length > 0
+      ? docRes.data as DocumentWithLinks[]
+      : demoDocuments.map(doc => ({
+          ...doc,
+          document_links: demoDocumentLinks.filter(link => link.document_id === doc.id),
+        }));
+    setControls(controlRows);
+    if (documentRows.length > 0) {
+      const ctrlMap = Object.fromEntries(controlRows.map(c => [c.id, c.title]));
+      const enriched = documentRows.map(doc => ({
         ...doc,
         document_links: doc.document_links.map(link => ({
           ...link,

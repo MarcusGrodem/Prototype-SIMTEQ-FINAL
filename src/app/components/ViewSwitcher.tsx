@@ -1,5 +1,7 @@
 import { Link, useLocation } from 'react-router'
 import { BarChart2, Settings2, ClipboardCheck } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
+import { isAppRole } from '../utils/roleAccess'
 
 const VIEWS = [
   { label: 'CEO', description: 'Executive', href: '/', icon: BarChart2, accent: 'text-blue-600', bg: 'bg-blue-50 border-blue-200' },
@@ -16,12 +18,19 @@ function currentView(pathname: string) {
 export function ViewSwitcher() {
   const location = useLocation()
   const active = currentView(location.pathname)
+  const { profile } = useAuth()
+  const visibleViews = isAppRole(profile?.role)
+    ? VIEWS.filter(v => {
+        if (profile.role === 'ceo') return v.href === '/'
+        return v.href === `/${profile.role}`
+      })
+    : VIEWS.filter(v => v.href === active)
 
   return (
     <div className="px-3 pb-3">
       <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5 px-1">Switch view</p>
       <div className="flex gap-1">
-        {VIEWS.map(v => {
+        {visibleViews.map(v => {
           const isActive = active === v.href
           const Icon = v.icon
           return (

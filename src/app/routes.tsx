@@ -30,66 +30,85 @@ import { ChangeLogPage } from './pages/cto/ChangeLog';
 import { Releases } from './pages/cto/Releases';
 import { AccessControl } from './pages/cto/AccessControl';
 
+const CEO_ROUTES = [
+  { index: true, element: <MainDashboard /> },
+  { path: 'readiness', element: <Type2ReadinessPage /> },
+
+  { path: 'controls', element: <ControlManagement /> },
+  { path: 'risks', element: <RiskRegister /> },
+
+  { path: 'audit-period', element: <AuditPeriodPage /> },
+  { path: 'evidence-review', element: <EvidenceReviewQueue /> },
+  { path: 'deviations', element: <DeviationRegister /> },
+  { path: 'auditor-requests', element: <AuditorRequestTracker /> },
+  { path: 'period-end', element: <PeriodEndPage /> },
+  { path: 'report-template', element: <ReportTemplateEditor /> },
+
+  { path: 'users', element: <UserManagementPage /> }
+];
+
+const CTO_ROUTES = [
+  { index: true, element: <CTODashboard /> },
+  { path: 'controls', element: <ControlManagement /> },
+  { path: 'evidence', element: <Evidence /> },
+  { path: 'calendar', element: <ComplianceCalendar /> },
+  { path: 'changelog', element: <ChangeLogPage /> },
+  { path: 'releases', element: <Releases /> },
+  { path: 'access', element: <AccessControl /> }
+];
+
+const QA_ROUTES = [
+  { index: true, element: <QADashboard /> },
+  { path: 'controls', element: <ControlManagement /> },
+  { path: 'rcm', element: <ControlObjectivesPage /> },
+  { path: 'categories', element: <RiskCategoriesPage /> },
+  { path: 'evidence', element: <Evidence /> },
+  { path: 'evidence-review', element: <EvidenceReviewQueue /> },
+  { path: 'deviations', element: <DeviationRegister /> },
+  { path: 'auditor-requests', element: <AuditorRequestTracker /> },
+  { path: 'audit-period', element: <AuditPeriodPage /> },
+  { path: 'data-import', element: <DataImportPage /> },
+  { path: 'report-template', element: <ReportTemplateEditor /> },
+  { path: 'notifications', element: <NotificationLogPage /> },
+  { path: 'calendar', element: <ComplianceCalendar /> },
+  { path: 'policies', element: <PolicyManagement /> }
+];
+
+const ROLE_ROUTE_SECTIONS = [
+  {
+    path: '/',
+    requiredRole: 'ceo',
+    layout: <DashboardLayout />,
+    children: CEO_ROUTES
+  },
+  {
+    path: '/cto',
+    requiredRole: 'cto',
+    layout: <CTOLayout />,
+    children: CTO_ROUTES
+  },
+  {
+    path: '/qa',
+    requiredRole: 'qa',
+    layout: <QALayout />,
+    children: QA_ROUTES
+  }
+];
+
 export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />
   },
-  {
-    path: '/',
+  ...ROLE_ROUTE_SECTIONS.map(({ path, requiredRole, layout, children }) => ({
+    path,
     element: (
-      <ProtectedRoute requiredRole="ceo">
-        <DashboardLayout />
+      <ProtectedRoute requiredRole={requiredRole}>
+        {layout}
       </ProtectedRoute>
     ),
-    children: [
-      { index: true, element: <MainDashboard /> },
-      { path: 'risks', element: <RiskRegister /> },
-      { path: 'controls', element: <ControlManagement /> },
-      { path: 'rcm', element: <ControlObjectivesPage /> },
-      { path: 'calendar', element: <ComplianceCalendar /> },
-      { path: 'categories', element: <RiskCategoriesPage /> },
-      { path: 'users', element: <UserManagementPage /> },
-      { path: 'data-import', element: <DataImportPage /> },
-      { path: 'report-template', element: <ReportTemplateEditor /> },
-      { path: 'notifications', element: <NotificationLogPage /> },
-      { path: 'audit-period', element: <AuditPeriodPage /> },
-      { path: 'evidence-review', element: <EvidenceReviewQueue /> },
-      { path: 'deviations', element: <DeviationRegister /> },
-      { path: 'auditor-requests', element: <AuditorRequestTracker /> },
-      { path: 'readiness', element: <Type2ReadinessPage /> },
-      { path: 'period-end', element: <PeriodEndPage /> }
-    ]
-  },
-  {
-    path: '/cto',
-    element: (
-      <ProtectedRoute requiredRole="cto">
-        <CTOLayout />
-      </ProtectedRoute>
-    ),
-    children: [
-      { index: true, element: <CTODashboard /> },
-      { path: 'changelog', element: <ChangeLogPage /> },
-      { path: 'releases', element: <Releases /> },
-      { path: 'access', element: <AccessControl /> }
-    ]
-  },
-  {
-    path: '/qa',
-    element: (
-      <ProtectedRoute requiredRole="qa">
-        <QALayout />
-      </ProtectedRoute>
-    ),
-    children: [
-      { index: true, element: <QADashboard /> },
-      { path: 'controls', element: <ControlManagement /> },
-      { path: 'evidence', element: <Evidence /> },
-      { path: 'calendar', element: <ComplianceCalendar /> },
-      { path: 'policies', element: <PolicyManagement /> }
-    ]
-  },
+    children
+  })),
   {
     path: '*',
     element: <Navigate to="/login" replace />

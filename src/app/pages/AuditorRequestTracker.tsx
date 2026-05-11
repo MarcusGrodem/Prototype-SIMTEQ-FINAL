@@ -28,6 +28,7 @@ import { supabase } from '../../lib/supabase';
 import { AuditorRequest, Control } from '../../lib/types';
 import { useAuditPeriod } from '../../contexts/AuditPeriodContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { demoAuditorRequests, demoControls } from '../data/demoFallbacks';
 
 type RequestStatus = AuditorRequest['status'];
 
@@ -97,10 +98,15 @@ export function AuditorRequestTracker() {
       supabase.from('controls').select('id, title').order('id'),
     ]);
 
-    const controlRows = (ctrlRes.data ?? []) as Pick<Control, 'id' | 'title'>[];
+    const controlRows = ctrlRes.data && ctrlRes.data.length > 0
+      ? (ctrlRes.data as Pick<Control, 'id' | 'title'>[])
+      : demoControls.map(({ id, title }) => ({ id, title }));
+    const requestRows = reqRes.data && reqRes.data.length > 0
+      ? (reqRes.data as AuditorRequest[])
+      : demoAuditorRequests.filter(req => req.audit_period_id === activePeriod.id);
     const controlMap = Object.fromEntries(controlRows.map(c => [c.id, c.title]));
     setControls(controlRows);
-    setRequests(((reqRes.data ?? []) as AuditorRequest[]).map(req => ({
+    setRequests(requestRows.map(req => ({
       ...req,
       control_title: req.related_control ? controlMap[req.related_control] : undefined,
     })));

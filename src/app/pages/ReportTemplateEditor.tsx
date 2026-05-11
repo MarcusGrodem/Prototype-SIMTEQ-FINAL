@@ -7,8 +7,73 @@ import { Label } from '../components/ui/label'
 import { Textarea } from '../components/ui/textarea'
 import { Card } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
-import { ArrowUp, ArrowDown, Eye, EyeOff, Save, Plus, Trash2, RefreshCw } from 'lucide-react'
+import { Switch } from '../components/ui/switch'
+import { ArrowUp, ArrowDown, Eye, EyeOff, Save, Plus, Trash2, RefreshCw, FileText, Layers, ImageIcon, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
+
+const MAX_COVER_IMAGE_BYTES = 1_500_000
+const COVER_IMAGE_SECTION_KEY = 'cover_image'
+const TEMPLATE_LAYOUT_SECTION_KEY = 'template_layout_settings'
+
+type CoverImageSettings = {
+  dataUrl: string | null
+  name: string | null
+  caption: string | null
+  widthMm: number
+}
+
+type TemplateLayoutSettings = {
+  includeFrontPage: boolean
+  pageBreaks: Record<string, boolean>
+}
+
+function parseTemplateLayoutSettings(section?: ReportTemplateSection): TemplateLayoutSettings {
+  if (!section?.body) return { includeFrontPage: true, pageBreaks: {} }
+  try {
+    const parsed = JSON.parse(section.body) as Partial<TemplateLayoutSettings>
+    return {
+      includeFrontPage: parsed.includeFrontPage !== false,
+      pageBreaks: parsed.pageBreaks && typeof parsed.pageBreaks === 'object' ? parsed.pageBreaks : {},
+    }
+  } catch {
+    return { includeFrontPage: true, pageBreaks: {} }
+  }
+}
+
+function parseCoverImageSettings(section?: ReportTemplateSection): CoverImageSettings {
+  if (!section?.body) return { dataUrl: null, name: null, caption: '', widthMm: 120 }
+  try {
+    const parsed = JSON.parse(section.body) as Partial<CoverImageSettings>
+    return {
+      dataUrl: typeof parsed.dataUrl === 'string' ? parsed.dataUrl : null,
+      name: typeof parsed.name === 'string' ? parsed.name : null,
+      caption: typeof parsed.caption === 'string' ? parsed.caption : '',
+      widthMm: Math.min(170, Math.max(60, Number(parsed.widthMm) || 120)),
+    }
+  } catch {
+    return { dataUrl: null, name: null, caption: '', widthMm: 120 }
+  }
+}
+
+function stringifyCoverImageSettings(template: ReportTemplate) {
+  return JSON.stringify({
+    dataUrl: template.cover_image_data_url || null,
+    name: template.cover_image_name || null,
+    caption: template.cover_image_caption || '',
+    widthMm: Math.min(170, Math.max(60, Number(template.cover_image_width_mm) || 120)),
+  })
+}
+
+function stringifyTemplateLayoutSettings(template: ReportTemplate, sections: ReportTemplateSection[]) {
+  return JSON.stringify({
+    includeFrontPage: template.include_front_page !== false,
+    pageBreaks: Object.fromEntries(
+      sections
+        .filter(section => section.section_key !== 'cover_subtitle' && section.section_key !== 'footer')
+        .map(section => [section.section_key, section.page_break_before !== false])
+    ),
+  })
+}
 
 export function ReportTemplateEditor() {
   const [template, setTemplate] = useState<ReportTemplate | null>(null)
@@ -33,13 +98,34 @@ export function ReportTemplateEditor() {
       .select('*')
       .eq('template_id', tpl.id)
       .order('position')
-    setSections(secs || [])
+    const templateSections = (secs || []) as ReportTemplateSection[]
+    const coverImage = parseCoverImageSettings(templateSections.find(section => section.section_key === COVER_IMAGE_SECTION_KEY))
+    const layout = parseTemplateLayoutSettings(templateSections.find(section => section.section_key === TEMPLATE_LAYOUT_SECTION_KEY))
+    setTemplate({
+      ...tpl,
+      include_front_page: layout.includeFrontPage,
+      cover_image_data_url: coverImage.dataUrl,
+      cover_image_name: coverImage.name,
+      cover_image_caption: coverImage.caption,
+      cover_image_width_mm: coverImage.widthMm,
+    })
+    setSections(templateSections
+      .filter(section => section.section_key !== COVER_IMAGE_SECTION_KEY && section.section_key !== TEMPLATE_LAYOUT_SECTION_KEY)
+      .map(section => ({
+        ...section,
+        page_break_before: layout.pageBreaks[section.section_key] !== false,
+      })))
     setLoading(false)
   }
 
   const updateSection = (id: string, patch: Partial<ReportTemplateSection>) => {
     setSections(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s))
   }
+
+  const isReportBodySection = (section: ReportTemplateSection) => (
+    section.section_key !== 'cover_subtitle' && section.section_key !== 'footer' && section.section_key !== COVER_IMAGE_SECTION_KEY
+    && section.section_key !== TEMPLATE_LAYOUT_SECTION_KEY
+  )
 
   const move = (idx: number, dir: -1 | 1) => {
     const next = [...sections]
@@ -62,6 +148,7 @@ export function ReportTemplateEditor() {
         body: '',
         position: prev.length * 10,
         visible: true,
+        page_break_before: true,
       },
     ])
   }
@@ -69,6 +156,39 @@ export function ReportTemplateEditor() {
   const removeSection = (id: string) => {
     if (!confirm('Remove this section from the template?')) return
     setSections(prev => prev.filter(s => s.id !== id))
+  }
+
+  const handleCoverImageChange = (file: File | undefined) => {
+    if (!template || !file) return
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      toast.error('Use a PNG or JPEG image for the cover page.')
+      return
+    }
+    if (file.size > MAX_COVER_IMAGE_BYTES) {
+      toast.error('Cover images must be 1.5 MB or smaller.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      setTemplate({
+        ...template,
+        cover_image_data_url: String(reader.result || ''),
+        cover_image_name: file.name,
+      })
+    }
+    reader.onerror = () => toast.error('Could not read the selected image.')
+    reader.readAsDataURL(file)
+  }
+
+  const clearCoverImage = () => {
+    if (!template) return
+    setTemplate({
+      ...template,
+      cover_image_data_url: null,
+      cover_image_name: null,
+      cover_image_caption: '',
+    })
   }
 
   const handleSave = async () => {
@@ -102,12 +222,32 @@ export function ReportTemplateEditor() {
       position: i * 10,
       visible: s.visible,
     }))
+    rows.push({
+      template_id: template.id,
+      section_key: TEMPLATE_LAYOUT_SECTION_KEY,
+      title: 'Template layout settings',
+      body: stringifyTemplateLayoutSettings(template, sections),
+      position: -20,
+      visible: true,
+    })
+    if (template.cover_image_data_url) {
+      rows.push({
+        template_id: template.id,
+        section_key: COVER_IMAGE_SECTION_KEY,
+        title: 'Cover image',
+        body: stringifyCoverImageSettings(template),
+        position: -10,
+        visible: true,
+      })
+    }
     if (rows.length > 0) {
       const { error: insErr } = await supabase.from('report_template_sections').insert(rows)
       if (insErr) { toast.error(insErr.message); setSaving(false); return }
     }
 
     toast.success('Template saved')
+    window.localStorage.setItem('report-template-updated-at', new Date().toISOString())
+    window.dispatchEvent(new Event('report-template-updated'))
     setSaving(false)
     load()
   }
@@ -157,6 +297,107 @@ export function ReportTemplateEditor() {
           </div>
         </Card>
 
+        <Card className="border-slate-200 shadow-none p-5">
+          <h2 className="text-sm font-semibold text-slate-700">Report structure</h2>
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="flex items-start justify-between gap-4 rounded border border-slate-200 p-3">
+              <div className="flex gap-3">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded bg-slate-100 text-slate-600">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div>
+                  <Label htmlFor="front-page" className="text-sm font-medium text-slate-700">Front page</Label>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                    Include the generated cover page before the table of contents.
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="front-page"
+                checked={template.include_front_page !== false}
+                onCheckedChange={checked => setTemplate({ ...template, include_front_page: checked })}
+                aria-label="Include front page"
+              />
+            </div>
+            <div className="flex gap-3 rounded border border-slate-200 p-3">
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded bg-slate-100 text-slate-600">
+                <Layers className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-700">Section pagination</p>
+                <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  Set each section to begin on a new page or continue compactly after the previous section.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-[220px_1fr] gap-4 rounded border border-slate-200 p-3">
+            <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded border border-slate-200 bg-slate-50">
+              {template.cover_image_data_url ? (
+                <img
+                  src={template.cover_image_data_url}
+                  alt={template.cover_image_name || 'Cover page image'}
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-slate-300">
+                  <ImageIcon className="h-7 w-7" />
+                  <span className="text-xs">No cover image</span>
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-700">Cover image</p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                    Add a PNG or JPEG to the front page. It is stored with the template and exported to DOCX and PDF.
+                  </p>
+                </div>
+                {template.cover_image_data_url && (
+                  <Button type="button" variant="ghost" size="sm" onClick={clearCoverImage} className="h-8 w-8 p-0">
+                    <X className="h-4 w-4 text-slate-500" />
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-[auto_1fr_110px] gap-3">
+                <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                  <Upload className="h-3.5 w-3.5" />
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    className="sr-only"
+                    onChange={e => handleCoverImageChange(e.target.files?.[0])}
+                  />
+                </label>
+                <Input
+                  value={template.cover_image_caption || ''}
+                  onChange={e => setTemplate({ ...template, cover_image_caption: e.target.value })}
+                  placeholder="Optional caption"
+                  className="h-9"
+                  aria-label="Cover image caption"
+                />
+                <div>
+                  <Input
+                    type="number"
+                    min={60}
+                    max={170}
+                    value={template.cover_image_width_mm ?? 120}
+                    onChange={e => setTemplate({ ...template, cover_image_width_mm: Number(e.target.value) })}
+                    className="h-9"
+                    aria-label="Cover image width in millimeters"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-3 text-[11px] text-slate-400">
+                <span className="truncate">{template.cover_image_name || 'PNG/JPEG, maximum 1.5 MB'}</span>
+                <span className="shrink-0">{Math.min(170, Math.max(60, Number(template.cover_image_width_mm) || 120))} mm wide</span>
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {/* Sections */}
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-700">Sections ({sections.filter(s => s.visible).length} visible / {sections.length} total)</h2>
@@ -175,12 +416,28 @@ export function ReportTemplateEditor() {
                   </div>
                 </div>
                 <div className="flex-1 space-y-2">
-                  <Input
-                    value={s.title}
-                    onChange={e => updateSection(s.id, { title: e.target.value })}
-                    className="font-medium"
-                    placeholder="Section title"
-                  />
+                  <div className="grid grid-cols-[1fr_auto] gap-3">
+                    <Input
+                      value={s.title}
+                      onChange={e => updateSection(s.id, { title: e.target.value })}
+                      className="font-medium"
+                      placeholder="Section title"
+                    />
+                    {isReportBodySection(s) ? (
+                      <label className="flex h-10 items-center gap-2 rounded border border-slate-200 px-3 text-xs text-slate-500">
+                        <Switch
+                          checked={s.page_break_before !== false}
+                          onCheckedChange={checked => updateSection(s.id, { page_break_before: checked })}
+                          aria-label={`Start ${s.title || 'template section'} on a new page`}
+                        />
+                        <span className="whitespace-nowrap">{s.page_break_before !== false ? 'New page' : 'Compact'}</span>
+                      </label>
+                    ) : (
+                      <div className="flex h-10 items-center rounded border border-slate-200 px-3 text-xs text-slate-400">
+                        Template helper
+                      </div>
+                    )}
+                  </div>
                   <Textarea
                     value={s.body}
                     onChange={e => updateSection(s.id, { body: e.target.value })}

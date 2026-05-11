@@ -37,12 +37,14 @@ export const GROUPS: GroupDef[] = [
   { key: 'grp_ceo_governance', label: 'Governance',        view: 'CEO', icon: Cog },
 
   // CTO
-  { key: 'grp_cto_dashboard',    label: 'Dashboard',   view: 'CTO', icon: LayoutDashboard },
-  { key: 'grp_cto_engineering',  label: 'Engineering', view: 'CTO', icon: Wrench },
+  { key: 'grp_cto_dashboard',    label: 'Dashboard',            view: 'CTO', icon: LayoutDashboard },
+  { key: 'grp_cto_compliance',   label: 'Technical Compliance', view: 'CTO', icon: Shield },
+  { key: 'grp_cto_engineering',  label: 'Engineering',          view: 'CTO', icon: Wrench },
 
   // QA
-  { key: 'grp_qa_dashboard',  label: 'Dashboard',  view: 'QA', icon: LayoutDashboard },
-  { key: 'grp_qa_compliance', label: 'Compliance', view: 'QA', icon: Shield },
+  { key: 'grp_qa_dashboard',  label: 'Dashboard',        view: 'QA', icon: LayoutDashboard },
+  { key: 'grp_qa_compliance', label: 'Compliance',       view: 'QA', icon: Shield },
+  { key: 'grp_qa_audit',      label: 'Evidence & Audit', view: 'QA', icon: ClipboardCheck },
 ]
 
 export const GROUP_BY_KEY = Object.fromEntries(GROUPS.map(g => [g.key, g])) as Record<string, GroupDef>
@@ -57,9 +59,6 @@ export const ALL_PAGES: PageDef[] = [
   // CEO · Controls & Risks
   { key: 'ceo_controls',        name: 'Controls',          href: '/controls',         view: 'CEO', icon: Shield,          group: 'grp_ceo_compliance' },
   { key: 'ceo_risks',           name: 'Risks',             href: '/risks',            view: 'CEO', icon: AlertTriangle,   group: 'grp_ceo_compliance' },
-  { key: 'ceo_rcm',             name: 'RCM',               href: '/rcm',              view: 'CEO', icon: Table2,          group: 'grp_ceo_compliance' },
-  { key: 'ceo_categories',      name: 'Categories',        href: '/categories',       view: 'CEO', icon: Tag,             group: 'grp_ceo_compliance' },
-  { key: 'ceo_calendar',        name: 'Calendar',          href: '/calendar',         view: 'CEO', icon: Calendar,        group: 'grp_ceo_compliance' },
 
   // CEO · Evidence & Audit
   { key: 'ceo_audit_period',    name: 'Audit Periods',     href: '/audit-period',     view: 'CEO', icon: CalendarDays,    group: 'grp_ceo_audit'      },
@@ -67,15 +66,17 @@ export const ALL_PAGES: PageDef[] = [
   { key: 'ceo_deviations',      name: 'Deviations',        href: '/deviations',       view: 'CEO', icon: ShieldAlert,     group: 'grp_ceo_audit'      },
   { key: 'ceo_auditor_requests',name: 'Auditor Requests',  href: '/auditor-requests', view: 'CEO', icon: FileQuestion,     group: 'grp_ceo_audit'      },
   { key: 'ceo_period_end',      name: 'Period End',        href: '/period-end',       view: 'CEO', icon: FileSignature,   group: 'grp_ceo_audit'      },
-  { key: 'ceo_report_tpl',      name: 'Report Template',   href: '/report-template',  view: 'CEO', icon: FileEdit,        group: 'grp_ceo_audit'      },
 
   // CEO · Governance
   { key: 'ceo_users',           name: 'Users',             href: '/users',            view: 'CEO', icon: Users,           group: 'grp_ceo_governance' },
-  { key: 'ceo_data_import',     name: 'Data Import',       href: '/data-import',      view: 'CEO', icon: Upload,          group: 'grp_ceo_governance' },
-  { key: 'ceo_notifications',   name: 'Notifications',     href: '/notifications',    view: 'CEO', icon: Bell,            group: 'grp_ceo_governance' },
 
   // CTO · Dashboard
   { key: 'cto_overview',  name: 'Overview',       href: '/cto',           view: 'CTO', icon: LayoutDashboard, group: 'grp_cto_dashboard'   },
+
+  // CTO · Technical Compliance
+  { key: 'cto_controls',  name: 'Controls',       href: '/cto/controls',  view: 'CTO', icon: Shield,          group: 'grp_cto_compliance'  },
+  { key: 'cto_evidence',  name: 'Evidence',       href: '/cto/evidence',  view: 'CTO', icon: FileText,        group: 'grp_cto_compliance'  },
+  { key: 'cto_calendar',  name: 'Calendar',       href: '/cto/calendar',  view: 'CTO', icon: Calendar,        group: 'grp_cto_compliance'  },
 
   // CTO · Engineering
   { key: 'cto_changelog', name: 'Change Log',     href: '/cto/changelog', view: 'CTO', icon: GitCommit,       group: 'grp_cto_engineering' },
@@ -87,9 +88,20 @@ export const ALL_PAGES: PageDef[] = [
 
   // QA · Compliance
   { key: 'qa_controls',   name: 'Controls',       href: '/qa/controls',   view: 'QA',  icon: Shield,          group: 'grp_qa_compliance' },
-  { key: 'qa_evidence',   name: 'Evidence',       href: '/qa/evidence',   view: 'QA',  icon: FileText,        group: 'grp_qa_compliance' },
+  { key: 'qa_rcm',        name: 'RCM',            href: '/qa/rcm',        view: 'QA',  icon: Table2,          group: 'grp_qa_compliance' },
+  { key: 'qa_categories', name: 'Categories',     href: '/qa/categories', view: 'QA',  icon: Tag,             group: 'grp_qa_compliance' },
   { key: 'qa_calendar',   name: 'Calendar',       href: '/qa/calendar',   view: 'QA',  icon: Calendar,        group: 'grp_qa_compliance' },
   { key: 'qa_policies',   name: 'Policies',       href: '/qa/policies',   view: 'QA',  icon: BookOpen,        group: 'grp_qa_compliance' },
+
+  // QA · Evidence & Audit
+  { key: 'qa_evidence',   name: 'Evidence',       href: '/qa/evidence',   view: 'QA',  icon: FileText,        group: 'grp_qa_audit' },
+  { key: 'qa_audit_period',    name: 'Audit Periods',    href: '/qa/audit-period',    view: 'QA', icon: CalendarDays,   group: 'grp_qa_audit' },
+  { key: 'qa_evidence_review', name: 'Evidence Review',  href: '/qa/evidence-review', view: 'QA', icon: ClipboardCheck, group: 'grp_qa_audit' },
+  { key: 'qa_deviations',      name: 'Deviations',       href: '/qa/deviations',      view: 'QA', icon: ShieldAlert,    group: 'grp_qa_audit' },
+  { key: 'qa_auditor_requests',name: 'Auditor Requests', href: '/qa/auditor-requests',view: 'QA', icon: FileQuestion,    group: 'grp_qa_audit' },
+  { key: 'qa_data_import',     name: 'Data Import',      href: '/qa/data-import',     view: 'QA', icon: Upload,          group: 'grp_qa_audit' },
+  { key: 'qa_report_tpl',      name: 'Report Template',  href: '/qa/report-template', view: 'QA', icon: FileEdit,        group: 'grp_qa_audit' },
+  { key: 'qa_notifications',   name: 'Notifications',    href: '/qa/notifications',   view: 'QA', icon: Bell,            group: 'grp_qa_audit' },
 ]
 
 export const PAGE_BY_KEY = Object.fromEntries(ALL_PAGES.map(p => [p.key, p])) as Record<string, PageDef>

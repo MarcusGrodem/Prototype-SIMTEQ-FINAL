@@ -192,6 +192,11 @@ export interface ReportTemplate {
   company_name: string
   period_start: string
   period_end: string
+  include_front_page?: boolean
+  cover_image_data_url?: string | null
+  cover_image_name?: string | null
+  cover_image_caption?: string | null
+  cover_image_width_mm?: number
   is_default: boolean
   created_at: string
   updated_at: string
@@ -205,6 +210,7 @@ export interface ReportTemplateSection {
   body: string
   position: number
   visible: boolean
+  page_break_before?: boolean
 }
 
 export interface NotificationLogEntry {
@@ -216,6 +222,60 @@ export interface NotificationLogEntry {
   related_type: string | null
   related_id: string | null
   status: string
+  created_at: string
+}
+
+export type ImportRunStatus = 'running' | 'completed' | 'completed_with_errors' | 'failed'
+export type ImportRunRowStatus = 'success' | 'failed'
+
+export interface ImportRun {
+  id: string
+  target: string
+  file_name: string | null
+  source_type: string
+  source_checksum: string | null
+  source_file_size: number | null
+  row_count: number
+  success_count: number
+  failure_count: number
+  status: ImportRunStatus
+  imported_by_name: string | null
+  started_at: string
+  completed_at: string | null
+  created_at: string
+}
+
+export interface ImportRowTransformRecord {
+  field: string
+  original: string
+  normalized: string
+  reason: string
+}
+
+export interface ImportRunRow {
+  id: string
+  import_run_id: string
+  row_number: number
+  status: ImportRunRowStatus
+  source_data: Record<string, unknown>
+  payload: Record<string, unknown>
+  transforms: ImportRowTransformRecord[]
+  error_message: string | null
+  created_at: string
+}
+
+export interface AuditLogEntry {
+  id: string
+  actor_id: string | null
+  actor_email: string | null
+  actor_name: string | null
+  action: 'INSERT' | 'UPDATE' | 'DELETE'
+  table_name: string
+  record_id: string | null
+  before_data: Record<string, unknown> | null
+  after_data: Record<string, unknown> | null
+  source: string
+  context: Record<string, unknown> | null
   created_at: string
 }
 
@@ -243,6 +303,19 @@ export interface ManagementAssertion {
   notes: string | null
   created_at: string
   updated_at: string
+}
+
+export type KpiSnapshotRagStatus = 'green' | 'amber' | 'red' | 'neutral'
+
+export interface KpiSnapshot {
+  id: string
+  audit_period_id: string
+  snapshot_date: string
+  kpi_name: string
+  value: number | null
+  target: number | null
+  rag_status: KpiSnapshotRagStatus
+  created_at: string
 }
 
 export interface ControlExecution {

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { AuditPeriod } from '../lib/types'
+import { demoAuditPeriods } from '../app/data/demoFallbacks'
 
 interface AuditPeriodContextType {
   activePeriod: AuditPeriod | null
@@ -22,10 +23,9 @@ export function AuditPeriodProvider({ children }: { children: React.ReactNode })
       .from('audit_periods')
       .select('*')
       .order('start_date', { ascending: false })
-    if (data) {
-      setAllPeriods(data)
-      setActivePeriod(data.find(p => p.status === 'active') ?? null)
-    }
+    const periods = data && data.length > 0 ? data : demoAuditPeriods
+    setAllPeriods(periods)
+    setActivePeriod(periods.find(p => p.status === 'active') ?? null)
     setLoading(false)
   }, [])
 

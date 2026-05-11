@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { BarChart2, ChevronDown, ClipboardCheck, Settings2, Shield } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
+import { isAppRole } from '../utils/roleAccess'
 
 type ViewKey = 'ceo' | 'cto' | 'qa'
 
@@ -17,7 +19,12 @@ interface SidebarRoleSwitcherProps {
 export function SidebarRoleSwitcher({ activeView }: SidebarRoleSwitcherProps) {
   const [open, setOpen] = useState(false)
   const switcherRef = useRef<HTMLDivElement>(null)
+  const { profile } = useAuth()
   const current = VIEWS.find(view => view.key === activeView) ?? VIEWS[0]
+  const allowedViews = isAppRole(profile?.role)
+    ? VIEWS.filter(view => view.key === profile.role)
+    : VIEWS.filter(view => view.key === activeView)
+  const canSwitch = allowedViews.length > 1
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -37,9 +44,11 @@ export function SidebarRoleSwitcher({ activeView }: SidebarRoleSwitcherProps) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Switch view"
-        onClick={() => setOpen(isOpen => !isOpen)}
+        onClick={() => {
+          if (canSwitch) setOpen(isOpen => !isOpen)
+        }}
         className="w-full flex items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-        title="Switch view"
+        title={canSwitch ? 'Switch view' : `${current.label} view`}
       >
         <div className="w-8 h-8 bg-slate-900 rounded-md flex items-center justify-center flex-shrink-0">
           <Shield className="w-4 h-4 text-slate-50" />
@@ -55,15 +64,17 @@ export function SidebarRoleSwitcher({ activeView }: SidebarRoleSwitcherProps) {
             </span>
           </div>
         </div>
-        <ChevronDown
-          className={`w-3.5 h-3.5 flex-shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
-        />
+        {canSwitch && (
+          <ChevronDown
+            className={`w-3.5 h-3.5 flex-shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
+          />
+        )}
       </button>
 
-      {open && (
+      {open && canSwitch && (
         <div className="absolute left-3 right-3 top-[calc(100%-0.25rem)] z-20 rounded-md border border-slate-200 bg-slate-50 shadow-md overflow-hidden">
           <p className="text-[10px] font-semibold text-slate-400 uppercase px-3 pt-2 pb-1">Switch view</p>
-          {VIEWS.map(view => {
+          {allowedViews.map(view => {
             const Icon = view.icon
             const isActive = view.key === activeView
 

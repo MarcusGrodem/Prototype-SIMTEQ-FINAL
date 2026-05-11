@@ -27,6 +27,7 @@ import { Deviation, RemediationAction, Control } from '../../lib/types';
 import { useAuditPeriod } from '../../contexts/AuditPeriodContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
+import { demoControls, demoDeviations, demoRemediationActions } from '../data/demoFallbacks';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -118,11 +119,21 @@ export function DeviationRegister() {
       supabase.from('controls').select('id, title').order('id'),
     ]);
 
-    if (ctrlRes.data) setControls(ctrlRes.data as Control[]);
+    const controlRows = ctrlRes.data && ctrlRes.data.length > 0
+      ? ctrlRes.data as Control[]
+      : demoControls;
+    setControls(controlRows);
 
-    if (devRes.data) {
-      const ctrlMap = Object.fromEntries((ctrlRes.data ?? []).map((c: { id: string; title: string }) => [c.id, c.title]));
-      const enriched = (devRes.data as (Deviation & { remediation_actions: RemediationAction[] })[]).map(d => ({
+    const deviationRows = devRes.data && devRes.data.length > 0
+      ? devRes.data as (Deviation & { remediation_actions: RemediationAction[] })[]
+      : demoDeviations.map(deviation => ({
+          ...deviation,
+          remediation_actions: demoRemediationActions.filter(action => action.deviation_id === deviation.id),
+        }));
+
+    if (deviationRows.length > 0) {
+      const ctrlMap = Object.fromEntries(controlRows.map((c: { id: string; title: string }) => [c.id, c.title]));
+      const enriched = deviationRows.map(d => ({
         ...d,
         control_title: ctrlMap[d.control_id] ?? d.control_id,
         remediation: d.remediation_actions?.[0] ?? null,

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import {
-  ArrowRight, CalendarRange, CheckCircle2, Download, FileSignature,
+  ArrowRight, CalendarRange, Camera, CheckCircle2, Download, FileSignature,
   FileText, Gauge, Info, Lock, ShieldAlert, Snowflake,
 } from 'lucide-react';
 import { Card } from '../components/ui/card';
@@ -27,7 +27,13 @@ import {
   exportDeviationSummaryCsv,
   exportEvidenceIndexCsv,
 } from '../../lib/type2AuditorExports';
+import {
+  KpiSnapshotSet,
+  loadKpiSnapshotHistory,
+  saveKpiSnapshotSet,
+} from '../../lib/kpiSnapshots';
 import { Deviation, ManagementAssertion, Risk } from '../../lib/types';
+import { AuditTrailPanel } from '../components/AuditTrailPanel';
 import { AuditReportGenerator } from '../components/AuditReportGenerator';
 
 // ─── small style maps (mirror Type2ReadinessPage) ────────────────────────────
@@ -69,11 +75,14 @@ export function PeriodEndPage() {
   const [openDeviations, setOpenDeviations] = useState<Deviation[]>([]);
   const [openHighRisks, setOpenHighRisks] = useState<Risk[]>([]);
   const [assertion, setAssertion] = useState<ManagementAssertion | null>(null);
+  const [snapshotHistory, setSnapshotHistory] = useState<KpiSnapshotSet[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
   const [freezing, setFreezing] = useState(false);
+  const [savingSnapshot, setSavingSnapshot] = useState(false);
+  const [snapshotDate, setSnapshotDate] = useState(() => new Date().toISOString().split('T')[0]);
 
   // assertion form state
   const [signerName, setSignerName] = useState('');
@@ -106,11 +115,12 @@ export function PeriodEndPage() {
       setOpenDeviations([]);
       setOpenHighRisks([]);
       setAssertion(null);
+      setSnapshotHistory([]);
       setLoading(false);
       return;
     }
 
-    const [m, devsRes, risksRes, assertRes] = await Promise.all([
+    const [m, devsRes, risksRes, assertRes, snapshots] = await Promise.all([
       loadReadinessMetrics(activePeriod.id, activePeriod.start_date, activePeriod.end_date),
       supabase
         .from('deviations')
@@ -132,12 +142,14 @@ export function PeriodEndPage() {
         .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
+      loadKpiSnapshotHistory(activePeriod.id).catch(() => []),
     ]);
 
     setMetrics(m);
     setOpenDeviations((devsRes.data as Deviation[]) ?? []);
     setOpenHighRisks((risksRes.data as Risk[]) ?? []);
     setAssertion((assertRes.data as ManagementAssertion | null) ?? null);
+    setSnapshotHistory(snapshots);
     setLoading(false);
   };
 
@@ -224,6 +236,21 @@ export function PeriodEndPage() {
     await loadAll();
   };
 
+  const handleCaptureSnapshot = async () => {
+    if (!activePeriod) return;
+    setSavingSnapshot(true);
+    try {
+      await saveKpiSnapshotSet(activePeriod.id, snapshotDate, metrics);
+      const nextHistory = await loadKpiSnapshotHistory(activePeriod.id);
+      setSnapshotHistory(nextHistory);
+      toast.success('KPI snapshot captured');
+    } catch (e) {
+      toast.error(`Failed to capture snapshot: ${(e as Error).message}`);
+    } finally {
+      setSavingSnapshot(false);
+    }
+  };
+
   // ─── empty state ─────────────────────────────────────────────────────────
   if (!periodLoading && !activePeriod) {
     return (
@@ -266,6 +293,8 @@ export function PeriodEndPage() {
 
   const readinessRag = ragForPct(kpis.readiness, 90, 80);
   const isFrozen = !!activePeriod.frozen_at;
+  const latestSnapshot = snapshotHistory[0];
+  const latestSnapshotReadiness = latestSnapshot?.rows.find(r => r.kpi_name === 'Type 2 Readiness Score');
 
   // 8 KPI snapshot rows
   const kpiRows: { label: string; value: string; target: string; rag: Rag; sub: string }[] = [
@@ -416,6 +445,72 @@ export function PeriodEndPage() {
               ))}
             </tbody>
           </table>
+        </Card>
+
+        {/* Stored KPI snapshots */}
+        <Card className="border-slate-200 shadow-none">
+          <div className="px-6 py-4 border-b border-slate-100 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900">Captured KPI History</h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Stores the current live KPI set for point-in-time period-end evidence.
+                {latestSnapshotReadiness && (
+                  <> Latest: {latestSnapshot.snapshot_date} · readiness {Math.round(Number(latestSnapshotReadiness.value ?? 0))}/100</>
+                )}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={snapshotDate}
+                onChange={e => setSnapshotDate(e.target.value)}
+                className="h-9 w-40"
+              />
+              <Button
+                size="sm"
+                onClick={handleCaptureSnapshot}
+                disabled={savingSnapshot}
+                className="gap-1.5"
+              >
+                <Camera className="w-4 h-4" />
+                {savingSnapshot ? 'Capturing...' : 'Capture Snapshot'}
+              </Button>
+            </div>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {snapshotHistory.length === 0 && (
+              <div className="px-6 py-8 text-center text-xs text-slate-400">
+                No snapshots captured yet. Capture one before period-end sign-off to preserve the current KPI state.
+              </div>
+            )}
+            {snapshotHistory.slice(0, 6).map(set => {
+              const readiness = set.rows.find(r => r.kpi_name === 'Type 2 Readiness Score');
+              const atRisk = set.rows.filter(r => r.rag_status === 'red').length;
+              const watch = set.rows.filter(r => r.rag_status === 'amber').length;
+              return (
+                <div key={set.snapshot_date} className="px-6 py-3 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 md:items-center">
+                  <div>
+                    <p className="text-sm font-medium text-slate-800">{set.snapshot_date}</p>
+                    <p className="text-xs text-slate-400">
+                      Captured {new Date(set.created_at).toLocaleString('en-GB')} · {set.rows.length} KPIs
+                    </p>
+                  </div>
+                  <div className="text-xs text-slate-500 md:text-right">
+                    Readiness{' '}
+                    <span className={`font-semibold tabular-nums ${RAG_TEXT[readiness?.rag_status ?? 'neutral']}`}>
+                      {readiness?.value === null || readiness?.value === undefined ? '—' : `${Math.round(Number(readiness.value))}/100`}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-500 md:text-right">
+                    <span className="font-semibold text-red-700 tabular-nums">{atRisk}</span> at risk
+                  </div>
+                  <div className="text-xs text-slate-500 md:text-right">
+                    <span className="font-semibold text-amber-700 tabular-nums">{watch}</span> watch
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </Card>
 
         {/* Open exceptions + Unresolved high risks (two columns) */}
@@ -655,6 +750,9 @@ export function PeriodEndPage() {
             </div>
           </div>
         </Card>
+
+        {/* Audit trail */}
+        <AuditTrailPanel />
 
         {/* Disclaimer */}
         <div className="flex items-start gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-md px-4 py-3">

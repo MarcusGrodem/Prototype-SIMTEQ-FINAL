@@ -21,7 +21,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router';
 import { Button } from '../components/ui/button';
 import { supabase } from '../../lib/supabase';
-import { Risk, Control, Alert } from '../../lib/types';
+import { Risk, Control, Alert, ReportTemplate, ReportTemplateSection } from '../../lib/types';
 import { useAuditPeriod } from '../../contexts/AuditPeriodContext';
 
 export function MainDashboard() {
@@ -35,10 +35,49 @@ export function MainDashboard() {
   const [alertsVisible, setAlertsVisible] = useState(true);
   const [evidenceCompletenessRate, setEvidenceCompletenessRate] = useState<number | null>(null);
   const [openDeviations, setOpenDeviations] = useState<{ total: number; critical: number } | null>(null);
+  const [reportTemplate, setReportTemplate] = useState<ReportTemplate | null>(null);
+  const [reportTemplateSections, setReportTemplateSections] = useState<ReportTemplateSection[]>([]);
+  const [reportTemplateRevision, setReportTemplateRevision] = useState<string | null>(null);
 
   const { activePeriod } = useAuditPeriod();
 
   useEffect(() => { loadData() }, [activePeriod]);
+
+  useEffect(() => {
+    const refreshTemplate = () => { void loadReportTemplate(); };
+    window.addEventListener('report-template-updated', refreshTemplate);
+    window.addEventListener('storage', refreshTemplate);
+    return () => {
+      window.removeEventListener('report-template-updated', refreshTemplate);
+      window.removeEventListener('storage', refreshTemplate);
+    };
+  }, []);
+
+  const loadReportTemplate = async () => {
+    const { data: tpls } = await supabase
+      .from('report_templates')
+      .select('*')
+      .order('is_default', { ascending: false })
+      .limit(1);
+
+    const tpl = (tpls || [])[0] as ReportTemplate | undefined;
+    if (!tpl) {
+      setReportTemplate(null);
+      setReportTemplateSections([]);
+      setReportTemplateRevision(null);
+      return;
+    }
+
+    const { data: secs } = await supabase
+      .from('report_template_sections')
+      .select('*')
+      .eq('template_id', tpl.id)
+      .order('position');
+
+    setReportTemplate(tpl);
+    setReportTemplateSections((secs || []) as ReportTemplateSection[]);
+    setReportTemplateRevision(tpl.updated_at ?? tpl.id);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -47,6 +86,7 @@ export function MainDashboard() {
       supabase.from('controls').select('*'),
       supabase.from('alerts').select('*').order('created_at', { ascending: false }).limit(10)
     ]);
+    await loadReportTemplate();
     if (rRes.data) setRisks(rRes.data);
     if (cRes.data) setControls(cRes.data);
     if (aRes.data) setAlerts(aRes.data);
@@ -131,6 +171,14 @@ export function MainDashboard() {
           </div>
           <div className="flex items-center gap-2">
             <CatchUpNotification />
+            <Link
+              to="/report-template"
+              className="hidden lg:flex h-8 items-center gap-1.5 rounded-md border border-slate-200 px-3 text-xs font-medium text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+              aria-label={`Open report template editor. Current template: ${reportTemplate?.name ?? 'Not configured'}`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Template: {reportTemplate?.name ?? 'Not configured'}
+            </Link>
             <Button
               variant="outline"
               size="sm"
@@ -418,7 +466,13 @@ export function MainDashboard() {
 
         <RiskHeatmapDialog open={heatmapDialogOpen} onOpenChange={setHeatmapDialogOpen} />
         <ExportDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} />
-        <AuditReportGenerator open={aiReportDialogOpen} onOpenChange={setAiReportDialogOpen} />
+        <AuditReportGenerator
+          open={aiReportDialogOpen}
+          onOpenChange={setAiReportDialogOpen}
+          reportTemplate={reportTemplate}
+          reportTemplateSections={reportTemplateSections}
+          templateRevision={reportTemplateRevision}
+        />
       </div>
     </div>
   );

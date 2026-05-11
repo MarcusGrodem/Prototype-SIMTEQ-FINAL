@@ -1,13 +1,14 @@
 import { Navigate } from 'react-router'
 import { useAuth } from '../../contexts/AuthContext'
+import { canAccessRole, defaultPathForRole } from '../utils/roleAccess'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
   requiredRole?: string
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth()
+export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+  const { user, profile, loading } = useAuth()
 
   if (loading) {
     return (
@@ -25,6 +26,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!user) {
     return <Navigate to="/login" replace />
+  }
+
+  if (!canAccessRole(requiredRole, profile?.role)) {
+    return <Navigate to={defaultPathForRole(profile?.role)} replace />
   }
 
   return <>{children}</>
