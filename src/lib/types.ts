@@ -381,6 +381,61 @@ export interface AuditorRequest {
   updated_at: string
 }
 
+export type SubserviceOrgCriticality = 'low' | 'medium' | 'high' | 'critical'
+export type SubserviceOrgStatus = 'active' | 'under_review' | 'discontinued'
+export type SubserviceOrgReviewStatus =
+  | 'pending'
+  | 'accepted'
+  | 'accepted_with_findings'
+  | 'rejected'
+
+export interface SubserviceOrg {
+  id: string
+  name: string
+  service_description: string | null
+  criticality: SubserviceOrgCriticality
+  assurance_report_type: string | null
+  last_report_date: string | null
+  next_review_date: string | null
+  status: SubserviceOrgStatus
+  in_scope: boolean
+  owner_name: string | null
+  review_status: SubserviceOrgReviewStatus
+  findings_summary: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface SubserviceOrgObjectiveLink {
+  subservice_org_id: string
+  control_objective_id: string
+  created_at: string
+}
+
+export type CuecCategory = 'access' | 'data' | 'change' | 'operations' | 'other'
+export type CuecStatus = 'active' | 'retired'
+
+export interface Cuec {
+  id: string
+  code: string
+  title: string
+  description: string | null
+  category: CuecCategory
+  responsible_party: string | null
+  status: CuecStatus
+  in_scope: boolean
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CuecObjectiveLink {
+  cuec_id: string
+  control_objective_id: string
+  created_at: string
+}
+
 export interface Policy {
   id: string
   title: string

@@ -455,12 +455,97 @@ Information-architecture rework of the role sidebars after MVP 1–5 had grown t
 
 ---
 
+## Post-MVP — Subservice Organization Register
+**Status: COMPLETE**
+**Date: 2026-05-11**
+
+### Migration
+- `supabase/migrations/2026_05_type2_subservice_orgs.sql`
+  - Created `subservice_orgs` table with name, service description, criticality (low/medium/high/critical), assurance_report_type, last_report_date, next_review_date, status (active/under_review/discontinued), in_scope, owner_name, review_status (pending/accepted/accepted_with_findings/rejected), findings_summary, notes.
+  - Created `subservice_org_objectives` many-to-many link table referencing `control_objectives`.
+  - Added authenticated RLS policies, indexes on status, criticality, in_scope, and a partial index on next_review_date for non-discontinued rows.
+  - Added `updated_at` trigger.
+  - Attached `record_audit_log` trigger to `subservice_orgs` if the audit log function exists in the schema.
+
+### Types (`src/lib/types.ts`)
+- Added `SubserviceOrgCriticality`, `SubserviceOrgStatus`, `SubserviceOrgReviewStatus`.
+- Added `SubserviceOrg` interface.
+- Added `SubserviceOrgObjectiveLink` interface.
+
+### Subservice Organizations page (`src/app/pages/SubserviceOrgsPage.tsx`)
+- Route: `/qa/subservice-orgs` (QA sidebar — Evidence & Audit group, label "Subservice Orgs", `Building2` icon)
+- 6-tile KPI strip: Total, Active, High/Critical, Review Overdue, Pending Review, Missing Reports.
+- Search across name, service description, owner, and report type.
+- Status filter (all / active / under review / discontinued).
+- Criticality filter (all / critical / high / medium / low).
+- Per-row card surfaces criticality, status, review status, in-scope badge, assurance report type, owner, last report date, next review date, findings summary, and linked control objectives.
+- Review-overdue rows highlight in red and surface a `Review overdue` chip.
+- Create/edit dialog with all fields plus inline checkbox list for linking to `control_objectives`.
+- Report-type input uses a datalist with common standards (ISAE 3402 / SOC 2 / ISO 27001 variants).
+- Delete action wired through the edit dialog with confirm prompt.
+
+### Verification
+- `npm run build` passes
+- Existing Vite warnings remain:
+  - `src/lib/supabase.ts` is both dynamically and statically imported
+  - Main bundle is larger than the default 500 kB chunk warning threshold
+
+### Tradeoffs / follow-ups
+- Only the *latest* assurance report metadata is stored on the org row. A multi-report history table is deferred.
+- Subservice orgs are not yet rolled into the Type 2 Readiness score or the auditor export pack.
+- No CEO sidebar entry — the CEO sidebar surface stays capped at 10 pages per the role-scoped route architecture.
+
+---
+
+## Post-MVP — CUEC Register
+**Status: COMPLETE**
+**Date: 2026-05-11**
+
+### Migration
+- `supabase/migrations/2026_05_type2_cuecs.sql`
+  - Created `cuecs` table with `code` (unique short reference like `CUEC-01`), `title`, `description`, `category` (access | data | change | operations | other), `responsible_party`, `status` (active | retired), `in_scope`, `notes`, and timestamps.
+  - Created `cuec_control_objectives` many-to-many link table referencing `control_objectives`.
+  - Added authenticated RLS policies, indexes on `status`, `category`, and `in_scope`.
+  - Added `updated_at` trigger.
+  - Attached `record_audit_log` trigger to `cuecs` if the audit log function exists in the schema.
+
+### Types (`src/lib/types.ts`)
+- Added `CuecCategory`, `CuecStatus`.
+- Added `Cuec` interface.
+- Added `CuecObjectiveLink` interface.
+
+### CUEC Register page (`src/app/pages/CuecRegisterPage.tsx`)
+- Route: `/qa/cuecs` (QA sidebar — Evidence & Audit group, label "CUECs", `ListChecks` icon)
+- 5-tile KPI strip: Total, Active, In Scope, Linked to Objectives, Unlinked.
+- Search across code, title, description, and responsible party.
+- Status filter (all / active / retired).
+- Category filter (all / access / data / change / operations / other).
+- Per-row card surfaces a prominent code chip, title, category, status, in-scope badge, responsible party, notes, and linked control objective chips. Cards with no linked objective surface an inline "Not linked" hint.
+- Create/edit dialog auto-suggests the next sequential code (`CUEC-NN`) and covers all fields plus an inline checkbox list for linking to `control_objectives`.
+- Duplicate-code save attempts surface a friendly "Code already in use" toast (driven by the unique constraint).
+- Empty-state copy explains the purpose of a CUEC for first-time users.
+- Delete action wired through the edit dialog with confirm prompt.
+
+### Verification
+- `npm run build` passes
+- Existing Vite warnings remain:
+  - `src/lib/supabase.ts` is both dynamically and statically imported
+  - Main bundle is larger than the default 500 kB chunk warning threshold
+
+### Tradeoffs / follow-ups
+- CUECs are not yet rolled into the Type 2 Readiness score or the auditor export pack.
+- The generated ISAE 3402 report template does not yet auto-pull the CUEC register into a disclosure section; this remains a manual reporting step.
+- No CEO sidebar entry — the CEO sidebar surface stays capped at 10 pages per the role-scoped route architecture.
+
+---
+
 ## Post-MVP backlog
 **Status: NOT STARTED**
 
 - Scheduled monthly KPI snapshot capture
-- Subservice org register
-- CUEC register
 - Access review workflow in CTO > Access Control
 - Automated integrations (Jira, Entra ID)
 - Audit log hardening: role-scoped RLS, actor name resolution, retention policy
+- Multi-report assurance history per subservice org
+- Subservice org coverage feeding the Type 2 Readiness score and auditor export pack
+- CUEC coverage feeding the Type 2 Readiness score, auditor export pack, and report template

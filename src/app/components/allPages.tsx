@@ -2,7 +2,7 @@ import {
   LayoutDashboard, AlertTriangle, Shield, Calendar,
   GitCommit, Package, Users, FileText, BookOpen,
   Tag, Bell, FileEdit, CalendarDays, ClipboardCheck, ShieldAlert, Gauge,
-  Cog, Wrench, Table2, FileQuestion, FileSignature, Upload
+  Cog, Wrench, Table2, FileQuestion, FileSignature, Upload, Building2, ListChecks
 } from 'lucide-react'
 
 export type ViewKey = 'CEO' | 'CTO' | 'QA'
@@ -99,6 +99,8 @@ export const ALL_PAGES: PageDef[] = [
   { key: 'qa_evidence_review', name: 'Evidence Review',  href: '/qa/evidence-review', view: 'QA', icon: ClipboardCheck, group: 'grp_qa_audit' },
   { key: 'qa_deviations',      name: 'Deviations',       href: '/qa/deviations',      view: 'QA', icon: ShieldAlert,    group: 'grp_qa_audit' },
   { key: 'qa_auditor_requests',name: 'Auditor Requests', href: '/qa/auditor-requests',view: 'QA', icon: FileQuestion,    group: 'grp_qa_audit' },
+  { key: 'qa_subservice_orgs', name: 'Subservice Orgs',  href: '/qa/subservice-orgs', view: 'QA', icon: Building2,       group: 'grp_qa_audit' },
+  { key: 'qa_cuecs',           name: 'CUECs',            href: '/qa/cuecs',           view: 'QA', icon: ListChecks,      group: 'grp_qa_audit' },
   { key: 'qa_data_import',     name: 'Data Import',      href: '/qa/data-import',     view: 'QA', icon: Upload,          group: 'grp_qa_audit' },
   { key: 'qa_report_tpl',      name: 'Report Template',  href: '/qa/report-template', view: 'QA', icon: FileEdit,        group: 'grp_qa_audit' },
   { key: 'qa_notifications',   name: 'Notifications',    href: '/qa/notifications',   view: 'QA', icon: Bell,            group: 'grp_qa_audit' },

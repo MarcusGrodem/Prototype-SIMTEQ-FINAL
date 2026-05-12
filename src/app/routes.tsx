@@ -20,6 +20,8 @@ import { ControlObjectivesPage } from './pages/ControlObjectivesPage';
 import { AuditorRequestTracker } from './pages/AuditorRequestTracker';
 import { PeriodEndPage } from './pages/PeriodEndPage';
 import { DataImportPage } from './pages/DataImportPage';
+import { SubserviceOrgsPage } from './pages/SubserviceOrgsPage';
+import { CuecRegisterPage } from './pages/CuecRegisterPage';
 // QA pages
 import { QADashboard } from './pages/qa/QADashboard';
 import { Evidence } from './pages/Evidence';
@@ -66,6 +68,8 @@ const QA_ROUTES = [
   { path: 'evidence-review', element: <EvidenceReviewQueue /> },
   { path: 'deviations', element: <DeviationRegister /> },
   { path: 'auditor-requests', element: <AuditorRequestTracker /> },
+  { path: 'subservice-orgs', element: <SubserviceOrgsPage /> },
+  { path: 'cuecs', element: <CuecRegisterPage /> },
   { path: 'audit-period', element: <AuditPeriodPage /> },
   { path: 'data-import', element: <DataImportPage /> },
   { path: 'report-template', element: <ReportTemplateEditor /> },

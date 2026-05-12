@@ -43,6 +43,8 @@ The application now supports:
 - Redistributed route/sidebar ownership so CTO and QA receive their operational pages instead of leaving every workflow under CEO.
 - CEO route/sidebar surface is capped at 10 pages.
 - KPI Snapshot History for Type 2 period-end evidence.
+- Subservice organization register with control-objective linking.
+- CUEC (Complementary User Entity Controls) register with control-objective linking.
 
 ---
 
@@ -106,6 +108,8 @@ Current groups:
   - Evidence Review
   - Deviations
   - Auditor Requests
+  - Subservice Orgs
+  - CUECs
   - Data Import
   - Report Template
   - Notifications
@@ -624,23 +628,87 @@ Follow-ups still open:
 - Retention/archival policy for old entries.
 
 ## Subservice Organization Register
-**Status:** NOT STARTED  
-**Source:** `TYPE2_PROGRESS.md`, `TYPE2_EXTENSION_PLAN.md`
+**Status:** COMPLETE  
+**Date:** 2026-05-11  
+**Detailed log:** `TYPE2_PROGRESS.md`
 
-Planned:
+Changed files:
 
-- Register vendors/subservice organizations.
-- Track assurance reports and review status.
-- Link to control objectives where relevant.
+- `supabase/migrations/2026_05_type2_subservice_orgs.sql` (new)
+- `src/lib/types.ts`
+- `src/app/pages/SubserviceOrgsPage.tsx` (new)
+- `src/app/routes.tsx`
+- `src/app/components/allPages.tsx`
+- `APP_PROGRESS.md`, `TYPE2_PROGRESS.md`
+
+Implemented:
+
+- `subservice_orgs` table with name, service description, criticality (low/medium/high/critical), assurance report type, last report date, next review date, status (active/under_review/discontinued), in-scope flag, owner, review status (pending/accepted/accepted_with_findings/rejected), findings summary, and notes.
+- `subservice_org_objectives` link table for many-to-many mapping to `control_objectives`.
+- Authenticated RLS policies, useful indexes, and `updated_at` trigger.
+- Audit log trigger attached when the `record_audit_log` function exists.
+- Subservice Organizations register page with KPI strip (total, active, high/critical, review overdue, pending review, missing reports).
+- Create/edit dialog covering all fields plus inline control-objective linking.
+- Review-overdue highlighting on cards.
+- Status, criticality, and search filters.
+
+Route/sidebar changes:
+
+- New QA route: `/qa/subservice-orgs`.
+- New QA sidebar entry under Evidence & Audit.
+- No CEO route added (CEO sidebar remains capped at 10 pages).
+
+Verification:
+
+- `npm run build` passes.
+- Existing Vite warnings remain: mixed dynamic/static import of `src/lib/supabase.ts` and main chunk size above 500 kB.
+
+Known tradeoffs:
+
+- Assurance reports are stored as the most recent metadata on the org row (type, date, review status, findings). Multi-report history is not tracked; a `subservice_assurance_reports` history table can be added later.
+- Subservice orgs are not yet linked to the Type 2 Readiness score or auditor export pack.
 
 ## CUEC Register
-**Status:** NOT STARTED  
-**Source:** `TYPE2_PROGRESS.md`, `TYPE2_EXTENSION_PLAN.md`
+**Status:** COMPLETE  
+**Date:** 2026-05-11  
+**Detailed log:** `TYPE2_PROGRESS.md`
 
-Planned:
+Changed files:
 
-- Complementary User Entity Controls register.
-- Link CUECs to control objectives and report sections.
+- `supabase/migrations/2026_05_type2_cuecs.sql` (new)
+- `src/lib/types.ts`
+- `src/app/pages/CuecRegisterPage.tsx` (new)
+- `src/app/routes.tsx`
+- `src/app/components/allPages.tsx`
+- `APP_PROGRESS.md`, `TYPE2_PROGRESS.md`
+
+Implemented:
+
+- `cuecs` table with code (unique), title, description, category (access/data/change/operations/other), responsible_party, status (active/retired), in_scope flag, and notes.
+- `cuec_control_objectives` link table for many-to-many mapping to `control_objectives`.
+- Authenticated RLS policies, indexes on status/category/in_scope, and `updated_at` trigger.
+- Audit log trigger attached when the `record_audit_log` function exists.
+- CUEC Register page with KPI strip (Total, Active, In Scope, Linked to Objectives, Unlinked).
+- Create/edit dialog with auto-suggested next code (e.g. `CUEC-03`), all fields, and inline control-objective linking via checkbox list.
+- Status, category, and search filters across code/title/description/responsible party.
+- Empty state copy explaining what a CUEC is.
+- Delete from inside the edit dialog with confirm.
+
+Route/sidebar changes:
+
+- New QA route: `/qa/cuecs`.
+- New QA sidebar entry under Evidence & Audit (`ListChecks` icon).
+- No CEO route added (CEO sidebar remains capped at 10 pages).
+
+Verification:
+
+- `npm run build` passes.
+- Existing Vite warnings remain: mixed dynamic/static import of `src/lib/supabase.ts` and main chunk size above 500 kB.
+
+Known tradeoffs:
+
+- CUECs are not yet rolled into the Type 2 Readiness score or the auditor export pack.
+- No automatic linkage of CUECs into the generated ISAE 3402 report template sections; disclosure remains a manual reporting step.
 
 ## Access Review Workflow
 **Status:** NOT STARTED  
